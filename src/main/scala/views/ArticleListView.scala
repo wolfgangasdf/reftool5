@@ -5,6 +5,8 @@ import scalafx.scene.control._
 import scalafx.scene.paint.Color
 import scalafx.beans.property.{ObjectProperty, StringProperty}
 import scalafx.collections.ObservableBuffer
+import db.Article
+import scalafx.scene.control.TableColumn.CellDataFeatures
 
 class ArticleListView extends GenericView {
   // see upon https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/SimpleTableViewSorted.scala
@@ -15,30 +17,25 @@ class ArticleListView extends GenericView {
     val phone = new StringProperty(this, "phone", phone_)
     val favoriteColor = new ObjectProperty(this, "favoriteColor", favoriteColor_)
   }
-  val firstNameColumn = new TableColumn[Person, String] {
-    text = "First Name"
-    cellValueFactory = {_.value.firstName}
+  val cTitle = new TableColumn[Article, String] {
+    text = "Title"
+    // I would like to bind a squeryl (POSO) field to scalafx (ObjectProperties): shitty, but no real solution
+    //    cellValueFactory = (a: Article) => { new StringProperty(a.title)}
+    cellValueFactory = (a: CellDataFeatures[Article, String]) => new StringProperty(a.value.title)
     prefWidth = 180
   }
-  val lastNameColumn = new TableColumn[Person, String] {
-    text = "Last Name"
-    cellValueFactory = {_.value.lastName}
-    prefWidth = 180
+  val cPubdata = new TableColumn[Article, String] {
+    text = "Date"
+    cellValueFactory = (a: CellDataFeatures[Article, String]) => new StringProperty(a.value.pubdate)
+    prefWidth = 40
   }
-  val phoneColumn = new TableColumn[Person, String] {
-    text = "Phone"
-    cellValueFactory = {_.value.phone}
-    prefWidth = 180
-  }
-  val characters = ObservableBuffer[Person](
-    new Person("Peggy", "Sue", "555-6798"),
-    new Person("Desmond", "Sue", "555-6798"),
-    new Person("Rocky", "Raccoon", "555-8036"),
-    new Person("Molly", "Raccoon", "555-0789")
-  )
-  val alv = new TableView[Person](characters) {
-    columns +=(firstNameColumn, lastNameColumn, phoneColumn)
-    sortOrder +=(phoneColumn, lastNameColumn, firstNameColumn)
+
+  val articles = new ObservableBuffer[Article]()
+  articles += new Article(title = "tit1", pubdate = "2013") // TODO remove
+  articles += new Article(title = "tit2", pubdate = "2012")
+  val alv = new TableView[Article](articles) {
+    columns += (cTitle, cPubdata)
+    sortOrder += (cTitle, cPubdata)
   }
 
 

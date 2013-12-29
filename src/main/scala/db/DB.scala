@@ -12,7 +12,7 @@ import org.squeryl.annotations.Transient
 
 class BaseEntity extends KeyedEntity[Long] {
   val id: Long = 0
-//  var lastModified = new TimestampType(System.currentTimeMillis)
+  //  var lastModified = new TimestampType(System.currentTimeMillis)
 }
 
 class Article(var entrytype: String = "",
@@ -28,14 +28,16 @@ class Article(var entrytype: String = "",
               var doi: String = "")
   extends BaseEntity {
   lazy val topics = ReftoolDB.topics2articles.right(this)
+
   override def toString: String = "" + id + ":" + title
+
   @Transient var testthing = "" // not in DB!
 }
 
-class Topic(var title: String = "") extends BaseEntity {
+class Topic(var title: String = "", var parent: Option[Long] = Option[Long](0)) extends BaseEntity {
   lazy val articles = ReftoolDB.topics2articles.left(this)
   lazy val children: OneToMany[Topic] = ReftoolDB.topic2topics.left(this)
-  lazy val parent: ManyToOne[Topic] = ReftoolDB.topic2topics.right(this)
+  def orderedChilds = { inTransaction { from(children) (c => select(c) orderBy(c.title asc)) } }
   override def toString: String = "" + id + ":" + title
 }
 
@@ -56,40 +58,58 @@ object ReftoolDB extends Schema with Logging {
 
   on(topics)(t => declare(
     t.id is(primaryKey, autoIncremented, named("ID")),
-    t.title is(indexed, dbType("varchar(512)"), named("TITLE"))
-      ))
+    t.title is(indexed, dbType("varchar(512)"), named("TITLE")),
+    t.parent is named("PARENT") // if null, root topic!
+  ))
   on(articles)(a => declare(
     a.id is(primaryKey, autoIncremented, named("ID")),
     a.entrytype is(dbType("varchar(256)"), named("ENTRYTYPE")),
     a.title is(indexed, dbType("varchar(1024)"), named("TITLE")),
-    a.authors is (dbType("varchar(4096)"), named("AUTHORS")),
-    a.journal is (dbType("varchar(1024)"), named("JOURNAL")),
-    a.pubdate is (dbType("varchar(1024)"), named("PUBDATE")),
-    a.review is (dbType("varchar(8192)"), named("REVIEW")),
-    a.pdflink is (dbType("varchar(1024)"), named("PDFLINK")),
-    a.linkurl is (dbType("varchar(1024)"), named("LINKURL")),
-    a.bibtexid is (dbType("varchar(255)"), named("BIBTEXID")),
-    a.bibtexentry is (dbType("varchar(8192)"), named("BIBTEXENTRY")),
-    a.doi is (dbType("varchar(255)"), named("DOI"))
+    a.authors is(dbType("varchar(4096)"), named("AUTHORS")),
+    a.journal is(dbType("varchar(1024)"), named("JOURNAL")),
+    a.pubdate is(dbType("varchar(1024)"), named("PUBDATE")),
+    a.review is(dbType("varchar(8192)"), named("REVIEW")),
+    a.pdflink is(dbType("varchar(1024)"), named("PDFLINK")),
+    a.linkurl is(dbType("varchar(1024)"), named("LINKURL")),
+    a.bibtexid is(dbType("varchar(255)"), named("BIBTEXID")),
+    a.bibtexentry is(dbType("varchar(8192)"), named("BIBTEXENTRY")),
+    a.doi is(dbType("varchar(255)"), named("DOI"))
   ))
-  val topics2articles = manyToManyRelation(topics, articles,"TOPIC2ARTICLE").
+  val topics2articles = manyToManyRelation(topics, articles, "TOPIC2ARTICLE").
     via[Topic2Article]((t, a, ta) => (ta.topic === t.id, a.id === ta.article))
-  val topic2topics = oneToManyRelation(topics, topics).via((tp,tc) => tp.id === tc.id)
+  val topic2topics = oneToManyRelation(topics, topics).via((tp, tc) => tp.id === tc.parent)
   on(topics2articles)(a => declare(
     a.topic is named("TOPIC"),
     a.article is named("ARTICLE"),
     a.color is named("COLOR")
   ))
-  def initialize() {
-    // val databaseConnection = "jdbc:derby:/tmp/squerylexample;create=true"
 
-    // this creates from old database, in this case reftool4
-    val databaseConnection = s"jdbc:derby:$newdbpath;createFrom=$olddbpath"
-
+  // upgrades old reftool4 database
+  def upgrade4to5() {
     // clean
     import FileHelper._
     val pdir = new File(newdbpath)
     pdir.deleteAll
+    // this creates from old database and copies content where needed... looses fields!
+    val dbs = s"jdbc:derby:$newdbpath;createFrom=$olddbpath"
+    val dbconn = java.sql.DriverManager.getConnection(dbs)
+    // this updates the root topic NOT to have a 'null' entry for parent!
+//    val s = dbconn.createStatement()
+//    s.execute("UPDATE TOPICS SET PARENT = 0 WHERE PARENT = NULL")
+    // shut all down
+    dbconn.close()
+//    java.sql.DriverManager.getConnection("jdbc:derby:;shutdown=true");
+  }
+  
+  def initialize() {
+    
+    upgrade4to5()
+    
+    // val databaseConnection = "jdbc:derby:/tmp/squerylexample;create=true"
+    val databaseConnection = s"jdbc:derby:$newdbpath"
+
+
+
 
     def startDatabaseSession() {
       Class.forName("org.apache.derby.jdbc.EmbeddedDriver")
@@ -113,25 +133,25 @@ object Testsqueryl extends Logging {
   def main(args: Array[String]) {
 
 
-//    transaction {
-//      val t1: Topic = new Topic(title="t1")
-//      val t1a: Topic = new Topic(title="t1a")
-//      val t2: Topic = new Topic(title="t2")
-//      ReftoolDB.topics.insert(t1)
-//      ReftoolDB.topics.insert(t1a)
-//      ReftoolDB.topics.insert(t2)
-//      val a1: Article = new Article(title="asdf")
-//      ReftoolDB.articles.insert(a1)
-//      a1.topics.associate(t1a)
-//      a1.topics.associate(t2)
-//    }
+    //    transaction {
+    //      val t1: Topic = new Topic(title="t1")
+    //      val t1a: Topic = new Topic(title="t1a")
+    //      val t2: Topic = new Topic(title="t2")
+    //      ReftoolDB.topics.insert(t1)
+    //      ReftoolDB.topics.insert(t1a)
+    //      ReftoolDB.topics.insert(t2)
+    //      val a1: Article = new Article(title="asdf")
+    //      ReftoolDB.articles.insert(a1)
+    //      a1.topics.associate(t1a)
+    //      a1.topics.associate(t2)
+    //    }
     ReftoolDB.initialize()
 
     transaction {
       def topics = ReftoolDB.topics
-//      for (t <- topics) {
-//        debug("topic: " + t)
-//      }
+      //      for (t <- topics) {
+      //        debug("topic: " + t)
+      //      }
       val tx = topics.where(t => t.title === "helices in nature").single
       debug("res=" + tx)
       for (a <- tx.articles)
