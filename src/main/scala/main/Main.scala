@@ -32,15 +32,20 @@ object Main extends JFXApp with Logging {
   //  using(db.ReftoolDB)
   transaction {
     def topics = ReftoolDB.topics
-    //      for (t <- topics) {
-    //        debug("topic: " + t)
-    //      }
-    val tx = topics.where(t => t.title === "helices in nature").single
-    debug("res=" + tx)
-    for (a <- tx.articles)
-      debug("article: " + a)
+//          for (t <- topics) {
+//            debug("topic: " + t)
+//          }
+
+    // root topic has null parent!
+//    val t = topics.where(t => t.parent.isNull).single
+//    debug("root topic=" + t)
+//    for (cc <- t.orderedChilds) {
+//      debug("  has child " + cc)
+//    }
+
 
   }
+//  sys.exit(1)
 
   private def createMenuBar() = new MenuBar {
 //    useSystemMenuBar = true
