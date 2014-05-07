@@ -2,32 +2,26 @@ package main
 
 import scalafx.application.JFXApp
 import scalafx.Includes._
-import scalafx.scene._
-import scalafx.stage._
 import scalafx.scene.layout._
 import scalafx.scene.control._
-import util._
 
-//import javafx.geometry.Orientation
-//import javafx.event._
-import scalafx.geometry._
-import db.ReftoolDB
-import org.squeryl.adapters.DerbyAdapter
-import org.squeryl.PrimitiveTypeMode._
-import org.squeryl.dsl._
-import org.squeryl._
-import views.{SearchView, ArticleDetailView, ArticleListView, TopicsTreeView}
+import scala.language.{implicitConversions, reflectiveCalls, postfixOps}
+import scalafx.geometry.Orientation
 import scalafx.application.JFXApp.PrimaryStage
-import scala.language.implicitConversions
-import scalafx.Includes._
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.input.KeyCombination
+import scalafx.scene.Scene
 import scalafx.event.ActionEvent
+
 import scalafx.scene.shape.Circle
 import scalafx.scene.paint.Color
+import org.squeryl.PrimitiveTypeMode._
+import views.{SearchView, ArticleDetailView, ArticleListView, TopicsTreeView}
+import util._
+import db.ReftoolDB
 
 object Main extends JFXApp with Logging {
-  ReftoolDB.initialize
+  ReftoolDB.initialize()
   // test db
   //  using(db.ReftoolDB)
   transaction {
@@ -55,9 +49,7 @@ object Main extends JFXApp with Logging {
           new MenuItem("New...") {
             graphic = new ImageView(new Image(getClass.getResource("/images/paper.png").toExternalForm))
             accelerator = KeyCombination.keyCombination("Ctrl +N")
-            onAction = {
-              e: ActionEvent => println(e.eventType + " occurred on MenuItem New")
-            }
+// todo           onAction = (e: ActionEvent) => { println(e.eventType + " occurred on MenuItem New") }
           },
           new MenuItem("Save")
         )
@@ -77,10 +69,10 @@ object Main extends JFXApp with Logging {
     val toolBar = new ToolBar {
       content = List(
         new Button {
-          id = "newButton"
-          graphic = new ImageView(new Image(getClass.getResource("/images/paper.png").toExternalForm))
-          tooltip = Tooltip("New Document... Ctrl+N")
-          onAction = println("New toolbar button clicked")
+//          id = "newButton"
+//          graphic = new ImageView(new Image(getClass.getResource("/images/paper.png").toExternalForm))
+//          tooltip = Tooltip("New Document... Ctrl+N")
+          onAction = (ae: ActionEvent) => { println("New toolbar button clicked") }
         },
         new Button {
           id = "editButton"

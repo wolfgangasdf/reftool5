@@ -128,7 +128,7 @@ object StarterAppMain extends JFXApp {
           id = "newButton"
           graphic = new ImageView(new Image(this, "images/paper.png"))
           tooltip = Tooltip("New Document... Ctrl+N")
-          onAction = println("New toolbar button clicked")
+          onAction = (ae: ActionEvent) => println("New toolbar button clicked")
         },
         new Button {
           id = "editButton"

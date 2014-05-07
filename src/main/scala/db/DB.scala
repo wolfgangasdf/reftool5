@@ -37,7 +37,7 @@ class Article(var entrytype: String = "",
 class Topic(var title: String = "", var parent: Option[Long] = Option[Long](0)) extends BaseEntity {
   lazy val articles = ReftoolDB.topics2articles.left(this)
   lazy val children: OneToMany[Topic] = ReftoolDB.topic2topics.left(this)
-  def orderedChilds = { inTransaction { from(children) (c => select(c) orderBy(c.title asc)) } }
+  def orderedChilds = { inTransaction { from(children) (c => select(c) orderBy(c.title.asc)) } }
   override def toString: String = "" + id + ":" + title
 }
 
@@ -102,8 +102,9 @@ object ReftoolDB extends Schema with Logging {
   }
   
   def initialize() {
-    
-    upgrade4to5()
+
+    // TODO uncomment this to create new test database!
+//    upgrade4to5()
     
     // val databaseConnection = "jdbc:derby:/tmp/squerylexample;create=true"
     val databaseConnection = s"jdbc:derby:$newdbpath"
