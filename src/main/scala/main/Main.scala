@@ -24,11 +24,12 @@ object Main extends JFXApp with Logging {
   ReftoolDB.initialize()
   // test db
   //  using(db.ReftoolDB)
+/*
   transaction {
     def topics = ReftoolDB.topics
-//          for (t <- topics) {
-//            debug("topic: " + t)
-//          }
+          for (t <- topics) {
+            debug("topic: " + t)
+          }
 
     // root topic has null parent!
 //    val t = topics.where(t => t.parent.isNull).single
@@ -39,6 +40,7 @@ object Main extends JFXApp with Logging {
 
 
   }
+*/
 //  sys.exit(1)
 
   private def createMenuBar() = new MenuBar {
@@ -49,7 +51,7 @@ object Main extends JFXApp with Logging {
           new MenuItem("New...") {
             graphic = new ImageView(new Image(getClass.getResource("/images/paper.png").toExternalForm))
             accelerator = KeyCombination.keyCombination("Ctrl +N")
-// todo           onAction = (e: ActionEvent) => { println(e.eventType + " occurred on MenuItem New") }
+            onAction = (e: ActionEvent) => { println(e.eventType + " occurred on MenuItem New") }
           },
           new MenuItem("Save")
         )
