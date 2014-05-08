@@ -1,11 +1,12 @@
 package views
 
-import scalafx.Includes._
+import scalafx.scene.layout._
 import scalafx.scene.control._
+import scalafx. {collections => sfxc}
+import scalafx.Includes._
 import org.squeryl.PrimitiveTypeMode._
 import javafx.scene.{control => jfxsc}
 import db.{ReftoolDB, Topic}
-import util._
 import framework.{Logging, GenericView}
 
 class myTreeItem(vv: Topic) extends TreeItem[Topic] with Logging {
@@ -58,7 +59,8 @@ class TopicsTreeView extends GenericView {
     selectionModel().selectedItem.onChange { (_, _, newVal) => {
       val topic = newVal.value()
       debug(s"topic $topic [${topic.id}]")
-
+      val al = topic.articles
+      transaction { main.Main.articleListView.setArticles(al.toList) }
     }}
     // load first element & expand
     transaction {
