@@ -1,4 +1,4 @@
-package util
+package framework
 
 trait Logging {
   protected def debug(msg: => Any): Unit = dolog(msg)

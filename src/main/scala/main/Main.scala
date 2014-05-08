@@ -15,16 +15,18 @@ import scalafx.event.ActionEvent
 
 import scalafx.scene.shape.Circle
 import scalafx.scene.paint.Color
-import org.squeryl.PrimitiveTypeMode._
 import views.{SearchView, ArticleDetailView, ArticleListView, TopicsTreeView}
 import util._
 import db.ReftoolDB
+import framework.Logging
 
 object Main extends JFXApp with Logging {
+  AppStorage.load()
   ReftoolDB.initialize()
   // test db
   //  using(db.ReftoolDB)
 /*
+import org.squeryl.PrimitiveTypeMode._
   transaction {
     def topics = ReftoolDB.topics
           for (t <- topics) {
@@ -67,7 +69,6 @@ object Main extends JFXApp with Logging {
   }
 
   private def createToolBar(): ToolBar = {
-    val alignToggleGroup = new ToggleGroup()
     val toolBar = new ToolBar {
       content = List(
         new Button {
