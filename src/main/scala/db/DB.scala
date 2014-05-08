@@ -8,6 +8,7 @@ import org.squeryl._
 import scala.Some
 import util._
 import org.squeryl.annotations.Transient
+import framework.Logging
 
 
 class BaseEntity extends KeyedEntity[Long] {
@@ -37,8 +38,8 @@ class Article(var entrytype: String = "",
 class Topic(var title: String = "", var parent: Option[Long] = Option[Long](0)) extends BaseEntity {
   lazy val articles = ReftoolDB.topics2articles.left(this)
   lazy val children: OneToMany[Topic] = ReftoolDB.topic2topics.left(this)
-  def orderedChilds = { inTransaction { from(children) (c => select(c) orderBy(c.title.asc)) } }
-  override def toString: String = "" + id + ":" + title
+  def orderedChilds = inTransaction { from(children) (c => select(c) orderBy c.title.asc) }
+  override def toString: String = title
 }
 
 class Topic2Article(val topic: Long, val article: Long, val color: Int) extends KeyedEntity[CompositeKey2[Long, Long]] {
@@ -49,9 +50,6 @@ class Setting(val name: String, val value: String) extends BaseEntity
 
 object ReftoolDB extends Schema with Logging {
 
-  // TODO: path config, import thing
-  val newdbpath = "/tmp/reftool5db"
-  val olddbpath = "/Unencrypted_Data/wolle-programming/01-reftool5/reftool5dbtest/db"
 
   val articles = table[Article]("ARTICLES")
   val topics = table[Topic]("TOPICS")
@@ -88,10 +86,11 @@ object ReftoolDB extends Schema with Logging {
   def upgrade4to5() {
     // clean
     import FileHelper._
-    val pdir = new File(newdbpath)
+    import util.AppStorage
+    val pdir = new File(AppStorage.config.newdbpath)
     pdir.deleteAll
     // this creates from old database and copies content where needed... looses fields!
-    val dbs = s"jdbc:derby:$newdbpath;createFrom=$olddbpath"
+    val dbs = s"jdbc:derby:${AppStorage.config.newdbpath};createFrom=${AppStorage.config.olddbpath}"
     val dbconn = java.sql.DriverManager.getConnection(dbs)
     // this updates the root topic NOT to have a 'null' entry for parent!
 //    val s = dbconn.createStatement()
@@ -107,7 +106,7 @@ object ReftoolDB extends Schema with Logging {
 //    upgrade4to5()
     
     // val databaseConnection = "jdbc:derby:/tmp/squerylexample;create=true"
-    val databaseConnection = s"jdbc:derby:$newdbpath"
+    val databaseConnection = s"jdbc:derby:${AppStorage.config.newdbpath}"
 
 
 

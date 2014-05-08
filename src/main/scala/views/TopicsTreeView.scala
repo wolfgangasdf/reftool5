@@ -1,21 +1,18 @@
 package views
 
-import util._
 import scalafx.Includes._
 import scalafx.scene.control._
-import scalafx.beans.property.{ReadOnlyBooleanProperty, BooleanProperty}
-import db.{ReftoolDB, Topic}
 import org.squeryl.PrimitiveTypeMode._
-import scalafx.collections.ObservableBuffer
-import scalafx.scene.control.TreeItem.TreeModificationEvent
 import javafx.scene.{control => jfxsc}
-import scalafx.scene
+import db.{ReftoolDB, Topic}
+import util._
+import framework.{Logging, GenericView}
 
-class myTreeItem(vv: Topic) extends TreeItem[String] with Logging {
+class myTreeItem(vv: Topic) extends TreeItem[Topic] with Logging {
   var hasloadedchilds: Boolean = false
   var topic = vv
   var thiti = this
-  value = vv.title
+  value = vv //.title
 
   // TODO: lazy loading? http://www.loop81.com/2011/11/javafx-20-mastering-treeview.html
   // better: http://javafx-demos.googlecode.com/svn-history/r81/trunk/javafx-demos/src/main/java/com/ezest/javafx/demogallery/treeview/TreeViewDynamicLoadingDemo.java
@@ -23,6 +20,7 @@ class myTreeItem(vv: Topic) extends TreeItem[String] with Logging {
 //    debug(s"isleaf($value)?")
 //    super.leaf
 //  }
+
   delegate.addEventHandler(jfxsc.TreeItem.branchExpandedEvent[Topic](), new javafx.event.EventHandler[jfxsc.TreeItem.TreeModificationEvent[Topic]]() {
     def handle(p1: jfxsc.TreeItem.TreeModificationEvent[Topic]): Unit = {
       debug(s"branchexpanded($value, has=$hasloadedchilds)")
@@ -44,7 +42,6 @@ class myTreeItem(vv: Topic) extends TreeItem[String] with Logging {
       }
     }
   })
-//  addEventHandler(TreeModificationEvent jfxsc.TreeItem.BRANCH_EXPANDED_EVENT, { debug("asdfa") ; print("") })
 
 }
 
@@ -52,38 +49,27 @@ class TopicsTreeView extends GenericView {
   var troot: Topic = null
   var tiroot: myTreeItem = null
 
-  def loadAll() {
-    def loadRec(ti: myTreeItem, topic: Topic) {
-      // add children
-      for (newt <- topic.orderedChilds) {
-//        debug("  has child " + newt)
-        var newti = new myTreeItem(newt)
-        ti.children += newti
-        loadRec(newti, newt)
-      }
-    }
-    tiroot.children.clear() // TODO check if memory leak due to subchilds
-    import util.StopWatch._
-    timed("loadAll: ") { loadRec(tiroot, troot) }
-  }
-
   top = new ToolBar {
     items.add(new Button("ttv"))
   }
-  center = new TreeView[String] {
+  center = new TreeView[Topic] {
     id = "treeview"
     this.showRoot = true
+    selectionModel().selectedItem.onChange { (_, _, newVal) => {
+      val topic = newVal.value()
+      debug(s"topic $topic [${topic.id}]")
+
+    }}
+    // load first element & expand
     transaction {
       def topics = ReftoolDB.topics
       // root item (must be unique)
       troot = topics.where(t => t.parent.isNull).single
       debug("root topic=" + troot)
       tiroot = new myTreeItem(troot)
-//      tiroot.loadchildren()
       debug("root.childs=" + tiroot.children.length)
       root = tiroot
       tiroot.setExpanded(true)
-//      loadAll()
     }
 
   }
