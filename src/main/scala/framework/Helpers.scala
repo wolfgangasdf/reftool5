@@ -53,9 +53,9 @@ object Helpers {
     }
   }
 
-  import scalafx.beans.property._
-  implicit def StringPropertyToString(sp: StringProperty) = sp.value
-  implicit def IntegerPropertyToInt(sp: IntegerProperty) = sp.value
+//  import scalafx.beans.property._
+//  implicit def StringPropertyToString(sp: StringProperty) = sp.value
+//  implicit def IntegerPropertyToInt(sp: IntegerProperty) = sp.value
   //  implicit def StringToStringProperty(s: String): StringProperty = StringProperty(s)
   //  implicit def IntegerToIntegerProperty(i: Int): IntegerProperty = IntegerProperty(i)
 
