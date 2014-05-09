@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 import framework.{Logging, Helpers}
 import Helpers._
 
-class Config {
+class Config extends Logging {
   // implicit def StringToStringProperty(s: String): StringProperty = StringProperty(s)
   var width = 800
   var height = 600
@@ -14,6 +14,9 @@ class Config {
   val newdbpath = "/tmp/reftool5db"
   val olddbpath = "/Unencrypted_Data/wolle-programming/01-reftool5/reftool5dbtest/db"
 
+//  val csspath = getClass.getResource("/reftool.css").toExternalForm
+  val csspath = "file:" + new java.io.File("src/main/resources/reftool.css").getAbsolutePath // TODO testing
+  debug("csspath: " + csspath)
 }
 
 object AppSettings extends Logging {
@@ -75,16 +78,15 @@ object AppStorage extends Logging {
   def load() {
     info("----------load")
     val lines = AppSettings.getLines
+    config = new Config
     if (lines.size == 0) {
       info("no config file...")
-      config = new Config
     } else {
       lines.foreach(lll => {
         val sett = splitsetting(lll.toString)
         sett(0) match {
-          case "sfsyncsettingsversion" =>
+          case "reftoolsettingsversion" =>
             if (!sett(1).equals("1")) sys.error("wrong settings version")
-            config = new Config()
           case "width" => config.width = sett(1).toInt
           case "height" => config.height = sett(1).toInt
           case _ => warn("unknown tag in config file: <" + sett(0) + ">")

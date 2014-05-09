@@ -26,12 +26,12 @@ class ArticleListView extends GenericView {
   val cTitle = new TableColumn[Article, String] {
     text = "Title"
     cellValueFactory = (a) => new StringProperty(a.value.title)
-    prefWidth = 180
+    prefWidth = 280
   }
   val cPubdata = new TableColumn[Article, String] {
     text = "Date"
     cellValueFactory = (a) => new StringProperty(a.value.pubdate)
-    prefWidth = 40
+    prefWidth = 80
   }
 
   val articles = new ObservableBuffer[Article]()
