@@ -18,11 +18,14 @@ import scalafx.scene.paint.Color
 import views.{SearchView, ArticleDetailView, ArticleListView, TopicsTreeView}
 import util._
 import db.ReftoolDB
-import framework.Logging
+import framework.{ViewContainer, Logging}
 
 object Main extends JFXApp with Logging {
   AppStorage.load()
   ReftoolDB.initialize()
+
+  debug("I am here: " + new java.io.File(".").getAbsolutePath )
+
   // test db
   //  using(db.ReftoolDB)
 /*
@@ -45,7 +48,7 @@ import org.squeryl.PrimitiveTypeMode._
 */
 //  sys.exit(1)
 
-  private def createMenuBar() = new MenuBar {
+  private def createMenuBar = new MenuBar {
 //    useSystemMenuBar = true
     menus = List(
       new Menu("File") {
@@ -55,7 +58,13 @@ import org.squeryl.PrimitiveTypeMode._
             accelerator = KeyCombination.keyCombination("Ctrl +N")
             onAction = (e: ActionEvent) => { println(e.eventType + " occurred on MenuItem New") }
           },
-          new MenuItem("Save")
+          new MenuItem("Save"),
+          new MenuItem("reload CSS") {
+            onAction = (e: ActionEvent) => {
+              info("reload CSS!")
+              myScene.stylesheets = List(AppStorage.config.csspath)
+            }
+          }
         )
       },
       new Menu("Edit") {
@@ -68,7 +77,7 @@ import org.squeryl.PrimitiveTypeMode._
     )
   }
 
-  private def createToolBar(): ToolBar = {
+  private def createToolBar: ToolBar = {
     val toolBar = new ToolBar {
       content = List(
         new Button {
@@ -104,26 +113,21 @@ import org.squeryl.PrimitiveTypeMode._
   val articleDetailView = new ArticleDetailView
   var searchView = new SearchView
 
-  val bottomtabs = new TabPane {
-    tabs = List(
-      new Tab {
-        text = "Details"
-        content = articleDetailView
-      }
-      ,
-      new Tab {
-        text = "Search"
-        content = searchView
-      }
-    )
+  val bottomtabs = new ViewContainer {
+    addView("Details", articleDetailView)
+    addView("Search", searchView)
   }
 
   val articleListView = new ArticleListView
 
+  val toptabs = new ViewContainer {
+    addView("Articles", articleListView)
+  }
+
   val spv = new SplitPane {
     orientation = Orientation.VERTICAL
     dividerPositions = 0.6
-    items += (articleListView, bottomtabs)
+    items += (toptabs, bottomtabs)
   }
 
   val topicTreeView = new TopicsTreeView
@@ -138,8 +142,8 @@ import org.squeryl.PrimitiveTypeMode._
     children += new Button("stat1")
   }
 
-  val menuBar = createMenuBar()
-  val toolBar = createToolBar()
+  val menuBar: MenuBar = createMenuBar
+  val toolBar = createToolBar
   val maincontent = new BorderPane() {
     top = new VBox {
       content = List(menuBar, toolBar)
@@ -148,19 +152,31 @@ import org.squeryl.PrimitiveTypeMode._
     bottom = statusbar
   }
 
+  val myScene = new Scene {
+    stylesheets = List(AppStorage.config.csspath)
+    content = maincontent
+  }
+
   stage = new PrimaryStage{
-    title = "CheckBox Test"
-    width = 800
-    height = 600
-    scene = new Scene {
-      stylesheets = List(getClass.getResource("/reftool.css").toExternalForm)
-      content = maincontent
-    }
+    title = "Reftool 5"
+    width = AppStorage.config.width.toDouble
+    height = AppStorage.config.height.toDouble
+    scene = myScene
   }
   maincontent.prefHeight <== stage.scene.height
   maincontent.prefWidth <== stage.scene.width
 
-//  mainContent.prefHeight <== stage.scene.height
+
+  override def stopApp() {
+    info("*************** stop app")
+    AppStorage.config.width = stage.width.toInt
+    AppStorage.config.height = stage.height.toInt
+    AppStorage.save()
+    sys.exit(0)
+  }
+
+
+  //  mainContent.prefHeight <== stage.scene.height
 //  mainContent.prefWidth <== stage.scene.width
 //  //  setPrefSize(stage.scene.width.get, stage.scene.height.get)
 //
