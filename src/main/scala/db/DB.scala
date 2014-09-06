@@ -84,11 +84,12 @@ object ReftoolDB extends Schema with Logging {
 
   // upgrades old reftool4 database
   def upgrade4to5() {
+    info("upgrade4to5...")
     // clean
     import FileHelper._
     import util.AppStorage
     val pdir = new File(AppStorage.config.newdbpath)
-    pdir.deleteAll
+    pdir.deleteAll()
     // this creates from old database and copies content where needed... looses fields!
     val dbs = s"jdbc:derby:${AppStorage.config.newdbpath};createFrom=${AppStorage.config.olddbpath}"
     val dbconn = java.sql.DriverManager.getConnection(dbs)
@@ -102,9 +103,11 @@ object ReftoolDB extends Schema with Logging {
   
   def initialize() {
 
-    // TODO uncomment this to create new test database!
-//    upgrade4to5()
-    
+    // TODO DB selection dialog etc
+    if (!new java.io.File(AppStorage.config.newdbpath).exists()) {
+      upgrade4to5()
+    }
+
     // val databaseConnection = "jdbc:derby:/tmp/squerylexample;create=true"
     val databaseConnection = s"jdbc:derby:${AppStorage.config.newdbpath}"
 
