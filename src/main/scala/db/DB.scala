@@ -38,6 +38,7 @@ class Article(var entrytype: String = "",
 class Topic(var title: String = "", var parent: Option[Long] = Option[Long](0)) extends BaseEntity {
   lazy val articles = ReftoolDB.topics2articles.left(this)
   lazy val children: OneToMany[Topic] = ReftoolDB.topic2topics.left(this)
+  lazy val parentTopic: ManyToOne[Topic] = ReftoolDB.topic2topics.right(this)
   def orderedChilds = inTransaction { from(children) (c => select(c) orderBy c.title.asc) }
   override def toString: String = title
 }
@@ -73,9 +74,12 @@ object ReftoolDB extends Schema with Logging {
     a.bibtexentry is(dbType("varchar(8192)"), named("BIBTEXENTRY")),
     a.doi is(dbType("varchar(255)"), named("DOI"))
   ))
+
   val topics2articles = manyToManyRelation(topics, articles, "TOPIC2ARTICLE").
     via[Topic2Article]((t, a, ta) => (ta.topic === t.id, a.id === ta.article))
+
   val topic2topics = oneToManyRelation(topics, topics).via((tp, tc) => tp.id === tc.parent)
+
   on(topics2articles)(a => declare(
     a.topic is named("TOPIC"),
     a.article is named("ARTICLE"),
