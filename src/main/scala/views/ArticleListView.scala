@@ -15,7 +15,7 @@ import javafx.collections.ListChangeListener.Change
 
 // see https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/SimpleTableViewSorted.scala
 //https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/TableWithCustomCellDemo.scala
-class ArticleListView extends GenericView {
+class ArticleListView extends GenericView("articlelistview") {
 
   var currentTopic: Topic = null
   var currentTitle: String = null

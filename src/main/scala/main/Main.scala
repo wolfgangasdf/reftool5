@@ -89,14 +89,14 @@ import org.squeryl.PrimitiveTypeMode._
         new Button {
           id = "editButton"
           graphic = new Circle {
-            fill = Color.GREEN
+            fill = Color.Green
             radius = 8
           }
         },
         new Button {
           id = "deleteButton"
           graphic = new Circle {
-            fill = Color.BLUE
+            fill = Color.Blue
             radius = 8
           }
         })
@@ -146,7 +146,7 @@ import org.squeryl.PrimitiveTypeMode._
   val toolBar = createToolBar
   val maincontent = new BorderPane() {
     top = new VBox {
-      content = List(menuBar, toolBar)
+      children = List(menuBar, toolBar)
     }
     center = sph
     bottom = statusbar

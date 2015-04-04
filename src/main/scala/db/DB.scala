@@ -13,7 +13,7 @@ import framework.Logging
 
 class BaseEntity extends KeyedEntity[Long] {
   val id: Long = 0
-  //  var lastModified = new TimestampType(System.currentTimeMillis)
+  //  var lastModified = new TimestampType(System.currentTimeMillis) // TODO: add?
 }
 
 class Article(var entrytype: String = "",
@@ -84,18 +84,18 @@ object ReftoolDB extends Schema with Logging {
 
   // upgrades old reftool4 database
   def upgrade4to5() {
-    info("upgrade4to5...")
+    info("Upgrade4to5 of " + AppStorage.config.olddbpath + " ...")
     // clean
     import FileHelper._
     import util.AppStorage
     val pdir = new File(AppStorage.config.newdbpath)
-    pdir.deleteAll()
+    pdir.deleteAll() // TODO remove later...
     // this creates from old database and copies content where needed... looses fields!
     val dbs = s"jdbc:derby:${AppStorage.config.newdbpath};createFrom=${AppStorage.config.olddbpath}"
     val dbconn = java.sql.DriverManager.getConnection(dbs)
     // this updates the root topic NOT to have a 'null' entry for parent!
 //    val s = dbconn.createStatement()
-//    s.execute("UPDATE TOPICS SET PARENT = 0 WHERE PARENT = NULL")
+//    s.execute("UPDATE TOPICS SET PARENT = 0 WHERE PARENT IS NULL")
     // shut all down
     dbconn.close()
 //    java.sql.DriverManager.getConnection("jdbc:derby:;shutdown=true");
@@ -108,7 +108,7 @@ object ReftoolDB extends Schema with Logging {
       upgrade4to5()
     }
 
-    // val databaseConnection = "jdbc:derby:/tmp/squerylexample;create=true"
+    info("Loading database at " + AppStorage.config.newdbpath + " ...")
     val databaseConnection = s"jdbc:derby:${AppStorage.config.newdbpath}"
 
 
@@ -126,8 +126,8 @@ object ReftoolDB extends Schema with Logging {
     transaction {
       //      ReftoolDB.create
       ReftoolDB.printDdl
-      debug("Created the schema")
     }
+    info("Database loaded!")
   }
 }
 

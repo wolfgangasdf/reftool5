@@ -9,7 +9,7 @@ import scalafx.scene.control._
 import scalafx. {collections => sfxc}
 import scalafx.Includes._
 
-class SearchView extends GenericView {
+class SearchView extends GenericView("searchview") {
      top = new ToolBar {
        items.add(new Button("bbb"))
      }

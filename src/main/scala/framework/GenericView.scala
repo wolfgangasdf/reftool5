@@ -7,7 +7,7 @@ import scalafx.Includes._
 
 
 // use this, add content to "center"
-abstract class GenericView extends BorderPane with Logging {
+abstract class GenericView(id: String) extends BorderPane with Logging {
 
   // override settings to persist as single String. will be called...
   def settings: String = ""

@@ -10,7 +10,7 @@ import scalafx.scene.layout.BorderPane
 import framework.{Logging, GenericView}
 import db.Article
 
-class ArticleDetailView extends GenericView with Logging {
+class ArticleDetailView extends GenericView("articledetailview") with Logging {
   top = new ToolBar {
     items.add(new Button("adv"))
   }
