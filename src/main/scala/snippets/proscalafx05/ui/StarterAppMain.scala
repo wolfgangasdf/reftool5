@@ -405,14 +405,14 @@ object StarterAppMain extends JFXApp {
   def createAlertPopup(popupText: String) = new Popup {
     inner =>
     content.add(new StackPane {
-      content = List(
+      children = List(
         new Rectangle {
           width = 300
           height = 200
           arcWidth = 20
           arcHeight = 20
-          fill = Color.LIGHTBLUE
-          stroke = Color.GRAY
+          fill = Color.LightBlue
+          stroke = Color.Gray
           strokeWidth = 2
         },
         new BorderPane {
@@ -424,7 +424,7 @@ object StarterAppMain extends JFXApp {
           }
           bottom = new Button("OK") {
             onAction = {e: ActionEvent => inner.hide}
-            alignmentInParent = Pos.CENTER
+            alignmentInParent = Pos.Center
             margin = Insets(10, 0, 10, 0)
           }
         }

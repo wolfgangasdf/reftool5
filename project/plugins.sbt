@@ -9,7 +9,7 @@ addSbtPlugin("no.vedaadata" %% "sbt-javafx" % "0.6")
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.4")
 
 ///////////////// access build.scala info from scala
-addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.2.5")
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.3.2")
 
 ////////////////// onejar, not needed
 // addSbtPlugin("com.github.retronym" % "sbt-onejar" % "0.8")
