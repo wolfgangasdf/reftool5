@@ -1,6 +1,7 @@
 package db
 
 import java.io.File
+import java.sql.SQLException
 import org.squeryl.adapters.DerbyAdapter
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.dsl._
@@ -35,11 +36,11 @@ class Article(var entrytype: String = "",
   @Transient var testthing = "" // not in DB!
 }
 
-class Topic(var title: String = "", var parent: Option[Long] = Option[Long](0)) extends BaseEntity {
+class Topic(var title: String = "", var parent: Option[Long] = Option[Long](0), var expanded: Boolean = false) extends BaseEntity {
   lazy val articles = ReftoolDB.topics2articles.left(this)
-  lazy val children: OneToMany[Topic] = ReftoolDB.topic2topics.left(this)
+  lazy val childrenTopics: OneToMany[Topic] = ReftoolDB.topic2topics.left(this)
   lazy val parentTopic: ManyToOne[Topic] = ReftoolDB.topic2topics.right(this)
-  def orderedChilds = inTransaction { from(children) (c => select(c) orderBy c.title.asc) }
+  def orderedChilds = inTransaction { from(childrenTopics) (c => select(c) orderBy c.title.asc) }
   override def toString: String = title
 }
 
@@ -58,6 +59,7 @@ object ReftoolDB extends Schema with Logging {
   on(topics)(t => declare(
     t.id is(primaryKey, autoIncremented, named("ID")),
     t.title is(indexed, dbType("varchar(512)"), named("TITLE")),
+    t.expanded is(dbType("BOOLEAN"), named("EXPANDED")),
     t.parent is named("PARENT") // if null, root topic!
   ))
   on(articles)(a => declare(
@@ -89,22 +91,36 @@ object ReftoolDB extends Schema with Logging {
   // upgrades old reftool4 database
   def upgrade4to5() {
     info("Upgrade4to5 of " + AppStorage.config.olddbpath + " ...")
+
+    def dbShutdown(): Unit = {
+      try { java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.newdbpath};shutdown=true") } catch {
+        case se: SQLException => if (!se.getSQLState().equals("08006")) throw se
+      }
+    }
     // clean
     import FileHelper._
     import util.AppStorage
     val pdir = new File(AppStorage.config.newdbpath)
     pdir.deleteAll() // TODO remove later...
     // this creates from old database and copies content where needed... looses fields!
-    val dbs = s"jdbc:derby:${AppStorage.config.newdbpath};createFrom=${AppStorage.config.olddbpath}"
-    val dbconn = java.sql.DriverManager.getConnection(dbs)
-    // this updates the root topic NOT to have a 'null' entry for parent!
-//    val s = dbconn.createStatement()
-//    s.execute("UPDATE TOPICS SET PARENT = 0 WHERE PARENT IS NULL")
-    // shut all down
-    dbconn.close()
-//    java.sql.DriverManager.getConnection("jdbc:derby:;shutdown=true");
+    val w = new java.io.PrintWriter(new java.io.OutputStreamWriter(System.out))
+    java.sql.DriverManager.setLogWriter(w)
+    debug("  importing db...")
+    java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.newdbpath};createFrom=${AppStorage.config.olddbpath}")
+    dbShutdown()
+    debug("  upgrading db...")
+    java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.newdbpath};upgrade=true")
+    dbShutdown()
+    debug("  modify db...")
+    val dbconn2 = java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.newdbpath}")
+    val s = dbconn2.createStatement()
+    // TODO remove unused stuff, add things I want!
+    s.execute("ALTER TABLE TOPICS ADD EXPANDED BOOLEAN NOT NULL DEFAULT FALSE")
+    dbconn2.close()
+    dbShutdown()
+    debug("import old database finished!")
   }
-  
+
   def initialize() {
 
     // TODO DB selection dialog etc
@@ -113,59 +129,18 @@ object ReftoolDB extends Schema with Logging {
     }
 
     info("Loading database at " + AppStorage.config.newdbpath + " ...")
-    val databaseConnection = s"jdbc:derby:${AppStorage.config.newdbpath}"
+    val dbs = s"jdbc:derby:${AppStorage.config.newdbpath}"
 
-
-
-
-    def startDatabaseSession() {
-      Class.forName("org.apache.derby.jdbc.EmbeddedDriver")
-      SessionFactory.concreteFactory = Some(() => Session.create(
-        java.sql.DriverManager.getConnection(databaseConnection),
-        new DerbyAdapter))
-    }
-
-    startDatabaseSession()
+    Class.forName("org.apache.derby.jdbc.EmbeddedDriver")
+    SessionFactory.concreteFactory = Some(() => Session.create(
+      java.sql.DriverManager.getConnection(dbs),
+      new DerbyAdapter))
 
     transaction {
       //      ReftoolDB.create
       ReftoolDB.printDdl
     }
     info("Database loaded!")
-  }
-}
-
-
-object Testsqueryl extends Logging {
-  def main(args: Array[String]) {
-
-
-    //    transaction {
-    //      val t1: Topic = new Topic(title="t1")
-    //      val t1a: Topic = new Topic(title="t1a")
-    //      val t2: Topic = new Topic(title="t2")
-    //      ReftoolDB.topics.insert(t1)
-    //      ReftoolDB.topics.insert(t1a)
-    //      ReftoolDB.topics.insert(t2)
-    //      val a1: Article = new Article(title="asdf")
-    //      ReftoolDB.articles.insert(a1)
-    //      a1.topics.associate(t1a)
-    //      a1.topics.associate(t2)
-    //    }
-    ReftoolDB.initialize()
-
-    transaction {
-      def topics = ReftoolDB.topics
-      //      for (t <- topics) {
-      //        debug("topic: " + t)
-      //      }
-      val tx = topics.where(t => t.title === "helices in nature").single
-      debug("res=" + tx)
-      for (a <- tx.articles)
-        debug("article: " + a)
-
-    }
-
   }
 
 }

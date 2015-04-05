@@ -25,11 +25,18 @@ implement scrolling
 class myTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
   var hasloadedchilds: Boolean = false
 
-  // only check for children here!
   inTransaction {
-    if (vv.children.nonEmpty) {
-      // debug("myti: topic " + topic + " : have children!")
-      children += new TreeItem[Topic]() // dummy tree item
+    if (vv.expanded) {
+      for (c <- vv.childrenTopics) {
+        children += new myTreeItem(c)
+      }
+      expanded = true
+    } else {
+      // only check for children here!
+      if (vv.childrenTopics.nonEmpty) {
+        // debug("myti: topic " + topic + " : have children!")
+        children += new TreeItem[Topic]() // dummy tree item
+      }
     }
   }
 
@@ -45,6 +52,8 @@ class myTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
             var newti = new myTreeItem(newt)
             children += newti
           }
+          vv.expanded = true
+          ReftoolDB.topics.update(vv)
         }
         hasloadedchilds = true
       }
@@ -110,7 +119,7 @@ class myTreeCell extends TreeCell[Topic] with Logging {
       } else {
         treeItem.value.getValue
       }
-      newParent.children.associate(dt)
+      newParent.childrenTopics.associate(dt)
 //      ReftoolDB.topics.update(dt)
       dropOk = true
     }
