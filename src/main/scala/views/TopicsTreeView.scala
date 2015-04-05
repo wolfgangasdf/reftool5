@@ -82,10 +82,9 @@ class myTreeCell extends TreeCell[Topic] with Logging {
     debug("xxx me=" + me)
     val db = treeView.value.startDragAndDrop(TransferMode.MOVE)
     val cont = new ClipboardContent()
-    cont.put(TopicsTreeView.treeItemDataFormat, "dummy")
-    db.delegate.setContent(cont) // TODO
+    cont.put(TopicsTreeView.treeItemDataFormat, "treeItem can't be serialized yet")
+    db.delegate.setContent(cont)
     myTreeCell.draggedTreeItem = treeItem.value
-    debug("set dti=" + myTreeCell.draggedTreeItem)
     me.consume()
   }
 
@@ -96,65 +95,78 @@ class myTreeCell extends TreeCell[Topic] with Logging {
     }
   }
 
-  def getDropPositionScroll(de: DragEvent): Unit = {
-    // TODO
-  }
-
-  onDragOver = (de: DragEvent) => {
-    debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}")
-    clearDnDFormatting()
-    if (myTreeCell.draggedTreeItem.getParent != treeItem.value) {
-      // get action based on mouse position
-      val tvpossc = treeView.value.localToScene(0d, 0d)
-      // debug(s"de.getSceneY=${de.getSceneY} tvpossc=$tvpossc treeView.value.getParent=${treeView.value.getParent}")
-      val tvheight = treeView.value.getHeight
-      val tipossc = myTreeCell.this.localToScene(0d, 0d)
-      val tiheight = myTreeCell.this.getHeight
-      val tirely = de.getSceneY - tipossc.getY
-      if (de.getSceneY - tvpossc.getY < tiheight) { // javafx can't really scroll yet...
-        treeView.value.scrollTo(treeView.value.row(treeItem.value) - 1)
-      } else if (de.getSceneY - tvpossc.getY > tvheight - tiheight) {
-        val newtopindex = 2 + treeView.value.getRow(treeItem.value) - tvheight / tiheight
-        treeView.value.scrollTo(newtopindex.toInt)
-        debug(s" scroll: newtopindex=$newtopindex")
-      }
+  // 1-ontop of item, 2-below item
+  def getDropPositionScroll(de: DragEvent): Int = {
+    var res = 0
+    val tvpossc = treeView.value.localToScene(0d, 0d)
+    val tvheight = treeView.value.getHeight
+    val tipossc = myTreeCell.this.localToScene(0d, 0d)
+    val tiheight = myTreeCell.this.getHeight
+    val tirely = de.getSceneY - tipossc.getY
+    if (de.getSceneY - tvpossc.getY < tiheight) { // javafx can't really scroll yet...
+      treeView.value.scrollTo(treeView.value.row(treeItem.value) - 1)
+    } else if (de.getSceneY - tvpossc.getY > tvheight - tiheight) {
+      val newtopindex = 2 + treeView.value.getRow(treeItem.value) - tvheight / tiheight
+      treeView.value.scrollTo(newtopindex.toInt)
+      debug(s" scroll: newtopindex=$newtopindex")
+    } else {
       if (tirely < (tiheight * .25d)) { // determine drop position: onto or below
-        val shadow = new DropShadow(5.0, 0.0, -3.0, Color.web("#666666"))
+      val shadow = new DropShadow(5.0, 0.0, -3.0, Color.web("#666666"))
         effect = shadow
-        myTreeCell.lastDragoverBelow = true
+        res = 2
       } else {
         val shadow = new InnerShadow()
         shadow.setOffsetX(1.0)
         shadow.setColor(Color.web("#666666"))
         shadow.setOffsetY(1.0)
         effect = shadow
-        myTreeCell.lastDragoverBelow = false
+        res = 1
       }
-      myTreeCell.lastDragoverCell = this
+    }
+    res
+  }
 
+  onDragOver = (de: DragEvent) => {
+    debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}")
+    clearDnDFormatting()
+    val dropPos = getDropPositionScroll(de)
+    if (de.dragboard.getContentTypes.contains(TopicsTreeView.treeItemDataFormat)) {
+      val dti = myTreeCell.draggedTreeItem //de.dragboard.content(TopicsTreeView.treeItemDataFormat).asInstanceOf[TreeItem[Topic]]
+      if (dti.getParent != treeItem.value) {
+        myTreeCell.lastDragoverCell = this
+        de.acceptTransferModes(TransferMode.MOVE)
+      }
+    } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
+      val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
+      debug("  files: " + files)
       de.acceptTransferModes(TransferMode.MOVE)
     }
   }
 
   onDragDropped = (de: DragEvent) => {
-    debug("dragdropped! dragged: " + myTreeCell.draggedTreeItem + " onto: " + treeItem + " below=" + myTreeCell.lastDragoverBelow)
+//    debug("dragdropped! dragged: " + myTreeCell.draggedTreeItem + " onto: " + treeItem + " below=" + myTreeCell.lastDragoverBelow)
     clearDnDFormatting()
+    val dropPos = getDropPositionScroll(de)
     var dropOk = false
-    if (myTreeCell.draggedTreeItem != null) inTransaction {
-      val dt = ReftoolDB.topics.get(myTreeCell.draggedTreeItem.getValue.id)
-      val oldParent = dt.parentTopic.head
-      val newParent = if (myTreeCell.lastDragoverBelow) {
-        treeItem.value.getValue.parentTopic.head
-      } else {
-        treeItem.value.getValue
+    if (de.dragboard.getContentTypes.contains(TopicsTreeView.treeItemDataFormat)) {
+      val dti = myTreeCell.draggedTreeItem //de.dragboard.content(TopicsTreeView.treeItemDataFormat).asInstanceOf[TreeItem[Topic]]
+      inTransaction {
+        val dt = ReftoolDB.topics.get(dti.getValue.id)
+        val oldParent = dt.parentTopic.head
+        val newParent = if (dropPos == 2) {
+          treeItem.value.getValue.parentTopic.head
+        } else {
+          treeItem.value.getValue
+        }
+        newParent.childrenTopics.associate(dt)
+        newParent.expanded = true
+        ReftoolDB.topics.update(newParent)
+        dropOk = true
+        treeView.value.getUserData.asInstanceOf[TopicsTreeView].loadTopics() // refresh
+        treeView.value.getUserData.asInstanceOf[TopicsTreeView].revealAndSelect(dt)
       }
-      newParent.childrenTopics.associate(dt)
-      newParent.expanded = true
-      ReftoolDB.topics.update(newParent)
-      dropOk = true
-      treeView.value.getUserData.asInstanceOf[TopicsTreeView].loadTopics() // refresh
-      treeView.value.getUserData.asInstanceOf[TopicsTreeView].revealAndSelect(dt)
     }
+
     de.dropCompleted = dropOk
     de.consume()
   }
@@ -165,9 +177,8 @@ class myTreeCell extends TreeCell[Topic] with Logging {
 
 }
 object myTreeCell {
-  var draggedTreeItem: TreeItem[Topic] = null
   var lastDragoverCell: TreeCell[Topic] = null
-  var lastDragoverBelow = false
+  var draggedTreeItem: TreeItem[Topic] = null
 }
 
 // an iterator over all *displayed* tree items! (not the lazy ones)
