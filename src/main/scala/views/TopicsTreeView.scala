@@ -1,19 +1,25 @@
 package views
 
+import util.PdfHelper
+
 import scala.collection.mutable
+import scala.collection.JavaConversions._
+
 import scalafx.event.ActionEvent
 import scalafx.scene.control._
 import scalafx.scene.effect.{DropShadow, InnerShadow}
 import scalafx.scene.input._
-
 import scalafx.scene.control.Button._
 import scalafx.Includes._
-import org.squeryl.PrimitiveTypeMode._
+import scalafx.scene.paint.Color
+
 import javafx.scene.{control => jfxsc}
+
+import org.squeryl.PrimitiveTypeMode._
+
 import db.{ReftoolDB, Topic}
 import framework.{Logging, GenericView}
 
-import scalafx.scene.paint.Color
 
 
 /*  todo
@@ -82,7 +88,7 @@ class myTreeCell extends TreeCell[Topic] with Logging {
     debug("xxx me=" + me)
     val db = treeView.value.startDragAndDrop(TransferMode.MOVE)
     val cont = new ClipboardContent()
-    cont.put(TopicsTreeView.treeItemDataFormat, "treeItem can't be serialized yet")
+    cont.putString(TopicsTreeView.dataFormatTopicsTreeItem) // can't easily make custom DataFormats on mac (!)
     db.delegate.setContent(cont)
     myTreeCell.draggedTreeItem = treeItem.value
     me.consume()
@@ -130,7 +136,7 @@ class myTreeCell extends TreeCell[Topic] with Logging {
     debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}")
     clearDnDFormatting()
     val dropPos = getDropPositionScroll(de)
-    if (de.dragboard.getContentTypes.contains(TopicsTreeView.treeItemDataFormat)) {
+    if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == TopicsTreeView.dataFormatTopicsTreeItem) {
       val dti = myTreeCell.draggedTreeItem //de.dragboard.content(TopicsTreeView.treeItemDataFormat).asInstanceOf[TreeItem[Topic]]
       if (dti.getParent != treeItem.value) {
         myTreeCell.lastDragoverCell = this
@@ -148,7 +154,7 @@ class myTreeCell extends TreeCell[Topic] with Logging {
     clearDnDFormatting()
     val dropPos = getDropPositionScroll(de)
     var dropOk = false
-    if (de.dragboard.getContentTypes.contains(TopicsTreeView.treeItemDataFormat)) {
+    if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == TopicsTreeView.dataFormatTopicsTreeItem) {
       val dti = myTreeCell.draggedTreeItem //de.dragboard.content(TopicsTreeView.treeItemDataFormat).asInstanceOf[TreeItem[Topic]]
       inTransaction {
         val dt = ReftoolDB.topics.get(dti.getValue.id)
@@ -165,6 +171,17 @@ class myTreeCell extends TreeCell[Topic] with Logging {
         treeView.value.getUserData.asInstanceOf[TopicsTreeView].loadTopics() // refresh
         treeView.value.getUserData.asInstanceOf[TopicsTreeView].revealAndSelect(dt)
       }
+    } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
+      val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
+      debug("  dropped files: " + files)
+      for (f <- files) {
+        val doi = PdfHelper.getDOI(f)
+        if (doi != "") {
+          // TODO
+        }
+      }
+      dropOk = true
+      // TODO
     }
 
     de.dropCompleted = dropOk
@@ -231,8 +248,8 @@ class TopicsTreeView extends GenericView("topicsview") {
   def revealAndSelect(t: Topic): Unit = {
     var found = false
     debug(" reveal: expand required " + t)
-    var pt = t.parentTopic.head
     inTransaction{
+      var pt = t.parentTopic.head
       while (pt != null) {
         pt.expanded = true
         ReftoolDB.topics.update(pt)
@@ -254,8 +271,11 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   def loadTopics(): Unit = {
     debug("ttv: loadtopics!")
+    val tlast = if (tv.selectionModel.value.getSelectedItems.length > 0)
+      tv.selectionModel.value.getSelectedItems.head.getValue
+    else null
+
     tv.selectionModel.value.clearSelection() // TODO: store old selection & expanded states!
-    // TODO: via var expanded: Boolean = false in DB?
     inTransaction {
       def topics = ReftoolDB.topics
       // root item must have id '1'
@@ -264,12 +284,14 @@ class TopicsTreeView extends GenericView("topicsview") {
       tiroot = new myTreeItem(troot)
       tv.root = tiroot
       tiroot.setExpanded(true)
-      // TODO: restore stuff!
     }
+
+    if (tlast != null) revealAndSelect(tlast)
+
     debug("ttv: loadtopics done!")
   }
   loadTopics()
 }
 object TopicsTreeView {
-  val treeItemDataFormat = new DataFormat("topicstreeview.treeitem")
+  val dataFormatTopicsTreeItem = "dataFormatTopicsTreeItem"
 }
