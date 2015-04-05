@@ -4,7 +4,7 @@ import scala.collection.mutable
 import scalafx.event.ActionEvent
 import scalafx.scene.control._
 import scalafx.scene.effect.{DropShadow, InnerShadow}
-import scalafx.scene.input.{DragEvent, ClipboardContent, TransferMode, MouseEvent}
+import scalafx.scene.input._
 
 import scalafx.scene.control.Button._
 import scalafx.Includes._
@@ -82,7 +82,7 @@ class myTreeCell extends TreeCell[Topic] with Logging {
     debug("xxx me=" + me)
     val db = treeView.value.startDragAndDrop(TransferMode.MOVE)
     val cont = new ClipboardContent()
-    cont.putString("huhu")
+    cont.put(TopicsTreeView.treeItemDataFormat, "dummy")
     db.delegate.setContent(cont) // TODO
     myTreeCell.draggedTreeItem = treeItem.value
     debug("set dti=" + myTreeCell.draggedTreeItem)
@@ -96,24 +96,29 @@ class myTreeCell extends TreeCell[Topic] with Logging {
     }
   }
 
+  def getDropPositionScroll(de: DragEvent): Unit = {
+    // TODO
+  }
+
   onDragOver = (de: DragEvent) => {
+    debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}")
     clearDnDFormatting()
     if (myTreeCell.draggedTreeItem.getParent != treeItem.value) {
-      // get positions
+      // get action based on mouse position
       val tvpossc = treeView.value.localToScene(0d, 0d)
-      debug(s"de.getSceneY=${de.getSceneY} tvpossc=$tvpossc treeView.value.getParent=${treeView.value.getParent}")
+      // debug(s"de.getSceneY=${de.getSceneY} tvpossc=$tvpossc treeView.value.getParent=${treeView.value.getParent}")
       val tvheight = treeView.value.getHeight
       val tipossc = myTreeCell.this.localToScene(0d, 0d)
       val tiheight = myTreeCell.this.getHeight
       val tirely = de.getSceneY - tipossc.getY
-      if (de.getSceneY - tvpossc.getY < tiheight) {
+      if (de.getSceneY - tvpossc.getY < tiheight) { // javafx can't really scroll yet...
         treeView.value.scrollTo(treeView.value.row(treeItem.value) - 1)
-      } else if (de.getSceneY - tvpossc.getY > treeView.value.getHeight - tiheight) {
-        val newtopindex = 2 + treeView.value.getRow(treeItem.value) - treeView.value.getHeight / tiheight
+      } else if (de.getSceneY - tvpossc.getY > tvheight - tiheight) {
+        val newtopindex = 2 + treeView.value.getRow(treeItem.value) - tvheight / tiheight
         treeView.value.scrollTo(newtopindex.toInt)
         debug(s" scroll: newtopindex=$newtopindex")
       }
-      if (tirely < (tiheight * .25d)) {
+      if (tirely < (tiheight * .25d)) { // determine drop position: onto or below
         val shadow = new DropShadow(5.0, 0.0, -3.0, Color.web("#666666"))
         effect = shadow
         myTreeCell.lastDragoverBelow = true
@@ -168,16 +173,12 @@ object myTreeCell {
 // an iterator over all *displayed* tree items! (not the lazy ones)
 class TreeIterator[T](root: TreeItem[T]) extends Iterator[TreeItem[T]] with Logging {
   val stack = new mutable.Stack[TreeItem[T]]()
-
   stack.push(root)
 
-  def hasNext: Boolean = {
-    stack.nonEmpty
-  }
+  def hasNext: Boolean = stack.nonEmpty
 
   def next(): TreeItem[T] = {
     val nextItem = stack.pop
-    debug("   nextit=" + nextItem)
     for (ti <- nextItem.children) stack.push(ti)
     nextItem
   }
@@ -217,6 +218,7 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   // recursively from top reveal topics (lazy-loading!)
   def revealAndSelect(t: Topic): Unit = {
+    var found = false
     debug(" reveal: expand required " + t)
     var pt = t.parentTopic.head
     inTransaction{
@@ -229,11 +231,14 @@ class TopicsTreeView extends GenericView("topicsview") {
     debug(" find " + t)
     // find treeitem
     val it = new TreeIterator[Topic](tiroot)
-    while (it.hasNext) {
-      val tin = it.next
-      debug("  searching " + tin)
-      if (tin.getValue == t) tv.selectionModel.value.select(tin)
+    while (!found && it.hasNext) {
+      val tin = it.next()
+      if (tin.getValue == t) {
+        tv.selectionModel.value.select(tin)
+        found = true
+      }
     }
+    assert(found, "Error finding treeitem for topic " + t)
   }
 
   def loadTopics(): Unit = {
@@ -255,5 +260,5 @@ class TopicsTreeView extends GenericView("topicsview") {
   loadTopics()
 }
 object TopicsTreeView {
-
+  val treeItemDataFormat = new DataFormat("topicstreeview.treeitem")
 }
