@@ -10,6 +10,8 @@ import scala.Some
 import util._
 import org.squeryl.annotations.Transient
 import framework.Logging
+import FileHelper._
+import util.AppStorage
 
 
 class BaseEntity extends KeyedEntity[Long] {
@@ -98,11 +100,9 @@ object ReftoolDB extends Schema with Logging {
       }
     }
     // clean
-    import FileHelper._
-    import util.AppStorage
     val pdir = new File(AppStorage.config.newdbpath)
     pdir.deleteAll() // TODO remove later...
-    // this creates from old database and copies content where needed... looses fields!
+    // this creates from old database and copies content where needed... looses fields! TODO check
     val w = new java.io.PrintWriter(new java.io.OutputStreamWriter(System.out))
     java.sql.DriverManager.setLogWriter(w)
     debug("  importing db...")
@@ -118,7 +118,7 @@ object ReftoolDB extends Schema with Logging {
     s.execute("ALTER TABLE TOPICS ADD EXPANDED BOOLEAN NOT NULL DEFAULT FALSE")
     dbconn2.close()
     dbShutdown()
-    debug("import old database finished!")
+    info("Upgrade4to5 finished!")
   }
 
   def initialize() {
