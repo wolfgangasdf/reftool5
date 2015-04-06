@@ -116,13 +116,14 @@ object ReftoolDB extends Schema with Logging {
     a.color is named("COLOR"), a.color defaultsTo(0)
   ))
 
+  // manually auto-increment ids.
   override def callbacks = Seq(
     beforeInsert(articles) call((x:Article) => x.id = from(articles)(a => select(a).orderBy(a.id desc)).headOption.getOrElse(new Article()).id + 1),
     beforeInsert(topics) call((x:Topic) => x.id = from(topics)(a => select(a).orderBy(a.id desc)).headOption.getOrElse(new Topic()).id + 1)
   )
 
-
   // upgrades old reftool4 database
+  // what a mess, but this is due to hibernate <> squeryl... and now I understand everything!
   def upgrade4to5() {
     info("Upgrade4to5 of " + AppStorage.config.olddbpath + " ...")
 
