@@ -1,12 +1,11 @@
 package db
 
 import java.io.File
-import java.sql.SQLException
+import java.sql.{SQLNonTransientConnectionException, SQLException}
 import org.squeryl.adapters.DerbyAdapter
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.dsl._
 import org.squeryl._
-import scala.Some
 import util._
 import org.squeryl.annotations.Transient
 import framework.Logging
@@ -69,14 +68,14 @@ object ReftoolDB extends Schema with Logging {
     a.entrytype is(dbType("varchar(256)"), named("ENTRYTYPE")),
     a.title is(indexed, dbType("varchar(1024)"), named("TITLE")),
     a.authors is(dbType("varchar(4096)"), named("AUTHORS")),
-    a.journal is(dbType("varchar(1024)"), named("JOURNAL")),
-    a.pubdate is(dbType("varchar(1024)"), named("PUBDATE")),
-    a.review is(dbType("varchar(8192)"), named("REVIEW")),
-    a.pdflink is(dbType("varchar(1024)"), named("PDFLINK")),
+    a.journal is(dbType("varchar(256)"), named("JOURNAL")),
+    a.pubdate is(dbType("varchar(128)"), named("PUBDATE")),
+    a.review is(dbType("varchar(10000)"), named("REVIEW")),
+    a.pdflink is(dbType("varchar(10000)"), named("PDFLINK")),
     a.linkurl is(dbType("varchar(1024)"), named("LINKURL")),
-    a.bibtexid is(dbType("varchar(255)"), named("BIBTEXID")),
-    a.bibtexentry is(dbType("varchar(8192)"), named("BIBTEXENTRY")),
-    a.doi is(dbType("varchar(255)"), named("DOI"))
+    a.bibtexid is(dbType("varchar(128)"), named("BIBTEXID")),
+    a.bibtexentry is(dbType("varchar(10000)"), named("BIBTEXENTRY")),
+    a.doi is(dbType("varchar(256)"), named("DOI"))
   ))
 
   val topics2articles = manyToManyRelation(topics, articles, "TOPIC2ARTICLE").
@@ -94,30 +93,79 @@ object ReftoolDB extends Schema with Logging {
   def upgrade4to5() {
     info("Upgrade4to5 of " + AppStorage.config.olddbpath + " ...")
 
-    def dbShutdown(): Unit = {
-      try { java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.newdbpath};shutdown=true") } catch {
-        case se: SQLException => if (!se.getSQLState().equals("08006")) throw se
+    def dbShutdown(dbpath: String): Unit = {
+      try { java.sql.DriverManager.getConnection(s"jdbc:derby:$dbpath;shutdown=true") } catch {
+        case se: SQLException => if (!se.getSQLState.equals("08006")) throw se
+        case se: SQLNonTransientConnectionException => if (!se.getSQLState.equals("08006")) throw se
       }
+    }
+
+    def dbStats(dbpath: String, clobx: Boolean): Unit = {
+      val dbconnx = java.sql.DriverManager.getConnection(s"jdbc:derby:$dbpath")
+      val s = dbconnx.createStatement()
+      var r = s.executeQuery("select COUNT(*) as rowcount from ARTICLES")
+      r.next()
+      info("  article count=" + r.getInt("rowcount"))
+      r = s.executeQuery("select COUNT(*) as rowcount from TOPICS")
+      r.next()
+      info("  topics count=" + r.getInt("rowcount"))
+      def printClobSize(table: String, col: String, clob: Boolean): Unit = {
+        r = s.executeQuery(s"select $col from $table")
+        var sl: Long = 0
+        while (r.next()) {
+          if (clob) {
+            val cl = r.getClob(col)
+            if (cl != null) sl += cl.length()
+          } else {
+            val ss = r.getString(col)
+            if (ss != null) sl += ss.length
+          }
+        }
+        info(s"  total $col character count = " + sl)
+      }
+      printClobSize("ARTICLES", "REVIEW", clobx)
+      printClobSize("ARTICLES", "BIBTEXENTRY", clobx)
+      printClobSize("ARTICLES", "PDFLINK", clob = false)
+      dbconnx.close()
+      dbShutdown(dbpath)
     }
     // clean
     val pdir = new File(AppStorage.config.newdbpath)
     pdir.deleteAll() // TODO remove later...
-    // this creates from old database and copies content where needed... looses fields! TODO check
-    val w = new java.io.PrintWriter(new java.io.OutputStreamWriter(System.out))
-    java.sql.DriverManager.setLogWriter(w)
-    debug("  importing db...")
+    //    val w = new java.io.PrintWriter(new java.io.OutputStreamWriter(System.out))
+    //    java.sql.DriverManager.setLogWriter(w)
+    debug("checking old db...")
+    dbStats(AppStorage.config.olddbpath, clobx = true)
+    debug("importing db...")
     java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.newdbpath};createFrom=${AppStorage.config.olddbpath}")
-    dbShutdown()
-    debug("  upgrading db...")
+    dbShutdown(AppStorage.config.newdbpath)
+    debug("upgrading db...")
     java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.newdbpath};upgrade=true")
-    dbShutdown()
-    debug("  modify db...")
-    val dbconn2 = java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.newdbpath}")
-    val s = dbconn2.createStatement()
-    // TODO remove unused stuff, add things I want!
-    s.execute("ALTER TABLE TOPICS ADD EXPANDED BOOLEAN NOT NULL DEFAULT FALSE")
-    dbconn2.close()
-    dbShutdown()
+    dbShutdown(AppStorage.config.newdbpath)
+    debug("modify db...")
+    val dbc = java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.newdbpath}")
+    val s = dbc.createStatement()
+    s.execute("alter table TOPICS add column EXPANDED boolean not null default false")
+    for (c <- List("TAGS", "KEYWORDS", "RESEARCHGROUP", "CITING", "CITED", "RATING", "PARENT", "PARENT_ID", "AID"))
+      s.execute("alter table ARTICLES drop column " + c)
+    s.execute("drop table ARTICLE2ARTICLE")
+    s.execute("alter table TOPIC2ARTICLE drop column PREDECESSORINTOPIC")
+    s.execute("alter table ARTICLES alter AUTHORS set data type VARCHAR(1024)")
+    s.execute("alter table ARTICLES alter PDFLINK set data type VARCHAR(10000)")
+
+    s.execute("alter table ARTICLES add column REVIEWNEW VARCHAR(10000)")
+    s.execute("update ARTICLES set REVIEWNEW=REVIEW")
+    s.execute("alter table ARTICLES drop column REVIEW")
+    s.execute("rename column ARTICLES.REVIEWNEW to REVIEW")
+
+    s.execute("alter table ARTICLES add column BIBTEXENTRYNEW VARCHAR(10000)")
+    s.execute("update ARTICLES set BIBTEXENTRYNEW=BIBTEXENTRY")
+    s.execute("alter table ARTICLES drop column BIBTEXENTRY")
+    s.execute("rename column ARTICLES.BIBTEXENTRYNEW to BIBTEXENTRY")
+    dbc.close()
+    dbShutdown(AppStorage.config.newdbpath)
+    debug("checking new db...")
+    dbStats(AppStorage.config.newdbpath, clobx = false)
     info("Upgrade4to5 finished!")
   }
 

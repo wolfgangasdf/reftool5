@@ -24,6 +24,7 @@ object Build extends Build {
       version := "0.1-SNAPSHOT",
       scalaVersion := "2.11.6",
       scalacOptions ++= Seq("-feature", "-unchecked", "-deprecation", "-encoding", "UTF-8"),
+      // javaOptions in run += "-XX:MaxPermSize=256m",
       libraryDependencies ++= Seq(
         "org.scalafx" %% "scalafx" % "8.0.40-R8",
         "com.typesafe.akka" %% "akka-actor" % "2.3.9",
