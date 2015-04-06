@@ -164,7 +164,7 @@ class myTreeCell extends TreeCell[Topic] with Logging {
         } else {
           treeItem.value.getValue
         }
-        dt.parent = Option(newParent.id)
+        dt.parent = newParent.id
         ReftoolDB.topics.update(dt)
         newParent.expanded = true
         ReftoolDB.topics.update(newParent)
@@ -218,17 +218,16 @@ class TopicsTreeView extends GenericView("topicsview") {
     id = "treeview"
     showRoot = false
     userData = gv
+    editable = true
     // click
     selectionModel().selectedItem.onChange { (_, _, newVal) => {
-      if (newVal != null) {
-        val topic = newVal.value()
-        debug(s"ttv: topic $topic [${topic.id}]")
-        val al = topic.articles
-        inTransaction {
-          main.Main.articleListView.setArticles(al.toList)
-        }
-      }
+      if (newVal != null)
+        main.Main.articleListView.setArticlesTopic(newVal.value())
     }}
+
+    onEditCommit = (ee: TreeView.EditEvent[Topic]) => {
+      debug("edit commit: " + ee.newValue)
+    }
 
     cellFactory = (v: TreeView[Topic]) => new myTreeCell()
   }
@@ -242,17 +241,29 @@ class TopicsTreeView extends GenericView("topicsview") {
         val si = tv.selectionModel.value.getSelectedItems
         if (si.size() == 1) {
           inTransaction {
-            val t = si.head.getValue
+            val t = ReftoolDB.topics.get(si.head.getValue.id)
             val a = new Article(title = "new content")
-            debug("a.id=" + a.id)
             ReftoolDB.articles.insert(a)
-            debug("a.id=" + a.id)
-            a.topics.assign(t)
-            debug("a.id=" + a.id)
-            ReftoolDB.articles.update(a)
-            debug("a.id=" + a.id)
+            val t2a = a.topics.associate(t)
+            main.Main.articleListView.setArticlesTopic(t) // TODO
           }
         }
+      }
+    })
+    items.add(new Button("+T") {
+      onAction = (ae: ActionEvent) => {
+        val si = tv.selectionModel.value.getSelectedItems
+        val pid = if (si.size() == 1) si.head.getValue.id else troot.id
+        val t2 = new Topic(title = "new topic", parent = pid)
+        inTransaction {
+          ReftoolDB.topics.insert(t2)
+          val pt = ReftoolDB.topics.get(pid)
+          pt.expanded = true
+          ReftoolDB.topics.update(pt)
+          debug(" add topic " + t2 + "  id=" + t2.id)
+        }
+        loadTopics() // refresh
+        revealAndSelect(t2)
       }
     })
   }
@@ -276,12 +287,12 @@ class TopicsTreeView extends GenericView("topicsview") {
     val it = new TreeIterator[Topic](tiroot)
     while (!found && it.hasNext) {
       val tin = it.next()
-      if (tin.getValue == t) {
+      if (tin.getValue != null) if (tin.getValue.id == t.id) {
         tv.selectionModel.value.select(tin)
         found = true
       }
     }
-    assert(found, "Error finding treeitem for topic " + t)
+    assert(found, "Error finding treeitem for topic " + t + " id=" + t.id)
   }
 
   def loadTopics(): Unit = {
@@ -294,7 +305,8 @@ class TopicsTreeView extends GenericView("topicsview") {
     inTransaction {
       def topics = ReftoolDB.topics
       // root item must have id '1'
-      troot = topics.where(t => t.id === 1).single
+      // debug(" 0 - topics: " + topics.where(t => t.parent === 0).mkString(" ; "))
+      troot = topics.where(t => t.parent === 0).single
       debug("ttv: root topic=" + troot)
       tiroot = new myTreeItem(troot)
       tv.root = tiroot
