@@ -45,8 +45,8 @@ class Topic(var title: String = "", var parent: Option[Long] = Option[Long](0), 
   override def toString: String = title
 }
 
-class Topic2Article(val topic: Long, val article: Long, val color: Int) extends KeyedEntity[CompositeKey2[Long, Long]] {
-  def id = compositeKey(topic, article)
+class Topic2Article(val TOPIC: Long, val ARTICLE: Long, val color: Int) extends KeyedEntity[CompositeKey2[Long, Long]] {
+  def id = compositeKey(TOPIC, ARTICLE)
 }
 
 class Setting(val name: String, val value: String) extends BaseEntity
@@ -57,14 +57,20 @@ object ReftoolDB extends Schema with Logging {
   val articles = table[Article]("ARTICLES")
   val topics = table[Topic]("TOPICS")
 
+  /*
+    there are issues in squeryl with renaming of columns ("named"). if a foreign key does not work, use uppercase!
+   */
+
   on(topics)(t => declare(
-    t.id is(unique, autoIncremented, named("ID")),
+//    t.id is(unique, autoIncremented, named("ID")),
+    t.id is(autoIncremented, named("ID")),
     t.title is(indexed, dbType("varchar(512)"), named("TITLE")),
     t.expanded is(dbType("BOOLEAN"), named("EXPANDED")),
     t.parent is named("PARENT") // if null, root topic!
   ))
   on(articles)(a => declare(
-    a.id is(unique, autoIncremented, named("ID")),
+//    a.id is(unique, autoIncremented, named("ID")),
+    a.id is(autoIncremented, named("ID")),
     a.entrytype is(dbType("varchar(256)"), named("ENTRYTYPE")),
     a.title is(indexed, dbType("varchar(1024)"), named("TITLE")),
     a.authors is(dbType("varchar(4096)"), named("AUTHORS")),
@@ -79,11 +85,9 @@ object ReftoolDB extends Schema with Logging {
   ))
 
   val topics2articles = manyToManyRelation(topics, articles, "TOPIC2ARTICLE").
-    via[Topic2Article]((t, a, ta) => (ta.topic === t.id, a.id === ta.article))
+    via[Topic2Article]((t, a, ta) => (ta.TOPIC === t.id, a.id === ta.ARTICLE))
 
   on(topics2articles)(a => declare(
-    a.topic is named("TOPIC"),
-    a.article is named("ARTICLE"),
     a.color is named("COLOR")
   ))
 
@@ -169,15 +173,22 @@ object ReftoolDB extends Schema with Logging {
 
   def initialize() {
 
-    // TODO DB selection dialog etc
-//    if (!new java.io.File(AppStorage.config.dbpath).exists()) {
-//      upgrade4to5()
-//      new File(AppStorage.config.pdfpath).mkdir() // TODO
-//    }
+    val startwithempty = false
 
+    // TODO DB selection dialog etc
+    if (!startwithempty) {
+      if (!new java.io.File(AppStorage.config.dbpath).exists()) {
+        upgrade4to5()
+        new File(AppStorage.config.pdfpath).mkdir() // TODO
+      }
+    } else {
+      FileHelper.deleteAll(new java.io.File(AppStorage.config.dbpath))
+    }
     info("Loading database at " + AppStorage.config.dbpath + " ...")
-//    val dbs = s"jdbc:derby:${AppStorage.config.dbpath}"
-    val dbs = s"jdbc:derby:${AppStorage.config.dbpath};create=true"
+    val dbs = if (!startwithempty)
+      s"jdbc:derby:${AppStorage.config.dbpath}"
+    else
+      s"jdbc:derby:${AppStorage.config.dbpath};create=true"
 
     Class.forName("org.apache.derby.jdbc.EmbeddedDriver")
     SessionFactory.concreteFactory = Some(() => Session.create(
@@ -185,8 +196,8 @@ object ReftoolDB extends Schema with Logging {
       new DerbyAdapter))
 
     transaction {
-      ReftoolDB.create
       ReftoolDB.printDdl
+      if (startwithempty) ReftoolDB.create
 
     }
     info("Database loaded!")
