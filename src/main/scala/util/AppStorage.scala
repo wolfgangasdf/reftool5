@@ -12,7 +12,7 @@ class Config extends Logging {
 
   // TODO: path config, import thing
   val newdbpath = "/tmp/reftool5db"
-  val olddbpath = "/Unencrypted_Data/wolle-programming/01-reftool5/reftool5dbtest/db"
+  val olddbpath = "/Unencrypted_Data/temp/reftool5dbtest/db"
 
 //  val csspath = getClass.getResource("/reftool.css").toExternalForm
   val csspath = "file:" + new java.io.File("src/main/resources/reftool.css").getAbsolutePath // TODO testing
