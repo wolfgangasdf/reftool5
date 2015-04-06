@@ -60,19 +60,17 @@ class ArticleListView extends GenericView("articlelistview") {
 
   center = alv
 
-  def setArticles(al: List[Article], topic: Topic = null, title: String = null) {
-    if (checkDirtyOk) {
-      currentTitle = title
-      currentTopic = topic
-      articles.clear()
-      articles ++= al
-    }
-    // todo signal adv
+  def setArticles(al: List[Article], title: String = null): Unit = {
+    articles.clear()
+    articles ++= al
+    currentTitle = title
   }
 
-  def checkDirtyOk = {
-    true
+  def setArticlesTopic(topic: Topic) {
+    inTransaction { setArticles(topic.articles.toList, s"Articles in [${topic.title}]") }
+    currentTopic = topic
   }
+
   // override settings to persist as single String
   override def settings: String = {
     "" // todo order of columns and width
