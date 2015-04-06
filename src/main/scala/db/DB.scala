@@ -14,6 +14,10 @@ import util.AppStorage
 
 /*
 
+  KEEP it simple! don't add unneeded stuff (keys, indices, constraints)...
+
+  after migration etc, check:
+    * squirrelsql, table: rightclick->scripts->show table script MUST exactly be the same for old and new db!
   TODO:
     * more indices on columns?
     * identity columns with auto-increment?
@@ -31,6 +35,8 @@ class BaseEntity extends KeyedEntity[Long] {
   var id: Long = 0
   //  var lastModified = new TimestampType(System.currentTimeMillis) // TODO: add?
 }
+
+class Setting(var name: String = "", var value: String = "") extends BaseEntity
 
 class Article(var entrytype: String = "",
               var title: String = "",
@@ -64,11 +70,10 @@ class Topic2Article(val TOPIC: Long, val ARTICLE: Long, val color: Int) extends 
    def id = compositeKey(TOPIC, ARTICLE)
 }
 
-class Setting(val name: String, val value: String) extends BaseEntity
-
 object ReftoolDB extends Schema with Logging {
 
 
+  val settings = table[Setting]("SETTING")
   val articles = table[Article]("ARTICLES")
   val topics = table[Topic]("TOPICS")
 
@@ -76,32 +81,39 @@ object ReftoolDB extends Schema with Logging {
         there are issues in squeryl with renaming of columns ("named"). if a foreign key does not work, use uppercase!
        */
 
+  on(settings)(t => declare(
+    t.id is named("ID"),
+    t.name.is(dbType("varchar(256)"), named("NAME")), t.name defaultsTo "",
+    t.value.is(dbType("varchar(1024)"), named("VALUE")), t.value defaultsTo ""
+  ))
+
   on(topics)(t => declare(
     t.id is named("ID"),
-    t.title is(dbType("varchar(512)"), named("TITLE")), // TODO add indexed?
-    t.expanded is(dbType("BOOLEAN"), named("EXPANDED")),
-    t.parent is named("PARENT") // if null, root topic!
+    t.title.is(dbType("varchar(512)"), named("TITLE")), t.title defaultsTo "",
+    t.expanded is(dbType("BOOLEAN"), named("EXPANDED")), t.expanded defaultsTo false,
+    t.parent is named("PARENT") // if 0, root topic!
   ))
+
   on(articles)(a => declare(
     a.id is named("ID"),
-    a.entrytype is(dbType("varchar(256)"), named("ENTRYTYPE")),
-    a.title is(dbType("varchar(1024)"), named("TITLE")), // TODO add indexed?
-    a.authors is(dbType("varchar(4096)"), named("AUTHORS")),
-    a.journal is(dbType("varchar(256)"), named("JOURNAL")),
-    a.pubdate is(dbType("varchar(128)"), named("PUBDATE")),
-    a.review is(dbType("varchar(10000)"), named("REVIEW")),
-    a.pdflink is(dbType("varchar(10000)"), named("PDFLINK")),
-    a.linkurl is(dbType("varchar(1024)"), named("LINKURL")),
-    a.bibtexid is(dbType("varchar(128)"), named("BIBTEXID")),
-    a.bibtexentry is(dbType("varchar(10000)"), named("BIBTEXENTRY")),
-    a.doi is(dbType("varchar(256)"), named("DOI"))
+    a.entrytype is(dbType("varchar(256)"), named("ENTRYTYPE")), a.entrytype defaultsTo "",
+    a.title is(dbType("varchar(1024)"), named("TITLE")), a.title defaultsTo "",
+    a.authors is(dbType("varchar(4096)"), named("AUTHORS")), a.authors defaultsTo "",
+    a.journal is(dbType("varchar(256)"), named("JOURNAL")), a.journal defaultsTo "",
+    a.pubdate is(dbType("varchar(128)"), named("PUBDATE")), a.pubdate defaultsTo "",
+    a.review is(dbType("varchar(10000)"), named("REVIEW")), a.review defaultsTo "",
+    a.pdflink is(dbType("varchar(10000)"), named("PDFLINK")), a.pdflink defaultsTo "",
+    a.linkurl is(dbType("varchar(1024)"), named("LINKURL")), a.linkurl defaultsTo "",
+    a.bibtexid is(dbType("varchar(128)"), named("BIBTEXID")), a.bibtexid defaultsTo "",
+    a.bibtexentry is(dbType("varchar(10000)"), named("BIBTEXENTRY")), a.bibtexentry defaultsTo "",
+    a.doi is(dbType("varchar(256)"), named("DOI")), a.doi defaultsTo ""
   ))
 
   val topics2articles = manyToManyRelation(topics, articles, "TOPIC2ARTICLE").
     via[Topic2Article]((t, a, ta) => (ta.TOPIC === t.id, a.id === ta.ARTICLE))
 
   on(topics2articles)(a => declare(
-    a.color is named("COLOR")
+    a.color is named("COLOR"), a.color defaultsTo(0)
   ))
 
   override def callbacks = Seq(
@@ -166,22 +178,41 @@ object ReftoolDB extends Schema with Logging {
     debug("modify db...")
     val dbc = java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.dbpath}")
     val s = dbc.createStatement()
-
-    s.execute("alter table TOPICS add column EXPANDED boolean not null default false")
+    def modCol(table: String, col: String, default: String = null) = {
+      if (default != null) {
+        s.execute(s"update $table set $col=$default WHERE $col IS NULL")
+        s.execute(s"alter table $table alter column $col default $default")
+      }
+      s.execute(s"alter table $table alter column $col not null")
+    }
     for (c <- List("TAGS", "KEYWORDS", "RESEARCHGROUP", "CITING", "CITED", "RATING", "PARENT", "PARENT_ID", "AID"))
       s.execute("alter table ARTICLES drop column " + c)
 
     s.execute("drop table ARTICLE2ARTICLE")
 
+    modCol("SETTING", "NAME", "''")
+    modCol("SETTING", "VALUE", "''")
+
     s.execute("alter table TOPIC2ARTICLE drop column PREDECESSORINTOPIC")
     s.execute("alter table TOPIC2ARTICLE drop column ID") // not needed!
-
+    modCol("TOPIC2ARTICLE", "TOPIC")
+    modCol("TOPIC2ARTICLE", "ARTICLE")
+    modCol("TOPIC2ARTICLE", "COLOR", "0")
+    s.execute("alter table TOPIC2ARTICLE drop foreign key FK345DBEB334742380")
+    s.execute("alter table TOPIC2ARTICLE drop foreign key FK345DBEB3187A628E")
+    s.execute("""ALTER TABLE "APP"."TOPIC2ARTICLE" ADD CONSTRAINT "TOPIC2ARTICLECPK" UNIQUE ("TOPIC", "ARTICLE")""") // from ddl comparison
+    //TODO: this does not work. check what it's about, probably data inconsistent!
     s.execute("alter table TOPICS drop foreign key FKCC42D924F2885EFB")
     s.execute("alter table TOPICS drop foreign key FKCC42D924CF8E6BFD")
     s.execute("update TOPICS SET PARENT=0 WHERE PARENT IS NULL")
+    modCol("TOPICS", "PARENT")
+    s.execute("alter table TOPICS add column EXPANDED boolean not null default false")
+    s.execute("alter table TOPICS alter column TITLE set data type VARCHAR(512)")
+    modCol("TOPICS", "TITLE", "''")
 
-    s.execute("alter table ARTICLES alter AUTHORS set data type VARCHAR(1024)")
-    s.execute("alter table ARTICLES alter PDFLINK set data type VARCHAR(10000)")
+    s.execute("alter table ARTICLES alter column AUTHORS set data type VARCHAR(4096)")
+    s.execute("alter table ARTICLES alter column PDFLINK set data type VARCHAR(10000)")
+    s.execute("alter table ARTICLES drop foreign key FKB6C0D23D4421A2B3")
 
     s.execute("alter table ARTICLES add column REVIEWNEW VARCHAR(10000)")
     s.execute("update ARTICLES set REVIEWNEW=REVIEW")
@@ -192,6 +223,9 @@ object ReftoolDB extends Schema with Logging {
     s.execute("update ARTICLES set BIBTEXENTRYNEW=BIBTEXENTRY")
     s.execute("alter table ARTICLES drop column BIBTEXENTRY")
     s.execute("rename column ARTICLES.BIBTEXENTRYNEW to BIBTEXENTRY")
+
+    for (cc <- List("BIBTEXENTRY", "REVIEW", "JOURNAL", "BIBTEXID", "LINKURL", "AUTHORS", "ENTRYTYPE", "PDFLINK", "TITLE", "DOI", "PUBDATE"))
+      modCol("ARTICLES", cc, "''")
 
     dbc.close()
     dbShutdown(AppStorage.config.dbpath)
