@@ -9,18 +9,19 @@ package util
  */
 import java.io._
 
-class FileHelper(file : File) {
-  def write(text : String) : Unit = {
+object FileHelper {
+
+  def write(file: File, text : String) : Unit = {
     val fw = new FileWriter(file)
     try{ fw.write(text) }
     finally{ fw.close() }
   }
-  def foreachLine(proc : String=>Unit) : Unit = {
+  def foreachLine(file: File, proc : String=>Unit) : Unit = {
     val br = new BufferedReader(new FileReader(file))
     try{ while(br.ready) proc(br.readLine) }
     finally{ br.close() }
   }
-  def deleteAll() : Unit = {
+  def deleteAll(file: File) : Unit = {
     def deleteFile(dfile : File) : Unit = {
       if(dfile.isDirectory) {
         println("deleting " + dfile + " recursively")
@@ -30,10 +31,11 @@ class FileHelper(file : File) {
     }
     deleteFile(file)
   }
-}
-
-import scala.language.implicitConversions
-object FileHelper{
-  implicit def file2helper(file : File) = new FileHelper(file)
+  def splitName(ff: File) = {
+    val f = ff.getName
+    val extension = f.substring(f.lastIndexOf('.'))
+    val name = f.substring(0, f.lastIndexOf('.'))
+    (name, extension)
+  }
 }
 

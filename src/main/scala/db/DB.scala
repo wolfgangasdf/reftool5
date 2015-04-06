@@ -39,8 +39,8 @@ class Article(var entrytype: String = "",
 
 class Topic(var title: String = "", var parent: Option[Long] = Option[Long](0), var expanded: Boolean = false) extends BaseEntity {
   lazy val articles = ReftoolDB.topics2articles.left(this)
-  lazy val childrenTopics: OneToMany[Topic] = ReftoolDB.topic2topics.left(this)
-  lazy val parentTopic: ManyToOne[Topic] = ReftoolDB.topic2topics.right(this)
+  lazy val childrenTopics = ReftoolDB.topics.where( t => t.parent === id)
+  lazy val parentTopic = ReftoolDB.topics.where( t => t.id === parent)
   def orderedChilds = inTransaction { from(childrenTopics) (c => select(c) orderBy c.title.asc) }
   override def toString: String = title
 }
@@ -58,13 +58,13 @@ object ReftoolDB extends Schema with Logging {
   val topics = table[Topic]("TOPICS")
 
   on(topics)(t => declare(
-    t.id is(primaryKey, autoIncremented, named("ID")),
+    t.id is(unique, autoIncremented, named("ID")),
     t.title is(indexed, dbType("varchar(512)"), named("TITLE")),
     t.expanded is(dbType("BOOLEAN"), named("EXPANDED")),
     t.parent is named("PARENT") // if null, root topic!
   ))
   on(articles)(a => declare(
-    a.id is(primaryKey, autoIncremented, named("ID")),
+    a.id is(unique, autoIncremented, named("ID")),
     a.entrytype is(dbType("varchar(256)"), named("ENTRYTYPE")),
     a.title is(indexed, dbType("varchar(1024)"), named("TITLE")),
     a.authors is(dbType("varchar(4096)"), named("AUTHORS")),
@@ -80,8 +80,6 @@ object ReftoolDB extends Schema with Logging {
 
   val topics2articles = manyToManyRelation(topics, articles, "TOPIC2ARTICLE").
     via[Topic2Article]((t, a, ta) => (ta.topic === t.id, a.id === ta.article))
-
-  val topic2topics = oneToManyRelation(topics, topics).via((tp, tc) => tp.id === tc.parent)
 
   on(topics2articles)(a => declare(
     a.topic is named("TOPIC"),
@@ -130,20 +128,20 @@ object ReftoolDB extends Schema with Logging {
       dbShutdown(dbpath)
     }
     // clean
-    val pdir = new File(AppStorage.config.newdbpath)
-    pdir.deleteAll() // TODO remove later...
+    val pdir = new File(AppStorage.config.dbpath)
+    FileHelper.deleteAll(pdir) // TODO remove later...
     //    val w = new java.io.PrintWriter(new java.io.OutputStreamWriter(System.out))
     //    java.sql.DriverManager.setLogWriter(w)
     debug("checking old db...")
     dbStats(AppStorage.config.olddbpath, clobx = true)
     debug("importing db...")
-    java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.newdbpath};createFrom=${AppStorage.config.olddbpath}")
-    dbShutdown(AppStorage.config.newdbpath)
+    java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.dbpath};createFrom=${AppStorage.config.olddbpath}")
+    dbShutdown(AppStorage.config.dbpath)
     debug("upgrading db...")
-    java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.newdbpath};upgrade=true")
-    dbShutdown(AppStorage.config.newdbpath)
+    java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.dbpath};upgrade=true")
+    dbShutdown(AppStorage.config.dbpath)
     debug("modify db...")
-    val dbc = java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.newdbpath}")
+    val dbc = java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.dbpath}")
     val s = dbc.createStatement()
     s.execute("alter table TOPICS add column EXPANDED boolean not null default false")
     for (c <- List("TAGS", "KEYWORDS", "RESEARCHGROUP", "CITING", "CITED", "RATING", "PARENT", "PARENT_ID", "AID"))
@@ -163,21 +161,23 @@ object ReftoolDB extends Schema with Logging {
     s.execute("alter table ARTICLES drop column BIBTEXENTRY")
     s.execute("rename column ARTICLES.BIBTEXENTRYNEW to BIBTEXENTRY")
     dbc.close()
-    dbShutdown(AppStorage.config.newdbpath)
+    dbShutdown(AppStorage.config.dbpath)
     debug("checking new db...")
-    dbStats(AppStorage.config.newdbpath, clobx = false)
+    dbStats(AppStorage.config.dbpath, clobx = false)
     info("Upgrade4to5 finished!")
   }
 
   def initialize() {
 
     // TODO DB selection dialog etc
-    if (!new java.io.File(AppStorage.config.newdbpath).exists()) {
-      upgrade4to5()
-    }
+//    if (!new java.io.File(AppStorage.config.dbpath).exists()) {
+//      upgrade4to5()
+//      new File(AppStorage.config.pdfpath).mkdir() // TODO
+//    }
 
-    info("Loading database at " + AppStorage.config.newdbpath + " ...")
-    val dbs = s"jdbc:derby:${AppStorage.config.newdbpath}"
+    info("Loading database at " + AppStorage.config.dbpath + " ...")
+//    val dbs = s"jdbc:derby:${AppStorage.config.dbpath}"
+    val dbs = s"jdbc:derby:${AppStorage.config.dbpath};create=true"
 
     Class.forName("org.apache.derby.jdbc.EmbeddedDriver")
     SessionFactory.concreteFactory = Some(() => Session.create(
@@ -185,8 +185,9 @@ object ReftoolDB extends Schema with Logging {
       new DerbyAdapter))
 
     transaction {
-      //      ReftoolDB.create
+      ReftoolDB.create
       ReftoolDB.printDdl
+
     }
     info("Database loaded!")
   }

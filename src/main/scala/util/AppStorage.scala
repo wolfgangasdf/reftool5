@@ -11,7 +11,10 @@ class Config extends Logging {
   var height = 600
 
   // TODO: path config, import thing
-  val newdbpath = "/tmp/reftool5db"
+  val datadir = "/tmp/reftool5data"
+  val dbpath = datadir + "/db"
+  val pdfpath = datadir + "/files"
+  val importfolderprefix = "folder-" // after this a number to limit #files in folder
   val olddbpath = "/Unencrypted_Data/temp/reftool5dbtest/db"
 
 //  val csspath = getClass.getResource("/reftool.css").toExternalForm
@@ -52,12 +55,11 @@ object AppStorage extends Logging {
     val fff = Paths.get(AppSettings.getSettingPath)
     Files.delete(fff)
     Files.createFile(fff)
-//    def saveVal(key: String, what: Property[_,_]) {
-//      Files.write(fff, (key + "=" + what.value + "\n").getBytes(filecharset),StandardOpenOption.APPEND)
-//    }
+
     def saveSett(key: String, what: Any) {
       Files.write(fff, (key + "=" + what + "\n").getBytes(Charset.forName("UTF-8")),StandardOpenOption.APPEND)
     }
+
     saveSett("reftoolsettingsversion", 1)
     saveSett("width", config.width)
     saveSett("height", config.height)

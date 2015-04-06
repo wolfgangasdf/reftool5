@@ -1,6 +1,6 @@
 package views
 
-import util.PdfHelper
+import util.{ImportHelper, PdfHelper}
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
@@ -17,7 +17,7 @@ import javafx.scene.{control => jfxsc}
 
 import org.squeryl.PrimitiveTypeMode._
 
-import db.{ReftoolDB, Topic}
+import db.{Article, ReftoolDB, Topic}
 import framework.{Logging, GenericView}
 
 
@@ -164,7 +164,8 @@ class myTreeCell extends TreeCell[Topic] with Logging {
         } else {
           treeItem.value.getValue
         }
-        newParent.childrenTopics.associate(dt)
+        dt.parent = Option(newParent.id)
+        ReftoolDB.topics.update(dt)
         newParent.expanded = true
         ReftoolDB.topics.update(newParent)
         dropOk = true
@@ -175,13 +176,9 @@ class myTreeCell extends TreeCell[Topic] with Logging {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
       debug("  dropped files: " + files)
       for (f <- files) {
-        val doi = PdfHelper.getDOI(f)
-        if (doi != "") {
-          // TODO
-        }
+        ImportHelper.importPdf(f, treeItem.value.getValue, null)
       }
       dropOk = true
-      // TODO
     }
 
     de.dropCompleted = dropOk
@@ -239,6 +236,24 @@ class TopicsTreeView extends GenericView("topicsview") {
   top = new ToolBar {
     items.add(new Button("reload") {
       onAction = (ae: ActionEvent) => loadTopics()
+    })
+    items.add(new Button("+A") {
+      onAction = (ae: ActionEvent) => {
+        val si = tv.selectionModel.value.getSelectedItems
+        if (si.size() == 1) {
+          inTransaction {
+            val t = si.head.getValue
+            val a = new Article(title = "new content")
+            debug("a.id=" + a.id)
+            ReftoolDB.articles.insert(a)
+            debug("a.id=" + a.id)
+            a.topics.assign(t)
+            debug("a.id=" + a.id)
+            ReftoolDB.articles.update(a)
+            debug("a.id=" + a.id)
+          }
+        }
+      }
     })
   }
 
