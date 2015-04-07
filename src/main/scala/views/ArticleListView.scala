@@ -1,17 +1,12 @@
 package views
 
-import scalafx.scene.layout._
 import scalafx.scene.control._
-import scalafx. {collections => sfxc}
 import scalafx.Includes._
 import scalafx.beans.property.StringProperty
 import scalafx.collections.ObservableBuffer
 import db.{Topic, Article}
 import framework.GenericView
-import scalafx.event.{Event, EventType}
 import org.squeryl.PrimitiveTypeMode._
-import javafx.collections.ListChangeListener
-import javafx.collections.ListChangeListener.Change
 
 // see https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/SimpleTableViewSorted.scala
 //https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/TableWithCustomCellDemo.scala

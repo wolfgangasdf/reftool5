@@ -8,9 +8,6 @@ import org.apache.pdfbox.pdmodel.PDDocument
 
 import framework.Logging
 
-import scala.util.matching.Regex
-
-
 object PdfHelper extends Logging {
 
 /*

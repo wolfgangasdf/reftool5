@@ -55,7 +55,10 @@ class Topic(var title: String = "", var parent: Long = 0, var expanded: Boolean 
   lazy val articles = ReftoolDB.topics2articles.left(this)
   lazy val childrenTopics = ReftoolDB.topics.where( t => t.parent === id)
   lazy val parentTopic = ReftoolDB.topics.where( t => t.id === parent)
-  def orderedChilds = inTransaction { from(childrenTopics) (c => select(c) orderBy c.title.asc) }
+  def orderedChilds = inTransaction {
+    from(childrenTopics) (c => select(c) orderBy c.title.asc)
+    // TODO sort for beginning number until other char... 0000 before 00 etc
+  }
   override def toString: String = title
 }
 

@@ -176,7 +176,7 @@ class myTreeCell extends TreeCell[Topic] with Logging {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
       debug("  dropped files: " + files)
       for (f <- files) {
-        ImportHelper.importPdf(f, treeItem.value.getValue, null)
+        ImportHelper.importDocument(f, treeItem.value.getValue, null)
       }
       dropOk = true
     }
