@@ -31,7 +31,8 @@ object Build extends Build {
         "com.jcraft" % "jsch" % "0.1.52",
         "org.apache.derby" % "derby" % "10.11.1.1",
         "org.squeryl" %% "squeryl" % "0.9.5-7" withSources() withJavadoc(),
-        "org.apache.pdfbox" % "pdfbox" % "1.8.9"
+        "org.apache.pdfbox" % "pdfbox" % "1.8.9",
+        "org.jbibtex" % "jbibtex" % "1.0.14"
       )
     ) ++ buildInfoSettings ++ myBuildInfoSettings
   )

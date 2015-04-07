@@ -1,7 +1,8 @@
 package util
 
+import org.squeryl.PrimitiveTypeMode._
 
-import db.{Article, Topic}
+import db.{ReftoolDB, Article, Topic}
 import framework.Logging
 
 import java.io.{FileFilter, File}
@@ -9,17 +10,22 @@ import java.io.{FileFilter, File}
 import scala.util.Random
 
 
+/*
+TODO:
+  this is completely untested!
+ */
+
 object ImportHelper extends Logging {
 
   def main(args: Array[String]): Unit = {
     val f = new File("/Unencrypted_Data/incoming/firefox/A differentiated plane wave as an electromagnetic vortex8110565808763115773.pdf")
-    importPdf(f, null, null)
+    importDocument(f, null, null)
   }
 
   def getImportFolder(num: Int) = AppStorage.config.pdfpath + "/" + AppStorage.config.importfolderprefix + num
 
   // topic OR article can be NULL, but both should not be set!
-  def importPdf(sourceFile: java.io.File, topic: Topic, article: Article): Unit = {
+  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article): Unit = {
     assert(article != null && topic != null)
 
     // check topic
@@ -58,15 +64,45 @@ object ImportHelper extends Logging {
     // move file
     sourceFile.renameTo(newf)
 
-    // parse
+    // parse doi or ask for doi link or say 'paste bibtex later'
+    var doi = ""
     if (newf.getName.endsWith(".pdf")) {
-      val doi = PdfHelper.getDOI(sourceFile)
+      doi = PdfHelper.getDOI(sourceFile)
       if (doi != "") {
         // TODO
       }
     }
 
     // create article
+    val relnewf = newf.getAbsolutePath.substring( (AppStorage.config.pdfpath + "/").length )
+    var a = article
+    if (a == null) {
+      // create new article
+      a = new Article("imported", sourceFile.getName, pdflink = relnewf, doi = doi)
+    } else {
+      // article given, add document
+      a.pdflink += "\0" + relnewf
+    }
+    inTransaction {
+      ReftoolDB.articles.insertOrUpdate(a)
+    }
 
+    // call doi updater on article if no article given
+    if (article == null && doi != "") {
+      updateBibtexFromDoi(a)
+      updateArticleFromBibtex(a)
+    }
   }
+  
+  def updateBibtexFromDoi(a: Article): Unit = {
+    // TODO
+    // retrieve bibtex and store it in article, adapt bibtexid if present! if not, create useful one!
+  }
+
+  def updateArticleFromBibtex(a: Article): Unit = {
+    // TODO
+    // parse bibtex, update empty fields in article
+    // https://github.com/jbibtex/jbibtex
+  }
+
 }
