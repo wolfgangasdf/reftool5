@@ -122,7 +122,7 @@ object ReftoolDB extends Schema with Logging {
   def initialize() {
 
 
-    val startwithempty = true // true: create schema with squeryl ; false: migrate old db
+    val startwithempty = false // true: create schema with squeryl ; false: migrate old db
 
     // TODO DB selection dialog etc
     if (!startwithempty) {

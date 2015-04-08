@@ -18,31 +18,38 @@ TODO:
 object ImportHelper extends Logging {
 
   def main(args: Array[String]): Unit = {
-    val f = new File("/Unencrypted_Data/incoming/firefox/A differentiated plane wave as an electromagnetic vortex8110565808763115773.pdf")
-    importDocument(f, null, null)
+    // test doi extraction from pdf
+//    val f = new File("/Unencrypted_Data/incoming/firefox/A differentiated plane wave as an electromagnetic vortex8110565808763115773.pdf")
+//    importDocument(f, null, null)
+
+    // test bibtex retrieval from doi
+    val a = new Article()
+    a.doi = "10.1364/OME.4.002355"
+    updateBibtexFromDoi(a)
   }
 
   def getImportFolder(num: Int) = AppStorage.config.pdfpath + "/" + AppStorage.config.importfolderprefix + num
 
   // topic OR article can be NULL, but both should not be set!
   def importDocument(sourceFile: java.io.File, topic: Topic, article: Article): Unit = {
-    assert(article != null && topic != null)
+    debug(s"importDocument: topic=$topic article=$article sourceFile=$sourceFile")
+    assert(!( (article == null) == (topic == null) )) // xor for now
 
     // check topic
 //    if (topic == null)
 
-    // find suitable pdf-folder
+    debug("move document to reftool database...")
     val pdfpath = new File(AppStorage.config.pdfpath)
     val ifolders = pdfpath.listFiles(new FileFilter {
       override def accept(pathname: File): Boolean = pathname.getName.startsWith(AppStorage.config.importfolderprefix)
     }).sorted
     debug("import folders:\n" + ifolders.mkString("\n"))
     var lastfolder = if (ifolders.length == 0)
-      new File(AppStorage.config.pdfpath + AppStorage.config.importfolderprefix + "1")
+      new File(getImportFolder(1))
     else
       ifolders.last
     if (lastfolder.exists()) {
-      if (lastfolder.list().length > 100) {
+      if (lastfolder.list().length > 3) { // TODO: 3 is for testing
         val rex = """.*-([0-9]+)""".r
         val lastno = lastfolder.getName match {
           case rex(s) => s.toInt
@@ -64,39 +71,52 @@ object ImportHelper extends Logging {
     // move file
     sourceFile.renameTo(newf)
 
-    // parse doi or ask for doi link or say 'paste bibtex later'
-    var doi = ""
-    if (newf.getName.endsWith(".pdf")) {
-      doi = PdfHelper.getDOI(sourceFile)
-      if (doi != "") {
-        // TODO
-      }
-    }
-
-    // create article
+    debug("create article...")
     val relnewf = newf.getAbsolutePath.substring( (AppStorage.config.pdfpath + "/").length )
     var a = article
     if (a == null) {
       // create new article
-      a = new Article("imported", sourceFile.getName, pdflink = relnewf, doi = doi)
+      a = new Article("imported", sourceFile.getName, pdflink = relnewf)
     } else {
       // article given, add document
-      a.pdflink += "\0" + relnewf
+      if (a.pdflink == "") a.pdflink += relnewf else a.pdflink += "\n" + relnewf
     }
+
+    debug("parse for DOI...")
+    var doi = ""
+    if (newf.getName.endsWith(".pdf")) {
+      doi = PdfHelper.getDOI(newf)
+      if (doi != "") {
+        // TODO
+      } else {
+        a.doi = doi
+      }
+
+    }
+
+    debug("save article...")
     inTransaction {
       ReftoolDB.articles.insertOrUpdate(a)
+      if (topic != null) a.topics.associate(topic)
     }
 
     // call doi updater on article if no article given
     if (article == null && doi != "") {
+      debug("retrieve bibtex...")
       updateBibtexFromDoi(a)
+      debug("update document data from bibtex...")
       updateArticleFromBibtex(a)
     }
   }
   
   def updateBibtexFromDoi(a: Article): Unit = {
-    // TODO
-    // retrieve bibtex and store it in article, adapt bibtexid if present! if not, create useful one!
+    // http://labs.crossref.org/citation-formatting-service/
+    import scalaj.http._ // or probably use better http://www.bigbeeconsultants.co.uk/content/bee-client ? but has deps
+    val response = Http("http://dx.doi.org/" + a.doi).
+        header("Accept", "text/bibliography; style=bibtex").option(HttpOptions.followRedirects(true)).asString
+    if (response.code == 200) {
+      a.bibtexentry = response.body
+    }
   }
 
   def updateArticleFromBibtex(a: Article): Unit = {

@@ -38,7 +38,8 @@ object PdfHelper extends Logging {
       doi = info.getCustomMetadataValue("doi")
     } else { // parse for DOI everywhere...
       for (k <- info.getMetadataKeys) {
-        val v = info.getCustomMetadataValue(k).toUpperCase
+        debug("  k = " + k)
+        val v = Option(info.getCustomMetadataValue(k)).getOrElse("").toUpperCase
         debug(s"[$k]: " + v)
         if (v.contains("DOI")) {
           debug("  parsing...")
