@@ -32,7 +32,8 @@ object Build extends Build {
         "org.apache.derby" % "derby" % "10.11.1.1",
         "org.squeryl" %% "squeryl" % "0.9.5-7" withSources() withJavadoc(),
         "org.apache.pdfbox" % "pdfbox" % "1.8.9",
-        "org.jbibtex" % "jbibtex" % "1.0.14"
+        "org.jbibtex" % "jbibtex" % "1.0.14",
+        "org.scalaj" %% "scalaj-http" % "1.1.4"
       )
     ) ++ buildInfoSettings ++ myBuildInfoSettings
   )
