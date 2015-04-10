@@ -18,7 +18,7 @@ import scalafx.scene.paint.Color
 import views.{SearchView, ArticleDetailView, ArticleListView, TopicsTreeView}
 import util._
 import db.ReftoolDB
-import framework.{ViewContainer, Logging}
+import framework.{ApplicationController, ViewContainer, Logging}
 
 import scalafx.stage.WindowEvent
 
@@ -79,7 +79,7 @@ import org.squeryl.PrimitiveTypeMode._
     )
   }
 
-  private def createToolBar: ToolBar = {
+  private def createToolBar = {
     val toolBar = new ToolBar {
       content = List(
         new Button {
@@ -173,6 +173,11 @@ import org.squeryl.PrimitiveTypeMode._
   }
   maincontent.prefHeight <== stage.scene.height
   maincontent.prefWidth <== stage.scene.width
+
+  myScene.window.value.onCloseRequest = (we: WindowEvent) => {
+    if (!ApplicationController.canClose)
+      we.consume()
+  }
 
   override def stopApp() {
     info("*************** stop app")

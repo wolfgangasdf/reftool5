@@ -8,7 +8,7 @@ import scalafx.Includes._
 import scalafx.event.ActionEvent
 import scalafx.beans.property.StringProperty
 import scalafx.collections.ObservableBuffer
-import db.{Topic, Article}
+import db.{ReftoolDB, Topic, Article}
 import framework.GenericView
 import org.squeryl.PrimitiveTypeMode._
 
@@ -95,7 +95,20 @@ class ArticleListView extends GenericView("articlelistview") {
   }
 
   def setArticlesTopic(topic: Topic) {
-    inTransaction { setArticles(topic.articles.toList, s"Articles in [${topic.title}]") }
+    inTransaction {
+      if (topic.title == ReftoolDB.TORPHANS) {
+        // TODO
+//        val res = from(ReftoolDB.articles)(a =>
+//          where(notExists(
+//            from(ReftoolDB.topics2articles)(t2a => where(t2a.ARTICLE === a.id) select t2a.ARTICLE)
+//              //            ))
+//            )
+//            )
+//          setArticles(res))
+//
+      } else
+        setArticles(topic.articles.toList, s"Articles in [${topic.title}]")
+    }
     currentTopic = topic
   }
 
@@ -103,4 +116,6 @@ class ArticleListView extends GenericView("articlelistview") {
   override def settings: String = {
     "" // todo order of columns and width
   }
+
+  override def canClose: Boolean = true
 }

@@ -43,6 +43,7 @@ class Article(var entrytype: String = "",
               var bibtexentry: String = "",
               var doi: String = "")
   extends BaseEntity {
+
   lazy val topics = ReftoolDB.topics2articles.right(this)
 
   override def toString: String = "" + id + ":" + title
@@ -73,9 +74,12 @@ object ReftoolDB extends Schema with Logging {
   val articles = table[Article]("ARTICLES")
   val topics = table[Topic]("TOPICS")
 
-      /*
-        there are issues in squeryl with renaming of columns ("named"). if a foreign key does not work, use uppercase!
-       */
+
+  val TORPHANS = "0000-ORPHANS"
+
+  /*
+    there are issues in squeryl with renaming of columns ("named"). if a foreign key does not work, use uppercase!
+   */
 
   on(settings)(t => declare(
     t.id is named("ID"),
@@ -148,9 +152,17 @@ object ReftoolDB extends Schema with Logging {
       ReftoolDB.printDdl
       if (startwithempty) {
         ReftoolDB.create
-        topics.insert(new Topic("root", 0, true))
       }
-
+      // ensure essential topics are present
+      var troot = topics.where(t => t.parent === 0).headOption.orNull
+      if (troot == null) {
+        debug("create root topic")
+        troot = new Topic("root", 0, true)
+        topics.insert(troot)
+      }
+      if (topics.where(t => t.title === TORPHANS).isEmpty)
+        topics.insert(new Topic(TORPHANS, troot.id, false)
+      )
     }
     info("Database loaded!")
   }
