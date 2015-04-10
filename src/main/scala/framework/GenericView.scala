@@ -1,6 +1,7 @@
 package framework
 
-import scalafx.scene.layout.BorderPane
+import scala.collection.mutable.ArrayBuffer
+import scalafx.beans.property.BooleanProperty
 import scalafx.scene.control._
 import scalafx.scene.control.Tab._
 import scalafx.Includes._
@@ -10,7 +11,9 @@ abstract class GenericView(id: String) extends Tab with Logging {
   // override settings to persist as single String. will be called...
   def settings: String = ""
 
-  def canClose = false // TODO
+  var isDirty = BooleanProperty(value = false)
+
+  def canClose: Boolean
 }
 
 // this is a tab pane, use it for views!
@@ -22,6 +25,7 @@ class ViewContainer extends TabPane with Logging {
 
   def addView(view: GenericView) {
     tabs.add(view)
+    ApplicationController.views += view
   }
 
   /* TODO
@@ -36,4 +40,16 @@ class ViewContainer extends TabPane with Logging {
   but is overkill if everything is fast.
     can later simply override inTransaction and Transaction?!
    */
+}
+
+object ApplicationController {
+  val views = new ArrayBuffer[GenericView]()
+  def isAnyoneDirty = {
+    views.exists(v => v.isDirty.value)
+  }
+
+  def canClose = {
+    !views.exists(v => !v.canClose)
+  }
+
 }

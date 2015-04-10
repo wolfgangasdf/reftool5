@@ -1,7 +1,7 @@
 package views
 
-import scalafx.beans.property.BooleanProperty
 import scalafx.event.ActionEvent
+import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.layout.ColumnConstraints._
 import scalafx.scene.control._
 import scalafx.scene.control.Button._
@@ -19,13 +19,37 @@ import db.{ReftoolDB, Article}
 class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   val title = "Article details"
-  var isDirty = BooleanProperty(value = false)
   isDirty.onChange({ text = if (isDirty.value) title + " *" else title })
-  
+
+  override def canClose = {
+    if (isDirty.value) {
+      val res = new Alert(AlertType.Confirmation) {
+        headerText = "Application close requested"
+        contentText = "Press OK to discard changes to Article \n" + article
+      }.showAndWait()
+      res match {
+        case Some(ButtonType.OK) => true
+        case _ => false
+      }
+    } else true
+  }
+
   var article: Article = null
 
   def setArticle(a: Article) {
-    if (!isDirty.value) {
+    val doit = if (isDirty.value) {
+      val res = new Alert(AlertType.Confirmation) {
+        headerText = "Article is modified."
+        contentText = "Save modifications?"
+        buttonTypes = Seq(ButtonType.Yes, ButtonType.No, ButtonType.Cancel)
+      }.showAndWait()
+      res match {
+        case Some(ButtonType.Yes) => saveArticle() ; true
+        case Some(ButtonType.No) => true
+        case _ => false
+      }
+    } else true
+    if (doit) {
       article = a
       lTitle.tf.text = a.title
       lAuthors.tf.text = a.authors
@@ -135,4 +159,5 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
       }
     }
   }
+
 }

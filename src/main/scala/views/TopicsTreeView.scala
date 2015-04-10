@@ -176,7 +176,7 @@ class myTreeCell extends TreeCell[Topic] with Logging {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
       debug("  dropped files: " + files)
       for (f <- files) {
-        debug(s" importing file $f treeItem=${treeItem}")
+        debug(s" importing file $f treeItem=$treeItem")
         ImportHelper.importDocument(f, treeItem.value.getValue, null)
       }
       dropOk = true
@@ -204,7 +204,7 @@ class TreeIterator[T](root: TreeItem[T]) extends Iterator[TreeItem[T]] with Logg
   def hasNext: Boolean = stack.nonEmpty
 
   def next(): TreeItem[T] = {
-    val nextItem = stack.pop
+    val nextItem = stack.pop()
     for (ti <- nextItem.children) stack.push(ti)
     nextItem
   }
@@ -243,7 +243,7 @@ class TopicsTreeView extends GenericView("topicsview") {
       while (pt != null) {
         pt.expanded = true
         ReftoolDB.topics.update(pt)
-        if (pt.parentTopic.size == 0) pt = null else pt = pt.parentTopic.head
+        if (pt.parentTopic.isEmpty) pt = null else pt = pt.parentTopic.head
       }
     }
     debug(" find " + t)
@@ -268,8 +268,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     tv.selectionModel.value.clearSelection() // TODO: store old selection & expanded states!
     inTransaction {
       def topics = ReftoolDB.topics
-      // root item must have id '1'
-      // debug(" 0 - topics: " + topics.where(t => t.parent === 0).mkString(" ; "))
+      // root item must have parent == 0
       troot = topics.where(t => t.parent === 0).single
       debug("ttv: root topic=" + troot)
       tiroot = new myTreeItem(troot)
@@ -325,6 +324,8 @@ class TopicsTreeView extends GenericView("topicsview") {
   }
 
   loadTopics()
+
+  override def canClose: Boolean = true
 }
 object TopicsTreeView {
   val dataFormatTopicsTreeItem = "dataFormatTopicsTreeItem"
