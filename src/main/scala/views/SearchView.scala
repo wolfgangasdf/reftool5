@@ -10,11 +10,13 @@ import scalafx. {collections => sfxc}
 import scalafx.Includes._
 
 class SearchView extends GenericView("searchview") {
-     top = new ToolBar {
-       items.add(new Button("bbb"))
-     }
-  center = new Label {
-    text = "search view"
+  text = "Search"
+  content = new BorderPane {
+    top = new ToolBar {
+      items.add(new Button("bbb"))
+    }
+    center = new Label {
+      text = "search view"
+    }
   }
-
  }

@@ -116,14 +116,20 @@ import org.squeryl.PrimitiveTypeMode._
   var searchView = new SearchView
 
   val bottomtabs = new ViewContainer {
-    addView("Details", articleDetailView)
-    addView("Search", searchView)
+    addView(articleDetailView)
+    addView(searchView)
   }
 
   val articleListView = new ArticleListView
 
   val toptabs = new ViewContainer {
-    addView("Articles", articleListView)
+    addView(articleListView)
+  }
+
+  val topicTreeView = new TopicsTreeView
+
+  val lefttabs = new ViewContainer {
+    addView(topicTreeView)
   }
 
   val spv = new SplitPane {
@@ -132,11 +138,9 @@ import org.squeryl.PrimitiveTypeMode._
     items += (toptabs, bottomtabs)
   }
 
-  val topicTreeView = new TopicsTreeView
-
   val sph = new SplitPane {
     orientation = Orientation.HORIZONTAL
-    items += (topicTreeView, spv)
+    items += (lefttabs, spv)
   }
 
   val statusbar = new VBox {

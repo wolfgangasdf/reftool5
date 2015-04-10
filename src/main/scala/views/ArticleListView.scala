@@ -12,6 +12,8 @@ import db.{Topic, Article}
 import framework.GenericView
 import org.squeryl.PrimitiveTypeMode._
 
+import scalafx.scene.layout.BorderPane
+
 // see https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/SimpleTableViewSorted.scala
 //https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/TableWithCustomCellDemo.scala
 class ArticleListView extends GenericView("articlelistview") {
@@ -69,19 +71,22 @@ class ArticleListView extends GenericView("articlelistview") {
     )
   }
 
-  top = new ToolBar {
-    items.add(new Button("updFromBibtex") {
-      onAction = (ae: ActionEvent) => {
-        val a = alv.getSelectionModel.getSelectedItem
-        if (a != null) {
-          ImportHelper.updateArticleFromBibtex(a)
+  text = "Article list"
+
+  content = new BorderPane {
+    top = new ToolBar {
+      items.add(new Button("updFromBibtex") {
+        onAction = (ae: ActionEvent) => {
+          val a = alv.getSelectionModel.getSelectedItem
+          if (a != null) {
+            ImportHelper.updateArticleFromBibtex(a)
+          }
         }
-      }
-    })
+      })
+    }
+
+    center = alv
   }
-
-
-  center = alv
 
   def setArticles(al: List[Article], title: String = null): Unit = {
     articles.clear()
