@@ -6,11 +6,11 @@ import scalafx.scene.control.Tab._
 import scalafx.Includes._
 
 
-// use this, add content to "center"
-abstract class GenericView(id: String) extends BorderPane with Logging {
-
+abstract class GenericView(id: String) extends Tab with Logging {
   // override settings to persist as single String. will be called...
   def settings: String = ""
+
+  def canClose = false // TODO
 }
 
 // this is a tab pane, use it for views!
@@ -20,11 +20,8 @@ class ViewContainer extends TabPane with Logging {
     debug("tab sel: " + selectionModel().getSelectedItem)
   })
 
-  def addView(title: String, view: GenericView) {
-    tabs.add(new Tab {
-      text = title
-      content = view
-    })
+  def addView(view: GenericView) {
+    tabs.add(view)
   }
 
   /* TODO

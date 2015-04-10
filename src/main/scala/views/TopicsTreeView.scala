@@ -1,7 +1,5 @@
 package views
 
-import util.{ImportHelper, PdfHelper}
-
 import scala.collection.mutable
 import scala.collection.JavaConversions._
 
@@ -11,6 +9,7 @@ import scalafx.scene.effect.{DropShadow, InnerShadow}
 import scalafx.scene.input._
 import scalafx.scene.control.Button._
 import scalafx.Includes._
+import scalafx.scene.layout.BorderPane
 import scalafx.scene.paint.Color
 
 import javafx.scene.{control => jfxsc}
@@ -19,13 +18,14 @@ import org.squeryl.PrimitiveTypeMode._
 
 import db.{Article, ReftoolDB, Topic}
 import framework.{Logging, GenericView}
+import util.ImportHelper
+
 
 
 
 /*  todo
 
 onleft: also clear formatting
-implement scrolling
  */
 
 class myTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
@@ -233,43 +233,6 @@ class TopicsTreeView extends GenericView("topicsview") {
     cellFactory = (v: TreeView[Topic]) => new myTreeCell()
   }
 
-  top = new ToolBar {
-    items.add(new Button("reload") {
-      onAction = (ae: ActionEvent) => loadTopics()
-    })
-    items.add(new Button("+A") {
-      onAction = (ae: ActionEvent) => {
-        val si = tv.selectionModel.value.getSelectedItems
-        if (si.size() == 1) {
-          inTransaction {
-            val t = ReftoolDB.topics.get(si.head.getValue.id)
-            val a = new Article(title = "new content")
-            ReftoolDB.articles.insert(a)
-            val t2a = a.topics.associate(t)
-            main.Main.articleListView.setArticlesTopic(t) // TODO
-          }
-        }
-      }
-    })
-    items.add(new Button("+T") {
-      onAction = (ae: ActionEvent) => {
-        val si = tv.selectionModel.value.getSelectedItems
-        val pid = if (si.size() == 1) si.head.getValue.id else troot.id
-        val t2 = new Topic(title = "new topic", parent = pid)
-        inTransaction {
-          ReftoolDB.topics.insert(t2)
-          val pt = ReftoolDB.topics.get(pid)
-          pt.expanded = true
-          ReftoolDB.topics.update(pt)
-          debug(" add topic " + t2 + "  id=" + t2.id)
-        }
-        loadTopics() // refresh
-        revealAndSelect(t2)
-      }
-    })
-  }
-
-  center = tv
 
   // recursively from top reveal topics (lazy-loading!)
   def revealAndSelect(t: Topic): Unit = {
@@ -318,6 +281,49 @@ class TopicsTreeView extends GenericView("topicsview") {
 
     debug("ttv: loadtopics done!")
   }
+
+  text = "Topics"
+
+  content = new BorderPane {
+    top = new ToolBar {
+      items.add(new Button("reload") {
+        onAction = (ae: ActionEvent) => loadTopics()
+      })
+      items.add(new Button("+A") {
+        onAction = (ae: ActionEvent) => {
+          val si = tv.selectionModel.value.getSelectedItems
+          if (si.size() == 1) {
+            inTransaction {
+              val t = ReftoolDB.topics.get(si.head.getValue.id)
+              val a = new Article(title = "new content")
+              ReftoolDB.articles.insert(a)
+              val t2a = a.topics.associate(t)
+              main.Main.articleListView.setArticlesTopic(t) // TODO
+            }
+          }
+        }
+      })
+      items.add(new Button("+T") {
+        onAction = (ae: ActionEvent) => {
+          val si = tv.selectionModel.value.getSelectedItems
+          val pid = if (si.size() == 1) si.head.getValue.id else troot.id
+          val t2 = new Topic(title = "new topic", parent = pid)
+          inTransaction {
+            ReftoolDB.topics.insert(t2)
+            val pt = ReftoolDB.topics.get(pid)
+            pt.expanded = true
+            ReftoolDB.topics.update(pt)
+            debug(" add topic " + t2 + "  id=" + t2.id)
+          }
+          loadTopics() // refresh
+          revealAndSelect(t2)
+        }
+      })
+    }
+
+    center = tv
+  }
+
   loadTopics()
 }
 object TopicsTreeView {
