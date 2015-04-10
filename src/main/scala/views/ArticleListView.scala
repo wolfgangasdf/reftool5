@@ -1,7 +1,11 @@
 package views
 
+import util.ImportHelper
+
 import scalafx.scene.control._
+import scalafx.scene.control.Button._
 import scalafx.Includes._
+import scalafx.event.ActionEvent
 import scalafx.beans.property.StringProperty
 import scalafx.collections.ObservableBuffer
 import db.{Topic, Article}
@@ -23,20 +27,37 @@ class ArticleListView extends GenericView("articlelistview") {
     cellValueFactory = (a) => new StringProperty(a.value.title)
     prefWidth = 280
   }
-  val cPubdata = new TableColumn[Article, String] {
+  val cPubdate = new TableColumn[Article, String] {
     text = "Date"
     cellValueFactory = (a) => new StringProperty(a.value.pubdate)
     prefWidth = 80
   }
+  val cEntrytype = new TableColumn[Article, String] {
+    text = "Type"
+    cellValueFactory = (a) => new StringProperty(a.value.entrytype)
+  }
+  val cAuthors = new TableColumn[Article, String] {
+    text = "Authors"
+    cellValueFactory = (a) => new StringProperty(a.value.authors)
+  }
+  val cJournal = new TableColumn[Article, String] {
+    text = "Journal"
+    cellValueFactory = (a) => new StringProperty(a.value.journal)
+  }
+  val cReview = new TableColumn[Article, String] {
+    text = "Review"
+    cellValueFactory = (a) => new StringProperty(a.value.review)
+  }
+  val cBibtexid = new TableColumn[Article, String] {
+    text = "BibtexID"
+    cellValueFactory = (a) => new StringProperty(a.value.bibtexid)
+  }
 
   val articles = new ObservableBuffer[Article]()
 
-
-//  articles += new Article(title = "tit1", pubdate = "2013") // TODO remove
-//  articles += new Article(title = "tit2", pubdate = "2012")
   val alv = new TableView[Article](articles) {
-    columns += (cTitle, cPubdata)
-    sortOrder += (cTitle, cPubdata)
+    columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview)
+    sortOrder += (cPubdate, cTitle)
     selectionModel().selectedItems.onChange(
       (ob, _) => {
         if (ob.size == 1) {
@@ -49,7 +70,14 @@ class ArticleListView extends GenericView("articlelistview") {
   }
 
   top = new ToolBar {
-    items.add(new Button("bbb"))
+    items.add(new Button("updFromBibtex") {
+      onAction = (ae: ActionEvent) => {
+        val a = alv.getSelectionModel.getSelectedItem
+        if (a != null) {
+          ImportHelper.updateArticleFromBibtex(a)
+        }
+      }
+    })
   }
 
 

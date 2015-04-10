@@ -20,6 +20,8 @@ import util._
 import db.ReftoolDB
 import framework.{ViewContainer, Logging}
 
+import scalafx.stage.WindowEvent
+
 object Main extends JFXApp with Logging {
   AppStorage.load()
   ReftoolDB.initialize()
@@ -134,7 +136,6 @@ import org.squeryl.PrimitiveTypeMode._
 
   val sph = new SplitPane {
     orientation = Orientation.HORIZONTAL
-    dividerPositions = 0.3
     items += (topicTreeView, spv)
   }
 
@@ -162,10 +163,12 @@ import org.squeryl.PrimitiveTypeMode._
     width = AppStorage.config.width.toDouble
     height = AppStorage.config.height.toDouble
     scene = myScene
+    onShown = (we: WindowEvent) => {
+      sph.dividerPositions = 0.25
+    }
   }
   maincontent.prefHeight <== stage.scene.height
   maincontent.prefWidth <== stage.scene.width
-
 
   override def stopApp() {
     info("*************** stop app")
@@ -174,25 +177,6 @@ import org.squeryl.PrimitiveTypeMode._
     AppStorage.save()
     sys.exit(0)
   }
-
-
-  //  mainContent.prefHeight <== stage.scene.height
-//  mainContent.prefWidth <== stage.scene.width
-//  //  setPrefSize(stage.scene.width.get, stage.scene.height.get)
-//
-//  //  indicatorPane.prefHeight <== stage.scene.height
-//  leftPane.prefWidth <== mainContent.width * 0.2
-//  //  controlsPane.prefHeight <== stage.scene.height
-//  controlsPane.prefWidth <== mainContent.width * 0.2
-//  //  centerPane.prefHeight <== stage.scene.height
-//  //  centerPane.prefWidth <== stage.scene.width * 0.6
-
-//  debug("load plugins...")
-//  // get access to loaded scene! HOW? I think only via javafx....
-//  // is scalafx a one-way street?
-//  // RIGHT NOW: nearly no scalafx, could remove it.
-//  val scontent = mycontent.getChildren.asScala
-//  scontent.foreach(ccc => println(ccc.getClass + ": " + ccc))
 
 }
 

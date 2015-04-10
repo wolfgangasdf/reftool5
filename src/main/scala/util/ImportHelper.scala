@@ -1,13 +1,16 @@
 package util
 
+import org.jbibtex.Key
 import org.squeryl.PrimitiveTypeMode._
 
 import db.{ReftoolDB, Article, Topic}
 import framework.Logging
 
-import java.io.{FileFilter, File}
+import java.io.{StringReader, FileReader, FileFilter, File}
 
 import scala.util.Random
+
+import scala.collection.JavaConversions._
 
 
 /*
@@ -120,9 +123,18 @@ object ImportHelper extends Logging {
   }
 
   def updateArticleFromBibtex(a: Article): Unit = {
+    val btparser = new org.jbibtex.BibTeXParser
+    val btdb = btparser.parse(new StringReader(a.bibtexentry))
+    val btentries = btdb.getEntries
+    if (btentries.size() == 1) {
+      val (btkey, btentry) = btentries.head
+      debug(s"key=$btkey val=$btentry")
+    }
     // TODO
     // parse bibtex, update empty fields in article
     // https://github.com/jbibtex/jbibtex
+
+    // parse fields via latexparser: https://github.com/jbibtex/jbibtex
   }
 
 }
