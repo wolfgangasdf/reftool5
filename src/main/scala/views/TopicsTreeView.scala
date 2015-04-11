@@ -7,7 +7,6 @@ import scalafx.event.ActionEvent
 import scalafx.scene.control._
 import scalafx.scene.effect.{DropShadow, InnerShadow}
 import scalafx.scene.input._
-import scalafx.scene.control.Button._
 import scalafx.Includes._
 import scalafx.scene.layout.BorderPane
 import scalafx.scene.paint.Color
@@ -80,12 +79,11 @@ class myTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
 class myTreeCell extends TreeCell[Topic] with Logging {
 
   treeItem.onChange((_, _, p) =>
-    text = if (p != null) s"[${p.getValue.id}]: ${p.getValue.title}" else "?"
+    text = if (p != null) p.getValue.title else "?"
   )
 
   // drag'n'drop
   onDragDetected = (me: MouseEvent) => {
-    debug("xxx me=" + me)
     val db = treeView.value.startDragAndDrop(TransferMode.MOVE)
     val cont = new ClipboardContent()
     cont.putString(TopicsTreeView.dataFormatTopicsTreeItem) // can't easily make custom DataFormats on mac (!)
@@ -135,7 +133,7 @@ class myTreeCell extends TreeCell[Topic] with Logging {
   onDragOver = (de: DragEvent) => {
     debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}")
     clearDnDFormatting()
-    val dropPos = getDropPositionScroll(de)
+    // val dropPos = getDropPositionScroll(de)
     if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == TopicsTreeView.dataFormatTopicsTreeItem) {
       val dti = myTreeCell.draggedTreeItem //de.dragboard.content(TopicsTreeView.treeItemDataFormat).asInstanceOf[TreeItem[Topic]]
       if (dti.getParent != treeItem.value) {
@@ -267,9 +265,7 @@ class TopicsTreeView extends GenericView("topicsview") {
 
     tv.selectionModel.value.clearSelection() // TODO: store old selection & expanded states!
     inTransaction {
-      def topics = ReftoolDB.topics
-      // root item must have parent == 0
-      troot = topics.where(t => t.parent === 0).single
+      troot = ReftoolDB.topics.where(t => t.parent === 0).single // root item must have parent == 0
       debug("ttv: root topic=" + troot)
       tiroot = new myTreeItem(troot)
       tv.root = tiroot
@@ -283,43 +279,44 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   text = "Topics"
 
-  content = new BorderPane {
-    top = new ToolBar {
-      items.add(new Button("reload") {
-        onAction = (ae: ActionEvent) => loadTopics()
-      })
-      items.add(new Button("+A") {
-        onAction = (ae: ActionEvent) => {
-          val si = tv.selectionModel.value.getSelectedItems
-          if (si.size() == 1) {
-            inTransaction {
-              val t = ReftoolDB.topics.get(si.head.getValue.id)
-              val a = new Article(title = "new content")
-              ReftoolDB.articles.insert(a)
-              val t2a = a.topics.associate(t)
-              main.Main.articleListView.setArticlesTopic(t) // TODO
-            }
-          }
-        }
-      })
-      items.add(new Button("+T") {
-        onAction = (ae: ActionEvent) => {
-          val si = tv.selectionModel.value.getSelectedItems
-          val pid = if (si.size() == 1) si.head.getValue.id else troot.id
-          val t2 = new Topic(title = "new topic", parent = pid)
+  toolbar ++= Seq(
+    new Button("reload") {
+      onAction = (ae: ActionEvent) => loadTopics()
+    },
+    new Button("+A") {
+      onAction = (ae: ActionEvent) => {
+        val si = tv.selectionModel.value.getSelectedItems
+        if (si.size() == 1) {
           inTransaction {
-            ReftoolDB.topics.insert(t2)
-            val pt = ReftoolDB.topics.get(pid)
-            pt.expanded = true
-            ReftoolDB.topics.update(pt)
-            debug(" add topic " + t2 + "  id=" + t2.id)
+            val t = ReftoolDB.topics.get(si.head.getValue.id)
+            val a = new Article(title = "new content")
+            ReftoolDB.articles.insert(a)
+            a.topics.associate(t)
+            main.Main.articleListView.setArticlesTopic(t)
+            main.Main.articleListView.alv.getSelectionModel.select(a)
           }
-          loadTopics() // refresh
-          revealAndSelect(t2)
         }
-      })
+      }
+    },
+    new Button("+T") {
+      onAction = (ae: ActionEvent) => {
+        val si = tv.selectionModel.value.getSelectedItems
+        val pid = if (si.size() == 1) si.head.getValue.id else troot.id
+        val t2 = new Topic(title = "new topic", parent = pid)
+        inTransaction {
+          ReftoolDB.topics.insert(t2)
+          val pt = ReftoolDB.topics.get(pid)
+          pt.expanded = true
+          ReftoolDB.topics.update(pt)
+          debug(" add topic " + t2 + "  id=" + t2.id)
+        }
+        loadTopics() // refresh
+        revealAndSelect(t2)
+      }
     }
+  )
 
+  content = new BorderPane {
     center = tv
   }
 

@@ -4,10 +4,9 @@ import scalafx.event.ActionEvent
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.layout.ColumnConstraints._
 import scalafx.scene.control._
-import scalafx.scene.control.Button._
 import scalafx.Includes._
 import scalafx.geometry.{Insets, Pos}
-import scalafx.scene.control.{Label, TextArea, Button, ToolBar}
+import scalafx.scene.control.{Label, TextArea, Button}
 import scalafx.scene.layout._
 
 import org.squeryl.PrimitiveTypeMode._
@@ -51,6 +50,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     } else true
     if (doit) {
       article = a
+      lbCurrentArticle.text = a.toString
       lTitle.tf.text = a.title
       lAuthors.tf.text = a.authors
       lPubdate.tf.text = a.pubdate
@@ -141,13 +141,15 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   text = "Article details"
 
-  content = new BorderPane {
-    top = new ToolBar {
-      items.add(new Button("save") {
-        onAction = (ae: ActionEvent) => saveArticle()
-      })
-    }
+  val lbCurrentArticle = new Label("<article>")
 
+  toolbar ++= Seq(
+    new Button("save") {
+      onAction = (ae: ActionEvent) => saveArticle()
+  })
+
+  content = new BorderPane {
+    top = lbCurrentArticle
     center = new ScrollPane {
       fitToWidth = true
       content = new VBox {
