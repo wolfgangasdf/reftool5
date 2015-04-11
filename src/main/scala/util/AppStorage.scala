@@ -5,10 +5,11 @@ import java.nio.charset.Charset
 import framework.{Logging, Helpers}
 import Helpers._
 
+import scala.collection.mutable
+
 class Config extends Logging {
-  // implicit def StringToStringProperty(s: String): StringProperty = StringProperty(s)
-  var width = 800
-  var height = 600
+
+  val uiSettings = new mutable.HashMap[String, String]()
 
   // TODO: path config, import thing
   val datadir = "/tmp/reftool5data"
@@ -34,6 +35,7 @@ object AppSettings extends Logging {
 
   def getSettingPath = settpath + "/sfsyncsettings" + ".txt"
 
+  debug("AppSettings: file = " + getSettingPath)
   def getLines = {
     val fff = Paths.get(getSettingPath)
     if (!Files.exists(fff)) {
@@ -61,8 +63,9 @@ object AppStorage extends Logging {
     }
 
     saveSett("reftoolsettingsversion", 1)
-    saveSett("width", config.width)
-    saveSett("height", config.height)
+
+    config.uiSettings.foreach { case (key, value) => saveSett("ui-" + key, value) }
+
     info("-----------/save")
   }
 
@@ -81,17 +84,17 @@ object AppStorage extends Logging {
     info("----------load")
     val lines = AppSettings.getLines
     config = new Config
-    if (lines.size == 0) {
+    if (lines.isEmpty) {
       info("no config file...")
     } else {
       lines.foreach(lll => {
+        val reUIsett = """ui-(.*)""".r
         val sett = splitsetting(lll.toString)
-        sett(0) match {
+        sett.head match {
           case "reftoolsettingsversion" =>
             if (!sett(1).equals("1")) sys.error("wrong settings version")
-          case "width" => config.width = sett(1).toInt
-          case "height" => config.height = sett(1).toInt
-          case _ => warn("unknown tag in config file: <" + sett(0) + ">")
+          case reUIsett(key) => config.uiSettings.put(key, sett(1))
+          case _ => warn("unknown tag in config file: <" + sett.head + ">")
         }
       })
     }

@@ -323,6 +323,12 @@ class TopicsTreeView extends GenericView("topicsview") {
   loadTopics()
 
   override def canClose: Boolean = true
+
+  override def getUIsettings: String = ""
+
+  override def setUIsettings(s: String): Unit = {}
+
+  override val uisettingsID: String = "ttv"
 }
 object TopicsTreeView {
   val dataFormatTopicsTreeItem = "dataFormatTopicsTreeItem"

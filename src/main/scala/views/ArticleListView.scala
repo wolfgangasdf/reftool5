@@ -11,7 +11,7 @@ import db.{ReftoolDB, Topic, Article}
 import framework.GenericView
 import org.squeryl.PrimitiveTypeMode._
 
-import scalafx.scene.layout.{Priority, BorderPane}
+import scalafx.scene.layout.BorderPane
 
 // see https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/SimpleTableViewSorted.scala
 //https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/TableWithCustomCellDemo.scala
@@ -54,6 +54,7 @@ class ArticleListView extends GenericView("articlelistview") {
 
   val alv = new TableView[Article](articles) {
     columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview)
+    delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY) // TODO in scalafx...
     sortOrder += (cPubdate, cTitle)
     selectionModel().selectedItems.onChange(
       (ob, _) => {
@@ -106,10 +107,18 @@ class ArticleListView extends GenericView("articlelistview") {
     currentTopic = topic
   }
 
-  // override settings to persist as single String
-  override def settings: String = {
-    "" // todo order of columns and width
+  override def canClose: Boolean = true
+
+  override def getUIsettings: String = {
+    alv.columns.map(tc => tc.getWidth).mkString(",")
   }
 
-  override def canClose: Boolean = true
+  override def setUIsettings(s: String): Unit = {
+    // TODO doesnt work
+    debug("alv: settings = " + s)
+    if (s != "")
+      s.split(",").zipWithIndex.foreach { case (s: String, i: Int) => alv.columns(i).setPrefWidth(s.toDouble) }
+  }
+
+  override val uisettingsID: String = "alv"
 }
