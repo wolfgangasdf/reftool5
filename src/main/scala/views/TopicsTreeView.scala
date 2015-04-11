@@ -16,7 +16,7 @@ import javafx.scene.{control => jfxsc}
 import org.squeryl.PrimitiveTypeMode._
 
 import db.{Article, ReftoolDB, Topic}
-import framework.{Logging, GenericView}
+import framework.{ApplicationController, Logging, GenericView}
 import util.ImportHelper
 
 
@@ -221,7 +221,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     // click
     selectionModel().selectedItem.onChange { (_, _, newVal) => {
       if (newVal != null)
-        main.Main.articleListView.setArticlesTopic(newVal.value())
+        ApplicationController.submitShowArticlesFromTopic(newVal.getValue)
     }}
 
     onEditCommit = (ee: TreeView.EditEvent[Topic]) => {
@@ -292,8 +292,8 @@ class TopicsTreeView extends GenericView("topicsview") {
             val a = new Article(title = "new content")
             ReftoolDB.articles.insert(a)
             a.topics.associate(t)
-            main.Main.articleListView.setArticlesTopic(t)
-            main.Main.articleListView.alv.getSelectionModel.select(a)
+            ApplicationController.submitShowArticlesFromTopic(t)
+            ApplicationController.submitRevealArticleInList(a)
           }
         }
       }

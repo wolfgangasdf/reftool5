@@ -8,7 +8,7 @@ import scalafx.event.ActionEvent
 import scalafx.beans.property.StringProperty
 import scalafx.collections.ObservableBuffer
 import db.{ReftoolDB, Topic, Article}
-import framework.GenericView
+import framework.{ApplicationController, GenericView}
 import org.squeryl.PrimitiveTypeMode._
 
 import scalafx.scene.layout.BorderPane
@@ -59,9 +59,7 @@ class ArticleListView extends GenericView("articlelistview") {
     selectionModel().selectedItems.onChange(
       (ob, _) => {
         if (ob.size == 1) {
-          debug("selitemsonchange: ob.size=" + ob.size)
-          val article = ob.head
-          main.Main.articleDetailView.setArticle(article)
+          ApplicationController.submitShowArticle(ob.head)
         }
       }
     )
@@ -86,6 +84,14 @@ class ArticleListView extends GenericView("articlelistview") {
   content = new BorderPane {
     center = alv
   }
+
+  ApplicationController.showArticlesListListeners += ( (al: List[Article], title: String) => setArticles(al, title) )
+  ApplicationController.showArticlesFromTopicListeners += ( (t: Topic) => setArticlesTopic(t) )
+  ApplicationController.revealArticleInListListeners += ( (a: Article) => alv.getSelectionModel.select(a) )
+  ApplicationController.articleChangedListeners += ( (a: Article) => {
+    val oldart = articles.find(oa => oa.id == a.id)
+    if (oldart != None) { articles.replaceAll(oldart.get, a) }
+  })
 
   def setArticles(al: List[Article], title: String = null): Unit = {
     articles.clear()
