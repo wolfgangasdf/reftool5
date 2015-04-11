@@ -1,5 +1,7 @@
 package framework
 
+import util.AppStorage
+
 import scala.collection.mutable.ArrayBuffer
 import scalafx.beans.property.BooleanProperty
 import scalafx.scene.{Node, Group}
@@ -22,10 +24,16 @@ but is overkill if everything is fast.
   can later simply override inTransaction and Transaction?!
  */
 
+trait HasUISettings {
 
-abstract class GenericView(id: String) extends Tab with Logging {
-  // override settings to persist as single String. will be called...
-  def settings: String = ""
+  val uisettingsID: String
+
+  def getUIsettings: String
+
+  def setUIsettings(s: String)
+}
+
+abstract class GenericView(id: String) extends Tab with HasUISettings with Logging {
 
   var isDirty = BooleanProperty(value = false)
 
@@ -90,9 +98,16 @@ object ApplicationController extends Logging {
     !views.exists(v => !v.canClose)
   }
 
+  def beforeClose(): Unit = {
+    views.foreach(c => AppStorage.config.uiSettings.put(c.uisettingsID, c.getUIsettings))
+    AppStorage.config.uiSettings.put("main", main.Main.getUIsettings)
+  }
+
   def afterShown(): Unit = {
     debug("aftershown!")
     containers.foreach(vc => vc.updateToolbar(0))
+    main.Main.setUIsettings(AppStorage.config.uiSettings.getOrElse("main", ""))
+    views.foreach(c => c.setUIsettings(AppStorage.config.uiSettings.getOrElse(c.uisettingsID, "")))
   }
 
 }

@@ -17,4 +17,10 @@ class SearchView extends GenericView("searchview") {
   }
 
   override def canClose: Boolean = true
+
+  override def getUIsettings: String = ""
+
+  override def setUIsettings(s: String): Unit = {}
+
+  override val uisettingsID: String = "sv"
 }

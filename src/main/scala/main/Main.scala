@@ -1,5 +1,7 @@
 package main
 
+import java.lang.Thread.UncaughtExceptionHandler
+
 import scalafx.application.JFXApp
 import scalafx.Includes._
 import scalafx.scene.layout._
@@ -26,39 +28,27 @@ object Main extends JFXApp with Logging {
   AppStorage.load()
   ReftoolDB.initialize()
 
-  debug("I am here: " + new java.io.File(".").getAbsolutePath )
+  // TODO: unneeded??
+  Thread.currentThread().setUncaughtExceptionHandler(new UncaughtExceptionHandler {
+    override def uncaughtException(t: Thread, e: Throwable): Unit = {
+      error("Handler caught exception: "+e.getMessage)
+      e.printStackTrace()
+    }
+  })
 
-  // test db
-  //  using(db.ReftoolDB)
-/*
-import org.squeryl.PrimitiveTypeMode._
-  transaction {
-    def topics = ReftoolDB.topics
-          for (t <- topics) {
-            debug("topic: " + t)
-          }
-
-    // root topic has null parent!
-//    val t = topics.where(t => t.parent.isNull).single
-//    debug("root topic=" + t)
-//    for (cc <- t.orderedChilds) {
-//      debug("  has child " + cc)
-//    }
-
-
-  }
-*/
-//  sys.exit(1)
+  debug("I am here: " + new java.io.File(".").getAbsolutePath)
 
   private def createMenuBar = new MenuBar {
-//    useSystemMenuBar = true
+    //    useSystemMenuBar = true
     menus = List(
       new Menu("File") {
         items = List(
           new MenuItem("New...") {
             graphic = new ImageView(new Image(getClass.getResource("/images/paper.png").toExternalForm))
             accelerator = KeyCombination.keyCombination("Ctrl +N")
-            onAction = (e: ActionEvent) => { println(e.eventType + " occurred on MenuItem New") }
+            onAction = (e: ActionEvent) => {
+              println(e.eventType + " occurred on MenuItem New")
+            }
           },
           new MenuItem("Save"),
           new MenuItem("reload CSS") {
@@ -83,10 +73,12 @@ import org.squeryl.PrimitiveTypeMode._
     val toolBar = new ToolBar {
       content = List(
         new Button {
-//          id = "newButton"
-//          graphic = new ImageView(new Image(getClass.getResource("/images/paper.png").toExternalForm))
-//          tooltip = Tooltip("New Document... Ctrl+N")
-          onAction = (ae: ActionEvent) => { println("New toolbar button clicked") }
+          //          id = "newButton"
+          //          graphic = new ImageView(new Image(getClass.getResource("/images/paper.png").toExternalForm))
+          //          tooltip = Tooltip("New Document... Ctrl+N")
+          onAction = (ae: ActionEvent) => {
+            println("New toolbar button clicked")
+          }
         },
         new Button {
           id = "editButton"
@@ -108,7 +100,7 @@ import org.squeryl.PrimitiveTypeMode._
 
   val history = new VBox
 
-  val aListView = new ListView[String] () {
+  val aListView = new ListView[String]() {
     //articlelist
   }
 
@@ -134,13 +126,12 @@ import org.squeryl.PrimitiveTypeMode._
 
   val spv = new SplitPane {
     orientation = Orientation.VERTICAL
-    dividerPositions = 0.6
-    items += (toptabs, bottomtabs)
+    items +=(toptabs, bottomtabs)
   }
 
   val sph = new SplitPane {
     orientation = Orientation.HORIZONTAL
-    items += (lefttabs, spv)
+    items +=(lefttabs, spv)
   }
 
   val statusbar = new VBox {
@@ -162,28 +153,51 @@ import org.squeryl.PrimitiveTypeMode._
     content = maincontent
   }
 
-  stage = new PrimaryStage{
+  stage = new PrimaryStage {
     title = "Reftool 5"
-    width = AppStorage.config.width.toDouble
-    height = AppStorage.config.height.toDouble
+    width = 800
+    height = 600
     scene = myScene
     onShown = (we: WindowEvent) => {
       sph.dividerPositions = 0.25
-      ApplicationController.afterShown()
+      spv.dividerPositions = 0.6
+      try {
+        ApplicationController.afterShown()
+      } catch {
+        case e: Exception => e.printStackTrace()
+      }
     }
   }
   maincontent.prefHeight <== stage.scene.height
   maincontent.prefWidth <== stage.scene.width
 
+  def getUIsettings: String = {
+    s"${stage.width.getValue};${stage.height.getValue};${sph.dividerPositions.head};${spv.dividerPositions.head};${stage.x.getValue};${stage.y.getValue}"
+  }
+
+  def setUIsettings(s: String) = {
+    val parms = s.split(";")
+    if (parms.length == 6) {
+      stage.setWidth(parms(0).toDouble)
+      stage.setHeight(parms(1).toDouble)
+      sph.dividerPositions = parms(2).toDouble
+      spv.dividerPositions = parms(3).toDouble
+      stage.setX(parms(4).toDouble)
+      stage.setY(parms(5).toDouble)
+    }
+  }
+
   myScene.window.value.onCloseRequest = (we: WindowEvent) => {
     if (!ApplicationController.canClose)
       we.consume()
+    else {
+      ApplicationController.beforeClose()
+    }
   }
 
-  override def stopApp() {
+  override def stopApp()
+  {
     info("*************** stop app")
-    AppStorage.config.width = stage.width.toInt
-    AppStorage.config.height = stage.height.toInt
     AppStorage.save()
     sys.exit(0)
   }

@@ -84,8 +84,6 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     isDirty.value = false
   }
 
-  override def settings: String = ""
-
   class MyLine(gpRow: Int, labelText: String, rows: Int = 1) {
     val label = new Label(labelText) {
       style = "-fx-font-weight:bold"
@@ -162,4 +160,9 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
+  override def getUIsettings: String = ""
+
+  override def setUIsettings(s: String): Unit = {}
+
+  override val uisettingsID: String = "adv"
 }
