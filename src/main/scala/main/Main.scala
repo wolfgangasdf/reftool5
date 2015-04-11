@@ -169,6 +169,7 @@ import org.squeryl.PrimitiveTypeMode._
     scene = myScene
     onShown = (we: WindowEvent) => {
       sph.dividerPositions = 0.25
+      ApplicationController.afterShown()
     }
   }
   maincontent.prefHeight <== stage.scene.height

@@ -3,7 +3,6 @@ package views
 import util.ImportHelper
 
 import scalafx.scene.control._
-import scalafx.scene.control.Button._
 import scalafx.Includes._
 import scalafx.event.ActionEvent
 import scalafx.beans.property.StringProperty
@@ -12,17 +11,13 @@ import db.{ReftoolDB, Topic, Article}
 import framework.GenericView
 import org.squeryl.PrimitiveTypeMode._
 
-import scalafx.scene.layout.BorderPane
+import scalafx.scene.layout.{Priority, BorderPane}
 
 // see https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/SimpleTableViewSorted.scala
 //https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/TableWithCustomCellDemo.scala
 class ArticleListView extends GenericView("articlelistview") {
 
   var currentTopic: Topic = null
-  var currentTitle: String = null
-
-//  val etUpdatelist = new EventType[Event]("alvupdatelist") // TODO
-//  addEventHandler()
 
   val cTitle = new TableColumn[Article, String] {
     text = "Title"
@@ -73,39 +68,38 @@ class ArticleListView extends GenericView("articlelistview") {
 
   text = "Article list"
 
-  content = new BorderPane {
-    top = new ToolBar {
-      items.add(new Button("updFromBibtex") {
-        onAction = (ae: ActionEvent) => {
-          val a = alv.getSelectionModel.getSelectedItem
-          if (a != null) {
-            ImportHelper.updateArticleFromBibtex(a)
-          }
-        }
-      })
-    }
+  val lbCurrentTitle = new Label("<title>")
 
+  toolbar ++= Seq(
+    lbCurrentTitle,
+    new Button("updFromBibtex") {
+      onAction = (ae: ActionEvent) => {
+        val a = alv.getSelectionModel.getSelectedItem
+        if (a != null) {
+          ImportHelper.updateArticleFromBibtex(a)
+        }
+      }
+    }
+  )
+
+  content = new BorderPane {
     center = alv
   }
 
   def setArticles(al: List[Article], title: String = null): Unit = {
     articles.clear()
     articles ++= al
-    currentTitle = title
+    lbCurrentTitle.text = title
   }
 
   def setArticlesTopic(topic: Topic) {
     inTransaction {
       if (topic.title == ReftoolDB.TORPHANS) {
-        // TODO
-//        val res = from(ReftoolDB.articles)(a =>
-//          where(notExists(
-//            from(ReftoolDB.topics2articles)(t2a => where(t2a.ARTICLE === a.id) select t2a.ARTICLE)
-//              //            ))
-//            )
-//            )
-//          setArticles(res))
-//
+        val q =
+          ReftoolDB.articles.where(a =>
+            a.id notIn from(ReftoolDB.topics2articles)(t2a => select(t2a.ARTICLE))
+          )
+        setArticles(q.toList, "Orphaned articles")
       } else
         setArticles(topic.articles.toList, s"Articles in [${topic.title}]")
     }

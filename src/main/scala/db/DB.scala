@@ -46,7 +46,15 @@ class Article(var entrytype: String = "",
 
   lazy val topics = ReftoolDB.topics2articles.right(this)
 
-  override def toString: String = "" + id + ":" + title
+  def headString(s: String, len: Int) = {
+    if (s.length < len) s else s.substring(0, len - 1)
+  }
+  override def toString: String = {
+    if (bibtexid == "")
+      headString(authors, 10) + ":" + headString(title, 10)
+    else
+      bibtexid
+  }
 
   @Transient var testthing = "" // not in DB!
 
@@ -56,9 +64,23 @@ class Topic(var title: String = "", var parent: Long = 0, var expanded: Boolean 
   lazy val articles = ReftoolDB.topics2articles.left(this)
   lazy val childrenTopics = ReftoolDB.topics.where( t => t.parent === id)
   lazy val parentTopic = ReftoolDB.topics.where( t => t.id === parent)
+
+  def AlphaNumStringSorter(string1: String, string2: String): Boolean = {
+    val reNum = """(\d+)(.*)""".r
+    (string1, string2) match {
+      case (reNum(n1, s1), reNum(n2, s2)) =>
+        if (n1.toInt == n2.toInt) {
+          if (n1.length != n2.length)
+            n1.length > n2.length
+          else
+            s1 < s2
+        } else n1.toInt < n2.toInt
+      case _ => string1 < string2
+    }
+  }
+
   def orderedChilds = inTransaction {
-    from(childrenTopics) (c => select(c) orderBy c.title.asc)
-    // TODO sort for beginning number until other char... 0000 before 00 etc
+    childrenTopics.toList.sortWith( (s1, s2) => AlphaNumStringSorter(s1.title, s2.title))
   }
   override def toString: String = title
 }
