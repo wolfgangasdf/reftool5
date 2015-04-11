@@ -1,22 +1,17 @@
 package util
 
-import org.jbibtex.Key
+import org.jbibtex.{BibTeXEntry, Key}
 import org.squeryl.PrimitiveTypeMode._
 
 import db.{ReftoolDB, Article, Topic}
 import framework.Logging
 
-import java.io.{StringReader, FileReader, FileFilter, File}
+import java.io.{StringReader, FileFilter, File}
 
 import scala.util.Random
 
 import scala.collection.JavaConversions._
 
-
-/*
-TODO:
-  this is completely untested!
- */
 
 object ImportHelper extends Logging {
 
@@ -34,7 +29,7 @@ object ImportHelper extends Logging {
   def getImportFolder(num: Int) = AppStorage.config.pdfpath + "/" + AppStorage.config.importfolderprefix + num
 
   // topic OR article can be NULL, but both should not be set!
-  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article): Unit = {
+  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article): Article = {
     debug(s"importDocument: topic=$topic article=$article sourceFile=$sourceFile")
     assert(!( (article == null) == (topic == null) )) // xor for now
 
@@ -77,25 +72,34 @@ object ImportHelper extends Logging {
     debug("create article...")
     val relnewf = newf.getAbsolutePath.substring( (AppStorage.config.pdfpath + "/").length )
     var a = article
-    if (a == null) {
+    if (a == null) { // no article given, create new and get bibtex etc.
       // create new article
-      a = new Article("imported", sourceFile.getName, pdflink = relnewf)
-    } else {
+      a = new Article(title = sourceFile.getName, pdflink = relnewf)
+      debug("parse for DOI...")
+      var doi = ""
+      if (newf.getName.endsWith(".pdf")) {
+        doi = PdfHelper.getDOI(newf)
+        if (doi == "") {
+          // TODO
+        } else {
+          a.doi = doi
+        }
+        if (doi != "") {
+          debug("retrieve bibtex...")
+          a = updateBibtexFromDoi(a)
+          debug("update document data from bibtex...")
+          a = updateArticleFromBibtex(a)
+          debug("save article...")
+          inTransaction {
+            ReftoolDB.articles.insertOrUpdate(a)
+          }
+        }
+      }
+    } else { // existing article!
       // article given, add document
       if (a.pdflink == "") a.pdflink += relnewf else a.pdflink += "\n" + relnewf
     }
 
-    debug("parse for DOI...")
-    var doi = ""
-    if (newf.getName.endsWith(".pdf")) {
-      doi = PdfHelper.getDOI(newf)
-      if (doi != "") {
-        // TODO
-      } else {
-        a.doi = doi
-      }
-
-    }
 
     debug("save article...")
     inTransaction {
@@ -103,38 +107,64 @@ object ImportHelper extends Logging {
       if (topic != null) a.topics.associate(topic)
     }
 
-    // call doi updater on article if no article given
-    if (article == null && doi != "") {
-      debug("retrieve bibtex...")
-      updateBibtexFromDoi(a)
-      debug("update document data from bibtex...")
-      updateArticleFromBibtex(a)
-    }
+    a
   }
   
-  def updateBibtexFromDoi(a: Article): Unit = {
+  def updateBibtexFromDoi(a: Article): Article = {
     // http://labs.crossref.org/citation-formatting-service/
     import scalaj.http._ // or probably use better http://www.bigbeeconsultants.co.uk/content/bee-client ? but has deps
     val response = Http("http://dx.doi.org/" + a.doi).
-        header("Accept", "text/bibliography; style=bibtex").option(HttpOptions.followRedirects(true)).asString
+        header("Accept", "text/bibliography; style=bibtex").option(HttpOptions.followRedirects(shouldFollow = true)).asString
+    debug(s"""curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
     if (response.code == 200) {
       a.bibtexentry = response.body
     }
+    a
   }
 
-  def updateArticleFromBibtex(a: Article): Unit = {
+  def getPlainTextField(btentry: BibTeXEntry, oldString: String, field: Key): String = {
+    val btfield = btentry.getField(field)
+    var s = oldString
+    if (btfield != null) {
+      s = btfield.toUserString
+      if (s.contains('\\') || s.contains('{')) {
+        val latexParser = new org.jbibtex.LaTeXParser()
+        val latexObjects = latexParser.parse(s)
+        val latexPrinter = new org.jbibtex.LaTeXPrinter()
+        s = latexPrinter.print(latexObjects)
+      }
+    }
+    s
+  }
+
+  // https://github.com/jbibtex/jbibtex
+  def updateArticleFromBibtex(a: Article): Article = {
+    val months = List("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
     val btparser = new org.jbibtex.BibTeXParser
+    // debug("bibtexentry: \n" + a.bibtexentry)
     val btdb = btparser.parse(new StringReader(a.bibtexentry))
     val btentries = btdb.getEntries
     if (btentries.size() == 1) {
       val (btkey, btentry) = btentries.head
-      debug(s"key=$btkey val=$btentry")
+      // debug(s"key=$btkey val=$btentry")
+      // only update these if not present
+      if (a.bibtexid == "") a.bibtexid = btentry.getKey.getValue
+      if (a.entrytype == "") a.entrytype = btentry.getType.getValue
+      // update these always!
+      a.title = getPlainTextField(btentry, a.title, BibTeXEntry.KEY_TITLE)
+      a.authors = getPlainTextField(btentry, a.authors, BibTeXEntry.KEY_AUTHOR)
+      a.journal = getPlainTextField(btentry, a.journal, BibTeXEntry.KEY_JOURNAL)
+      a.linkurl = getPlainTextField(btentry, a.linkurl, BibTeXEntry.KEY_URL)
+      a.doi = getPlainTextField(btentry, a.doi, BibTeXEntry.KEY_DOI)
+      var year = getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
+      val month = getPlainTextField(btentry, "", BibTeXEntry.KEY_MONTH).toLowerCase
+      val monthi = months.indexOf(month)
+      if (year != "") {
+        if (monthi > -1) year += (monthi + 1).formatted("%02d")
+        a.pubdate = year
+      }
     }
-    // TODO
-    // parse bibtex, update empty fields in article
-    // https://github.com/jbibtex/jbibtex
-
-    // parse fields via latexparser: https://github.com/jbibtex/jbibtex
+    a
   }
 
 }

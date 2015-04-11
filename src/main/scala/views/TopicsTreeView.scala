@@ -3,7 +3,6 @@ package views
 import scala.collection.mutable
 import scala.collection.JavaConversions._
 
-import scalafx.event.ActionEvent
 import scalafx.scene.control._
 import scalafx.scene.effect.{DropShadow, InnerShadow}
 import scalafx.scene.image.Image
@@ -20,13 +19,6 @@ import db.{Article, ReftoolDB, Topic}
 import framework.{MyAction, ApplicationController, Logging, GenericView}
 import util.ImportHelper
 
-
-
-
-/*  todo
-
-onleft: also clear formatting
- */
 
 class myTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
   var hasloadedchilds: Boolean = false
@@ -176,7 +168,9 @@ class myTreeCell extends TreeCell[Topic] with Logging {
       debug("  dropped files: " + files)
       for (f <- files) {
         debug(s" importing file $f treeItem=$treeItem")
-        ImportHelper.importDocument(f, treeItem.value.getValue, null)
+        val a = ImportHelper.importDocument(f, treeItem.value.getValue, null)
+        ApplicationController.submitShowArticlesFromTopic(treeItem.value.getValue)
+        ApplicationController.submitRevealArticleInList(a)
       }
       dropOk = true
     }
