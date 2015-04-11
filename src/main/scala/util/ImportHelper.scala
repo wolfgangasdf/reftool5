@@ -154,10 +154,10 @@ object ImportHelper extends Logging {
         doi = PdfHelper.getDOI(newf)
         if (doi == "") {
           doi = getDOImanually(sourceFile.getName)
-        } else {
-          a.doi = doi
         }
+        debug("doi = " + a.doi)
         if (doi != "") {
+          a.doi = doi
           debug("retrieve bibtex...")
           a = updateBibtexFromDoi(a)
           debug("update document data from bibtex...")
