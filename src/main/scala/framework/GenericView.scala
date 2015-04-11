@@ -89,28 +89,50 @@ class ViewContainer extends Pane with Logging {
   ApplicationController.containers += this
 }
 
-class MyAction(category: String, title: String) {
-  var tooltipString: String = ""
-  var image: Image = null // TODO
+class MyAction(category: String, title: String) extends Logging {
+  private var _tooltipString: String = ""
+  private var _image: Image = null
+  private var _enabled: Boolean = true
   var action: () => Unit = null
-  def getToolbarButton = {
+
+  // TODO keyboard shortcut
+
+  // must use getter & setter because toolbarbutton etc has to be modified after it's instantiated
+  def image = _image
+  def image_= (i: Image): Unit = {
+    _image = i
+    toolbarButton.graphic = new ImageView(i)
+    toolbarButton.text = ""
+    menuEntry.graphic = new ImageView(i)
+  }
+
+  def tooltipString = _tooltipString
+  def tooltipString_= (s: String): Unit = {
+    _tooltipString = s
+    toolbarButton.tooltip = new Tooltip { text = s }
+  }
+
+  def enabled = _enabled
+  def enabled_= (b: Boolean): Unit = {
+    _enabled = b
+    toolbarButton.disable = !b
+    menuEntry.disable = !b
+  }
+
+  val toolbarButton = {
     // TODO transparent: http://stackoverflow.com/questions/17708022/javafx-toolbar-with-imagebuttons
     new Button {
-      tooltip = tooltipString // TODO looks shitty
+      text = title
       onAction = (ae: ActionEvent) => action()
-      if (image == null)
-        text = title
-      else
-        graphic = new ImageView(image)
     }
   }
-  def getMenuEntry = {
+  val menuEntry = {
     new MenuItem(title) {
       onAction = (ae: ActionEvent) => action()
-      if (image != null) graphic = new ImageView(image)
       // TODO show tooltip in statusbar if mouse over
     }
   }
+  // TODO: add automatically to menu?
 
 }
 

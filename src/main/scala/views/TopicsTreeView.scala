@@ -6,6 +6,7 @@ import scala.collection.JavaConversions._
 import scalafx.event.ActionEvent
 import scalafx.scene.control._
 import scalafx.scene.effect.{DropShadow, InnerShadow}
+import scalafx.scene.image.Image
 import scalafx.scene.input._
 import scalafx.Includes._
 import scalafx.scene.layout.BorderPane
@@ -16,7 +17,7 @@ import javafx.scene.{control => jfxsc}
 import org.squeryl.PrimitiveTypeMode._
 
 import db.{Article, ReftoolDB, Topic}
-import framework.{ApplicationController, Logging, GenericView}
+import framework.{MyAction, ApplicationController, Logging, GenericView}
 import util.ImportHelper
 
 
@@ -279,42 +280,43 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   text = "Topics"
 
-  toolbar ++= Seq(
-    new Button("reload") {
-      onAction = (ae: ActionEvent) => loadTopics()
-    },
-    new Button("+A") {
-      onAction = (ae: ActionEvent) => {
-        val si = tv.selectionModel.value.getSelectedItems
-        if (si.size() == 1) {
-          inTransaction {
-            val t = ReftoolDB.topics.get(si.head.getValue.id)
-            val a = new Article(title = "new content")
-            ReftoolDB.articles.insert(a)
-            a.topics.associate(t)
-            ApplicationController.submitShowArticlesFromTopic(t)
-            ApplicationController.submitRevealArticleInList(a)
-          }
-        }
-      }
-    },
-    new Button("+T") {
-      onAction = (ae: ActionEvent) => {
-        val si = tv.selectionModel.value.getSelectedItems
-        val pid = if (si.size() == 1) si.head.getValue.id else troot.id
-        val t2 = new Topic(title = "new topic", parent = pid)
+  val aAddArticle = new MyAction("Topic", "Add empty article") {
+    image = new Image(getClass.getResource("/images/new_con.gif").toExternalForm)
+    tooltipString = "Create new article in current topic"
+    action = () => {
+      val si = tv.selectionModel.value.getSelectedItems
+      if (si.size() == 1) {
         inTransaction {
-          ReftoolDB.topics.insert(t2)
-          val pt = ReftoolDB.topics.get(pid)
-          pt.expanded = true
-          ReftoolDB.topics.update(pt)
-          debug(" add topic " + t2 + "  id=" + t2.id)
+          val t = ReftoolDB.topics.get(si.head.getValue.id)
+          val a = new Article(title = "new content")
+          ReftoolDB.articles.insert(a)
+          a.topics.associate(t)
+          ApplicationController.submitShowArticlesFromTopic(t)
+          ApplicationController.submitRevealArticleInList(a)
         }
-        loadTopics() // refresh
-        revealAndSelect(t2)
       }
     }
-  )
+  }
+  val aAddTopic = new MyAction("Topic", "Add new topic") {
+    image = new Image(getClass.getResource("/images/addtsk_tsk.gif").toExternalForm)
+    tooltipString = "Add topic below selected topic"
+    action = () => {
+      val si = tv.selectionModel.value.getSelectedItems
+      val pid = if (si.size() == 1) si.head.getValue.id else troot.id
+      val t2 = new Topic(title = "new topic", parent = pid)
+      inTransaction {
+        ReftoolDB.topics.insert(t2)
+        val pt = ReftoolDB.topics.get(pid)
+        pt.expanded = true
+        ReftoolDB.topics.update(pt)
+        debug(" add topic " + t2 + "  id=" + t2.id)
+      }
+      loadTopics() // refresh
+      revealAndSelect(t2)
+    }
+  }
+
+  toolbar ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton )
 
   content = new BorderPane {
     center = tv
