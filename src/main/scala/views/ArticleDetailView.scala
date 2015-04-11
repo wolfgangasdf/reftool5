@@ -2,6 +2,7 @@ package views
 
 import scalafx.event.ActionEvent
 import scalafx.scene.control.Alert.AlertType
+import scalafx.scene.image.{ImageView, Image}
 import scalafx.scene.layout.ColumnConstraints._
 import scalafx.scene.control._
 import scalafx.Includes._
@@ -11,7 +12,7 @@ import scalafx.scene.layout._
 
 import org.squeryl.PrimitiveTypeMode._
 
-import framework.{ApplicationController, Logging, GenericView}
+import framework.{MyAction, ApplicationController, Logging, GenericView}
 import db.{ReftoolDB, Article}
 
 
@@ -144,10 +145,13 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   val lbCurrentArticle = new Label("<article>")
 
-  toolbar ++= Seq(
-    new Button("save") {
-      onAction = (ae: ActionEvent) => saveArticle()
-  })
+  val aSave = new MyAction("Article", "Save") {
+    tooltip = "Save changes to current article"
+    image = new Image(getClass.getResource("/images/save_edit.gif").toExternalForm)
+    action = () => saveArticle()
+  }
+
+  toolbar ++= Seq(aSave.getToolbarButton)
 
   content = new BorderPane {
     top = lbCurrentArticle

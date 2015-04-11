@@ -5,6 +5,8 @@ import util.AppStorage
 
 import scala.collection.mutable.ArrayBuffer
 import scalafx.beans.property.BooleanProperty
+import scalafx.event.ActionEvent
+import scalafx.scene.image.{ImageView, Image}
 import scalafx.scene.{Node, Group}
 import scalafx.scene.control._
 import scalafx.scene.control.Tab._
@@ -85,6 +87,31 @@ class ViewContainer extends Pane with Logging {
   }
 
   ApplicationController.containers += this
+}
+
+class MyAction(category: String, title: String) {
+  var tooltipString: String = ""
+  var image: Image = null // TODO
+  var action: () => Unit = null
+  def getToolbarButton = {
+    // TODO transparent: http://stackoverflow.com/questions/17708022/javafx-toolbar-with-imagebuttons
+    new Button {
+      tooltip = tooltipString // TODO looks shitty
+      onAction = (ae: ActionEvent) => action()
+      if (image == null)
+        text = title
+      else
+        graphic = new ImageView(image)
+    }
+  }
+  def getMenuEntry = {
+    new MenuItem(title) {
+      onAction = (ae: ActionEvent) => action()
+      if (image != null) graphic = new ImageView(image)
+      // TODO show tooltip in statusbar if mouse over
+    }
+  }
+
 }
 
 object ApplicationController extends Logging {
