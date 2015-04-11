@@ -1,5 +1,6 @@
 package framework
 
+import db.{Topic, Article}
 import util.AppStorage
 
 import scala.collection.mutable.ArrayBuffer
@@ -110,4 +111,30 @@ object ApplicationController extends Logging {
     views.foreach(c => c.setUIsettings(AppStorage.config.uiSettings.getOrElse(c.uisettingsID, "")))
   }
 
+  val articleChangedListeners = new ArrayBuffer[(Article) => Unit]()
+  def submitArticleChanged(a: Article): Unit = {
+    articleChangedListeners.foreach( acl => acl(a) )
+  }
+
+  val showArticleListeners = new ArrayBuffer[(Article) => Unit]()
+  def submitShowArticle(a: Article): Unit = {
+    showArticleListeners.foreach( acl => acl(a) )
+  }
+
+  val showArticlesListListeners = new ArrayBuffer[(List[Article], String) => Unit]()
+  def submitShowArticlesList(al: List[Article], text: String): Unit = {
+    showArticlesListListeners.foreach( acl => acl(al, text) )
+  }
+
+  val showArticlesFromTopicListeners = new ArrayBuffer[(Topic) => Unit]()
+  def submitShowArticlesFromTopic(t: Topic): Unit = {
+    showArticlesFromTopicListeners.foreach( acl => acl(t) )
+  }
+
+  val revealArticleInListListeners = new ArrayBuffer[(Article) => Unit]()
+  def submitRevealArticleInList(a: Article) = {
+    revealArticleInListListeners.foreach( acl => acl(a) )
+  }
+
+  // TODO show topic things
 }

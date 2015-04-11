@@ -11,7 +11,7 @@ import scalafx.scene.layout._
 
 import org.squeryl.PrimitiveTypeMode._
 
-import framework.{Logging, GenericView}
+import framework.{ApplicationController, Logging, GenericView}
 import db.{ReftoolDB, Article}
 
 
@@ -34,6 +34,8 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   }
 
   var article: Article = null
+
+  ApplicationController.showArticleListeners += ( (a: Article) => setArticle(a) )
 
   def setArticle(a: Article) {
     val doit = if (isDirty.value) {
@@ -82,6 +84,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
       ReftoolDB.articles.update(article)
     }
     isDirty.value = false
+    ApplicationController.submitArticleChanged(article)
   }
 
   class MyLine(gpRow: Int, labelText: String, rows: Int = 1) {
