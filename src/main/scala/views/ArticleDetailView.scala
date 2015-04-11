@@ -181,7 +181,14 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
-  toolbar ++= Seq(aSave.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateFromDOI.toolbarButton)
+  val aTest = new MyAction("Test", "test") {
+    action = () => {
+      val res = ImportHelper.getDOImanually("Attosecond gamma-ray pulses via nonlinear Compton scattering in the radiation dominated regime")
+      debug("res = " + res)
+    }
+  }
+
+  toolbar ++= Seq(aSave.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateFromDOI.toolbarButton, aTest.toolbarButton)
 
   content = new BorderPane {
     top = lbCurrentArticle

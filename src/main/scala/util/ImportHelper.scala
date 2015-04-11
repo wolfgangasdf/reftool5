@@ -11,22 +11,95 @@ import java.io.{StringReader, FileFilter, File}
 import scala.util.Random
 
 import scala.collection.JavaConversions._
+import scalafx.event.ActionEvent
+import scalafx.scene.Scene
+import scalafx.scene.control._
+import scalafx.scene.control.Button._
+import scalafx.scene.layout.{Priority, HBox, VBox}
+import scalafx.scene.layout.HBox._
+import scalafx.scene.web.WebView
+import scalafx.stage.{Modality, Stage}
+import scalafx.Includes._
 
 
 object ImportHelper extends Logging {
 
-  def main(args: Array[String]): Unit = {
-    // test doi extraction from pdf
-//    val f = new File("/Unencrypted_Data/incoming/firefox/A differentiated plane wave as an electromagnetic vortex8110565808763115773.pdf")
-//    importDocument(f, null, null)
-
-    // test bibtex retrieval from doi
-    val a = new Article()
-    a.doi = "10.1364/OME.4.002355"
-    updateBibtexFromDoi(a)
-  }
+//  def main(args: Array[String]): Unit = {
+//    // test doi extraction from pdf
+//    if (1 == 0) {
+//      val f = new File("/Unencrypted_Data/incoming/firefox/A differentiated plane wave as an electromagnetic vortex8110565808763115773.pdf")
+//      importDocument(f, null, null)
+//    } else {
+//      // test bibtex retrieval from doi
+//      val a = new Article()
+//      a.doi = "10.1364/OME.4.002355"
+//      updateBibtexFromDoi(a)
+//    }
+//
+//  }
 
   def getImportFolder(num: Int) = AppStorage.config.pdfpath + "/" + AppStorage.config.importfolderprefix + num
+
+  def getDOImanually(iniSearch: String): String = {
+    var doi = ""
+    val webView = new WebView {
+      prefHeight = 200
+    }
+    val webEngine = webView.engine
+
+    val tfSearch = new TextField {
+      text = iniSearch
+    }
+    val btSearch = new Button("Search!") {
+      onAction = (ae: ActionEvent) => {
+        webEngine.load("http://search.crossref.org/?q=" + tfSearch.text.value)
+      }
+    }
+    val tfDOI = new TextField {
+      hgrow = Priority.Always
+      onAction = (ae: ActionEvent) => {
+        doi = text.value
+        scene.value.getWindow.asInstanceOf[javafx.stage.Stage].close()
+      }
+    }
+
+    val myContent = new VBox {
+      children ++= Seq(
+        new Label("Cannot extract the DOI from the pdf. Please either search for title or so, you can also enter the DOI manually here, or see below."),
+        new HBox { children ++= Seq(tfSearch, btSearch) },
+        webView,
+        new Separator(),
+        new HBox { children ++= Seq( new Label("Or enter DOI here:"), tfDOI ) },
+        new Separator(),
+        new Label("Or paste the bibtex later manually.")
+      )
+    }
+    val dialogStage = new Stage {
+      width = 800
+      height = 600
+      val initModality = Modality.WINDOW_MODAL
+      initOwner(main.Main.stage)
+      scene = new Scene {
+        content = new ScrollPane {
+          content = myContent
+        }
+      }
+    }
+    myContent.prefHeight <== dialogStage.scene.height
+    myContent.prefWidth <== dialogStage.scene.width
+
+    webEngine.location.onChange( {
+      val newl = webEngine.location.value
+      if (newl.contains("dx.doi.org")) {
+        doi = newl.replaceAll("http://dx.doi.org/", "")
+        dialogStage.close()
+      }
+    } )
+
+    dialogStage.showAndWait()
+
+    doi
+  }
 
   // topic OR article can be NULL, but both should not be set!
   def importDocument(sourceFile: java.io.File, topic: Topic, article: Article): Article = {
@@ -80,7 +153,7 @@ object ImportHelper extends Logging {
       if (newf.getName.endsWith(".pdf")) {
         doi = PdfHelper.getDOI(newf)
         if (doi == "") {
-          // TODO
+          doi = getDOImanually(sourceFile.getName)
         } else {
           a.doi = doi
         }
