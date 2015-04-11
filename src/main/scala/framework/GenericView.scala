@@ -14,19 +14,6 @@ import scalafx.Includes._
 import scalafx.scene.layout.{HBox, Pane}
 
 
-/* TODO
-add communication framework.
-
-add probably also background-db-access-thing?
-I could put all DB stuff in background thread? simply as in RunUI but I need to make the backend for this.
-  idea: preserve order of things executed via RunDB(f1); RunDB(f2), but return immediately.
-  make a RunDBwait(f) does all DB stuff until result of f can be returned
-this works well if I
-  only make atomic modifications of DB
-but is overkill if everything is fast.
-  can later simply override inTransaction and Transaction?!
- */
-
 trait HasUISettings {
 
   val uisettingsID: String
@@ -45,8 +32,6 @@ abstract class GenericView(id: String) extends Tab with HasUISettings with Loggi
   def canClose: Boolean
 }
 
-// this is a tab pane, use it for views!
-// add views to "tabs"
 class ViewContainer extends Pane with Logging {
 
   val group = new Group // group needed to put toolbar next to tabs
@@ -185,5 +170,4 @@ object ApplicationController extends Logging {
     revealArticleInListListeners.foreach( acl => acl(a) )
   }
 
-  // TODO show topic things
 }

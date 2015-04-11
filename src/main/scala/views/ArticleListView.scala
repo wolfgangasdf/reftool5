@@ -4,7 +4,6 @@ import util.ImportHelper
 
 import scalafx.scene.control._
 import scalafx.Includes._
-import scalafx.event.ActionEvent
 import scalafx.beans.property.StringProperty
 import scalafx.collections.ObservableBuffer
 import db.{ReftoolDB, Topic, Article}
@@ -70,17 +69,7 @@ class ArticleListView extends GenericView("articlelistview") {
 
   val lbCurrentTitle = new Label("<title>")
 
-  val aUpdateFromBibtex = new MyAction("Article", "Update from bibtex") {
-    tooltipString = "Update article fields from bibtex (not overwriting review!)"
-    image = new Image(getClass.getResource("/images/bib2article.png").toExternalForm)
-    action = () => {
-      val a = alv.getSelectionModel.getSelectedItem
-      if (a != null) {
-        ImportHelper.updateArticleFromBibtex(a)
-      }
-    }
-  }
-  toolbar ++= Seq( lbCurrentTitle, aUpdateFromBibtex.toolbarButton )
+  toolbar ++= Seq( lbCurrentTitle )
 
   content = new BorderPane {
     center = alv
@@ -91,7 +80,7 @@ class ArticleListView extends GenericView("articlelistview") {
   ApplicationController.revealArticleInListListeners += ( (a: Article) => alv.getSelectionModel.select(a) )
   ApplicationController.articleChangedListeners += ( (a: Article) => {
     val oldart = articles.find(oa => oa.id == a.id)
-    if (oldart != None) { articles.replaceAll(oldart.get, a) }
+    if (oldart.isDefined) { articles.replaceAll(oldart.get, a) }
   })
 
   def setArticles(al: List[Article], title: String = null): Unit = {

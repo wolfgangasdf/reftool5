@@ -1,13 +1,14 @@
 package views
 
-import scalafx.event.ActionEvent
+import util.ImportHelper
+
 import scalafx.scene.control.Alert.AlertType
-import scalafx.scene.image.{ImageView, Image}
+import scalafx.scene.image.Image
 import scalafx.scene.layout.ColumnConstraints._
 import scalafx.scene.control._
 import scalafx.Includes._
 import scalafx.geometry.{Insets, Pos}
-import scalafx.scene.control.{Label, TextArea, Button}
+import scalafx.scene.control.{Label, TextArea}
 import scalafx.scene.layout._
 
 import org.squeryl.PrimitiveTypeMode._
@@ -22,6 +23,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   isDirty.onChange({
     text = if (isDirty.value) title + " *" else title
     aSave.enabled = isDirty.value
+    aUpdateFromBibtex.enabled = !isDirty.value
   })
 
   override def canClose = {
@@ -154,7 +156,32 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     action = () => saveArticle()
   }
 
-  toolbar ++= Seq(aSave.toolbarButton)
+  val aUpdateFromBibtex = new MyAction("Article", "Update from bibtex") {
+    tooltipString = "Update article fields from bibtex (not overwriting review!)"
+    image = new Image(getClass.getResource("/images/bib2article.png").toExternalForm)
+    action = () => {
+      val newa = ImportHelper.updateArticleFromBibtex(article)
+      inTransaction {
+        ReftoolDB.articles.update(newa)
+      }
+      ApplicationController.submitArticleChanged(newa)
+      setArticle(newa)
+    }
+  }
+
+  val aUpdateFromDOI = new MyAction("Article", "AfromDOI") {
+    tooltipString = "Update bibtex from DOI"
+    action = () => {
+      val newa = ImportHelper.updateBibtexFromDoi(article)
+      inTransaction {
+        ReftoolDB.articles.update(newa)
+      }
+      ApplicationController.submitArticleChanged(newa)
+      setArticle(newa)
+    }
+  }
+
+  toolbar ++= Seq(aSave.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateFromDOI.toolbarButton)
 
   content = new BorderPane {
     top = lbCurrentArticle
