@@ -19,7 +19,10 @@ import db.{ReftoolDB, Article}
 class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   val title = "Article details"
-  isDirty.onChange({ text = if (isDirty.value) title + " *" else title })
+  isDirty.onChange({
+    text = if (isDirty.value) title + " *" else title
+    aSave.enabled = isDirty.value
+  })
 
   override def canClose = {
     if (isDirty.value) {
@@ -146,12 +149,12 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   val lbCurrentArticle = new Label("<article>")
 
   val aSave = new MyAction("Article", "Save") {
-    tooltip = "Save changes to current article"
+    tooltipString = "Save changes to current article"
     image = new Image(getClass.getResource("/images/save_edit.gif").toExternalForm)
     action = () => saveArticle()
   }
 
-  toolbar ++= Seq(aSave.getToolbarButton)
+  toolbar ++= Seq(aSave.toolbarButton)
 
   content = new BorderPane {
     top = lbCurrentArticle

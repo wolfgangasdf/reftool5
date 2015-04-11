@@ -8,9 +8,10 @@ import scalafx.event.ActionEvent
 import scalafx.beans.property.StringProperty
 import scalafx.collections.ObservableBuffer
 import db.{ReftoolDB, Topic, Article}
-import framework.{ApplicationController, GenericView}
+import framework.{MyAction, ApplicationController, GenericView}
 import org.squeryl.PrimitiveTypeMode._
 
+import scalafx.scene.image.Image
 import scalafx.scene.layout.BorderPane
 
 // see https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/SimpleTableViewSorted.scala
@@ -69,17 +70,17 @@ class ArticleListView extends GenericView("articlelistview") {
 
   val lbCurrentTitle = new Label("<title>")
 
-  toolbar ++= Seq(
-    lbCurrentTitle,
-    new Button("updFromBibtex") {
-      onAction = (ae: ActionEvent) => {
-        val a = alv.getSelectionModel.getSelectedItem
-        if (a != null) {
-          ImportHelper.updateArticleFromBibtex(a)
-        }
+  val aUpdateFromBibtex = new MyAction("Article", "Update from bibtex") {
+    tooltipString = "Update article fields from bibtex (not overwriting review!)"
+    image = new Image(getClass.getResource("/images/bib2article.png").toExternalForm)
+    action = () => {
+      val a = alv.getSelectionModel.getSelectedItem
+      if (a != null) {
+        ImportHelper.updateArticleFromBibtex(a)
       }
     }
-  )
+  }
+  toolbar ++= Seq( lbCurrentTitle, aUpdateFromBibtex.toolbarButton )
 
   content = new BorderPane {
     center = alv
