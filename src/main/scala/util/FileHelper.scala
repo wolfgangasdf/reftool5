@@ -7,6 +7,7 @@ package util
  * Time: 18:47
  * To change this template use File | Settings | File Templates.
  */
+
 import java.io._
 
 object FileHelper {
@@ -37,5 +38,15 @@ object FileHelper {
     val name = f.substring(0, f.lastIndexOf('.'))
     (name, extension)
   }
+  def openDocument(relPath: String) = {
+    import java.awt.Desktop
+    if (Desktop.isDesktopSupported) {
+      val desktop = Desktop.getDesktop
+      if (desktop.isSupported(Desktop.Action.OPEN)) {
+        desktop.open(new File(AppStorage.config.pdfpath + "/" + relPath))
+      }
+    }
+  }
+
 }
 

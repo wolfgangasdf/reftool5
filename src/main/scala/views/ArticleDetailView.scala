@@ -24,6 +24,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     text = if (isDirty.value) title + " *" else title
     aSave.enabled = isDirty.value
     aUpdateFromBibtex.enabled = !isDirty.value
+    aUpdateFromDOI.enabled = !isDirty.value
   })
 
   override def canClose = {
@@ -183,6 +184,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   }
 
   val aTest = new MyAction("Test", "test") {
+    enabled = true
     action = () => {
       val res = ImportHelper.getDOImanually("Attosecond gamma-ray pulses via nonlinear Compton scattering in the radiation dominated regime")
       debug("res = " + res)

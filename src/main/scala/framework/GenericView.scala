@@ -77,7 +77,7 @@ class ViewContainer extends Pane with Logging {
 class MyAction(val category: String, val title: String) extends Logging {
   private var _tooltipString: String = ""
   private var _image: Image = null
-  private var _enabled: Boolean = true
+  private var _enabled: Boolean = false
   var action: () => Unit = null
 
   // TODO keyboard shortcut
@@ -105,7 +105,6 @@ class MyAction(val category: String, val title: String) extends Logging {
   }
 
   val toolbarButton = {
-    // TODO transparent: http://stackoverflow.com/questions/17708022/javafx-toolbar-with-imagebuttons
     new Button {
       text = title
       onAction = (ae: ActionEvent) => action()
@@ -117,7 +116,7 @@ class MyAction(val category: String, val title: String) extends Logging {
       // TODO show tooltip in statusbar if mouse over
     }
   }
-
+  enabled = false
   ApplicationController.actions += this
 }
 
