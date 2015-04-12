@@ -1,24 +1,19 @@
 package views
 
-import javafx.util.Callback
 
-import util.{StringHelper, ImportHelper}
+import db.{Article, ReftoolDB, Topic}
+import framework.{ApplicationController, GenericView, MyAction}
+import org.squeryl.PrimitiveTypeMode._
+import util.StringHelper
 
-import scalafx.geometry.Insets
-import scalafx.scene
-import scalafx.scene.control.Alert.AlertType
-import scalafx.scene.control._
 import scalafx.Includes._
 import scalafx.beans.property.StringProperty
 import scalafx.collections.ObservableBuffer
-import db.{ReftoolDB, Topic, Article}
-import framework.{MyAction, ApplicationController, GenericView}
-import org.squeryl.PrimitiveTypeMode._
-
+import scalafx.geometry.Insets
+import scalafx.scene.control._
 import scalafx.scene.image.Image
 import scalafx.scene.layout._
-import scalafx.scene.layout.VBox._
-import scalafx.scene.paint.{Color, Paint}
+import scalafx.scene.paint.Color
 
 // see https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/SimpleTableViewSorted.scala
 //https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/TableWithCustomCellDemo.scala
