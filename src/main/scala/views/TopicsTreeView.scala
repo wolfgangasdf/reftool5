@@ -17,7 +17,7 @@ import org.squeryl.PrimitiveTypeMode._
 
 import db.{Article, ReftoolDB, Topic}
 import framework.{MyAction, ApplicationController, Logging, GenericView}
-import util.ImportHelper
+import util.{DnDHelper, ImportHelper}
 
 
 class myTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
@@ -79,9 +79,9 @@ class myTreeCell extends TreeCell[Topic] with Logging {
   onDragDetected = (me: MouseEvent) => {
     val db = treeView.value.startDragAndDrop(TransferMode.MOVE)
     val cont = new ClipboardContent()
-    cont.putString(TopicsTreeView.dataFormatTopicsTreeItem) // can't easily make custom DataFormats on mac (!)
+    cont.putString("topic") // can't easily make custom DataFormats on mac (!)
     db.delegate.setContent(cont)
-    myTreeCell.draggedTreeItem = treeItem.value
+    DnDHelper.topicTreeItem = treeItem.value
     me.consume()
   }
 
@@ -126,13 +126,17 @@ class myTreeCell extends TreeCell[Topic] with Logging {
   onDragOver = (de: DragEvent) => {
     debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}")
     clearDnDFormatting()
-    // val dropPos = getDropPositionScroll(de)
-    if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == TopicsTreeView.dataFormatTopicsTreeItem) {
-      val dti = myTreeCell.draggedTreeItem //de.dragboard.content(TopicsTreeView.treeItemDataFormat).asInstanceOf[TreeItem[Topic]]
+    if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "topic") {
+      val dti = DnDHelper.topicTreeItem
       if (dti.getParent != treeItem.value) {
         myTreeCell.lastDragoverCell = this
         de.acceptTransferModes(TransferMode.MOVE)
       }
+    } else if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "articles") {
+      myTreeCell.lastDragoverCell = this
+      debug(" dragboard: " + de.dragboard.transferModes)
+      de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE) // TODO: move not accepted...
+      debug("  acc tm = " + de.acceptedTransferMode + "  acc=" + de.accepted)
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
       debug("  files: " + files)
@@ -145,8 +149,8 @@ class myTreeCell extends TreeCell[Topic] with Logging {
     clearDnDFormatting()
     val dropPos = getDropPositionScroll(de)
     var dropOk = false
-    if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == TopicsTreeView.dataFormatTopicsTreeItem) {
-      val dti = myTreeCell.draggedTreeItem //de.dragboard.content(TopicsTreeView.treeItemDataFormat).asInstanceOf[TreeItem[Topic]]
+    if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "topic") {
+      val dti = DnDHelper.topicTreeItem
       inTransaction {
         val dt = ReftoolDB.topics.get(dti.getValue.id)
         val oldParent = dt.parentTopic.head
@@ -163,6 +167,18 @@ class myTreeCell extends TreeCell[Topic] with Logging {
         treeView.value.getUserData.asInstanceOf[TopicsTreeView].loadTopics() // refresh
         treeView.value.getUserData.asInstanceOf[TopicsTreeView].revealAndSelect(dt)
       }
+    } else if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "articles") {
+      inTransaction {
+        for (a <- DnDHelper.articles) {
+          if (de.getAcceptedTransferMode == TransferMode.COPY) {
+            a.topics.associate(treeItem.value.getValue)
+          } else {
+            a.topics.dissociate(DnDHelper.articlesTopic)
+            a.topics.associate(treeItem.value.getValue)
+          }
+        }
+      }
+
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
       debug("  dropped files: " + files)
@@ -186,7 +202,6 @@ class myTreeCell extends TreeCell[Topic] with Logging {
 }
 object myTreeCell {
   var lastDragoverCell: TreeCell[Topic] = null
-  var draggedTreeItem: TreeItem[Topic] = null
 }
 
 // an iterator over all *displayed* tree items! (not the lazy ones)
@@ -325,7 +340,4 @@ class TopicsTreeView extends GenericView("topicsview") {
   override def setUIsettings(s: String): Unit = {}
 
   override val uisettingsID: String = "ttv"
-}
-object TopicsTreeView {
-  val dataFormatTopicsTreeItem = "dataFormatTopicsTreeItem"
 }

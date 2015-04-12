@@ -4,7 +4,7 @@ package views
 import db.{Article, ReftoolDB, Topic}
 import framework.{ApplicationController, GenericView, MyAction}
 import org.squeryl.PrimitiveTypeMode._
-import util.{FileHelper, StringHelper}
+import util.{DnDHelper, FileHelper, StringHelper}
 
 import scalafx.Includes._
 import scalafx.beans.property.StringProperty
@@ -12,6 +12,7 @@ import scalafx.collections.ObservableBuffer
 import scalafx.geometry.Insets
 import scalafx.scene.control._
 import scalafx.scene.image.Image
+import scalafx.scene.input.{MouseEvent, ClipboardContent, TransferMode}
 import scalafx.scene.layout._
 import scalafx.scene.paint.Color
 
@@ -83,6 +84,16 @@ class ArticleListView extends GenericView("articlelistview") {
     delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY) // TODO in scalafx...
     sortOrder += (cPubdate, cTitle)
     selectionModel.value.selectionMode = SelectionMode.MULTIPLE
+    onDragDetected = (me: MouseEvent) => {
+      val db = if (currentTopic == null) startDragAndDrop(TransferMode.COPY) else startDragAndDrop(TransferMode.COPY, TransferMode.MOVE)
+      val cont = new ClipboardContent()
+      cont.putString("articles") // can't easily make custom DataFormats on mac (!)
+      DnDHelper.articles.clear()
+      DnDHelper.articles ++= selectionModel.value.getSelectedItems
+      DnDHelper.articlesTopic = currentTopic
+      db.delegate.setContent(cont)
+      me.consume()
+    }
   }
 
   text = "Article list"
