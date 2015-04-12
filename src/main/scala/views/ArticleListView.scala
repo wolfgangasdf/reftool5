@@ -4,7 +4,7 @@ package views
 import db.{Article, ReftoolDB, Topic}
 import framework.{ApplicationController, GenericView, MyAction}
 import org.squeryl.PrimitiveTypeMode._
-import util.StringHelper
+import util.{FileHelper, StringHelper}
 
 import scalafx.Includes._
 import scalafx.beans.property.StringProperty
@@ -82,43 +82,144 @@ class ArticleListView extends GenericView("articlelistview") {
     columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview)
     delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY) // TODO in scalafx...
     sortOrder += (cPubdate, cTitle)
-    selectionModel().selectedItems.onChange(
-      (ob, _) => {
-        if (ob.size == 1) {
-          ApplicationController.submitShowArticle(ob.head)
-        }
-      }
-    )
+    selectionModel.value.selectionMode = SelectionMode.MULTIPLE
   }
 
   text = "Article list"
 
   val lbCurrentTitle = new Label("<title>")
 
-  val aSetColor = new MyAction("Article", "Set article color") {
-    tooltipString = "Set article color for article in this topic"
+  val aSetColor = new MyAction("Article", "Cycle article color") {
+    tooltipString = "Cycle article color for article in this topic"
     image = new Image(getClass.getResource("/images/colors.png").toExternalForm)
     action = () => {
       val a = alv.selectionModel.value.getSelectedItem
       inTransaction {
-        val t2a = a.getT2a(currentTopic)
-        var col = t2a.color + 1
-        if (col >= colors.length) col = 0
-        t2a.color = col
-        ReftoolDB.topics2articles.update(t2a)
+        a.getT2a(currentTopic) match {
+          case Some(t2a) =>
+            var col = t2a.color + 1 // cycle through colors
+            if (col >= colors.length) col = 0
+            t2a.color = col
+            ReftoolDB.topics2articles.update(t2a)
+
+          case None =>
+        }
       }
       ApplicationController.submitArticleChanged(a)
     }
   }
 
+  val aMoveToStack = new MyAction("Article", "Move to stack") {
+    tooltipString = "Move selected articles to stack"
+    image = new Image(getClass.getResource("/images/stackmove.gif").toExternalForm)
+    action = () => inTransaction {
+      val stack = ReftoolDB.topics.where(t => t.title === ReftoolDB.TSTACK).head
+      alv.selectionModel.value.getSelectedItems.foreach( a => {
+        a.topics.dissociate(currentTopic)
+        a.topics.associate(stack)
+      })
+      setArticlesTopic(currentTopic)
+    }
+  }
+  val aCopyToStack = new MyAction("Article", "Copy to stack") {
+    tooltipString = "Copy selected articles to stack"
+    image = new Image(getClass.getResource("/images/stackadd.gif").toExternalForm)
+    action = () => inTransaction {
+      val stack = ReftoolDB.topics.where(t => t.title === ReftoolDB.TSTACK).head
+      alv.selectionModel.value.getSelectedItems.foreach( a => {
+        a.topics.associate(stack)
+      })
+    }
+  }
+  val aStackMoveHere = new MyAction("Article", "Move stack articles here") {
+    tooltipString = "Move all stack articles here"
+    image = new Image(getClass.getResource("/images/stackmovetohere.gif").toExternalForm)
+    action = () => inTransaction {
+      val stack = ReftoolDB.topics.where(t => t.title === ReftoolDB.TSTACK).head
+      stack.articles.map( a => {
+        a.topics.dissociate(stack)
+        a.topics.associate(currentTopic)
+      })
+      setArticlesTopic(currentTopic)
+    }
+  }
+  val aStackCopyHere = new MyAction("Article", "Copy stack here") {
+    tooltipString = "Copy all stack articles here"
+    image = new Image(getClass.getResource("/images/stackcopytohere.gif").toExternalForm)
+    action = () => inTransaction {
+      val stack = ReftoolDB.topics.where(t => t.title === ReftoolDB.TSTACK).head
+      stack.articles.map( a => a.topics.associate(currentTopic) )
+      setArticlesTopic(currentTopic)
+    }
+  }
+  val aShowStack = new MyAction("Article", "Show stack") {
+    tooltipString = "Show articles on stack"
+    image = new Image(getClass.getResource("/images/stack.gif").toExternalForm)
+    action = () => inTransaction {
+      setArticlesTopic(ReftoolDB.topics.where(t => t.title === ReftoolDB.TSTACK).head)
+    }
+    enabled = true
+  }
+  val aOpenPDF = new MyAction("Article", "Open PDF") {
+    tooltipString = "Opens main document of article"
+    image = new Image(getClass.getResource("/images/pdf.png").toExternalForm)
+    action = () => {
+      val a = alv.selectionModel.value.getSelectedItem
+      FileHelper.openDocument(a.getFirstPDFlink)
+    }
+  }
+  val aRemoveFromTopic = new MyAction("Article", "Remove from topic") {
+    tooltipString = "Remove articles from current topic"
+    image = new Image(getClass.getResource("/images/remove_correction.gif").toExternalForm)
+    action = () => inTransaction {
+      alv.selectionModel.value.getSelectedItems.foreach( a => {
+        a.topics.dissociate(currentTopic)
+      })
+      setArticlesTopic(currentTopic)
+    }
+  }
+  val aRemoveArticle = new MyAction("Article", "Delete article") {
+    tooltipString = "Deletes articles completely"
+    image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
+    action = () => inTransaction {
+      alv.selectionModel.value.getSelectedItems.foreach( a => {
+        for (t <- a.topics.toList)
+          a.topics.dissociate(t)
+        ReftoolDB.articles.delete(a.id)
+      })
+      setArticlesTopic(currentTopic)
+    }
+  }
 
-  toolbar ++= Seq( lbCurrentTitle, aSetColor.toolbarButton )
+  alv.selectionModel().selectedItems.onChange(
+    (ob, _) => {
+      if (ob.isEmpty) {
+        aSetColor.enabled = false
+        aMoveToStack.enabled = false
+        aRemoveFromTopic.enabled = false
+        aRemoveArticle.enabled = false
+      } else {
+        aRemoveArticle.enabled = true
+        aCopyToStack.enabled = true
+        aMoveToStack.enabled = currentTopic != null
+        aRemoveFromTopic.enabled = currentTopic != null
+        if (ob.size == 1) {
+          aSetColor.enabled = currentTopic != null
+          aOpenPDF.enabled = true
+          ApplicationController.submitShowArticle(ob.head)
+        }
+      }
+    }
+  )
+
+  toolbar ++= Seq( lbCurrentTitle, aSetColor.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
+    aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveArticle.toolbarButton )
 
   content = new BorderPane {
     center = alv
   }
 
-  ApplicationController.showArticlesListListeners += ( (al: List[Article], title: String) => setArticles(al, title) )
+  ApplicationController.showArticlesListListeners += ( (al: List[Article], title: String) => setArticles(al, title, null) )
   ApplicationController.showArticlesFromTopicListeners += ( (t: Topic) => setArticlesTopic(t) )
   ApplicationController.revealArticleInListListeners += ( (a: Article) => alv.getSelectionModel.select(a) )
   ApplicationController.articleChangedListeners += ( (a: Article) => {
@@ -126,12 +227,18 @@ class ArticleListView extends GenericView("articlelistview") {
     if (oldart.isDefined) { articles.replaceAll(oldart.get, a) }
   })
 
-  def setArticles(al: List[Article], title: String = null): Unit = {
+  def setArticles(al: List[Article], title: String, topic: Topic): Unit = {
+    currentTopic = topic
     articles.clear()
     articles ++= al
     lbCurrentTitle.text = title
-    currentTopic = null
-    aSetColor.enabled = false
+    aStackCopyHere.enabled = currentTopic != null
+    aStackMoveHere.enabled = currentTopic != null
+    aCopyToStack.enabled = false // req selection
+    aMoveToStack.enabled = false // req selection
+    aOpenPDF.enabled = false // req selection
+    aRemoveFromTopic.enabled = false // req selection
+    aRemoveArticle.enabled = false // req selection
   }
 
   def setArticlesTopic(topic: Topic) {
@@ -141,12 +248,10 @@ class ArticleListView extends GenericView("articlelistview") {
           ReftoolDB.articles.where(a =>
             a.id notIn from(ReftoolDB.topics2articles)(t2a => select(t2a.ARTICLE))
           )
-        setArticles(q.toList, "Orphaned articles")
+        setArticles(q.toList, "Orphaned articles", null)
       } else
-        setArticles(topic.articles.toList, s"Articles in [${topic.title}]")
+        setArticles(topic.articles.toList, s"Articles in [${topic.title}]", topic)
     }
-    currentTopic = topic
-    aSetColor.enabled = true
   }
 
   override def canClose: Boolean = true

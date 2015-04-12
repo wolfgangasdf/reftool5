@@ -41,17 +41,27 @@ class Article(var entrytype: String = "",
               var bibtexid: String = "",
               var bibtexentry: String = "",
               var doi: String = "")
-  extends BaseEntity {
+  extends BaseEntity with Logging {
 
   lazy val topics = ReftoolDB.topics2articles.right(this)
-  def getT2a(t: Topic) = ReftoolDB.topics2articles.where(t2a => t2a.ARTICLE === id and t2a.TOPIC === t.id).head
-  def color(t: Topic) = getT2a(t).color
+  def getT2a(t: Topic) = ReftoolDB.topics2articles.where(t2a => t2a.ARTICLE === id and t2a.TOPIC === t.id).headOption
+  def color(t: Topic) = if (t == null) 0 else getT2a(t) match {
+    case None => 0
+    case Some(t2a) => t2a.color
+  }
 
   override def toString: String = {
     if (bibtexid == "")
       StringHelper.headString(authors, 10) + ":" + StringHelper.headString(title, 10)
     else
       bibtexid
+  }
+
+  def getFirstPDFlink = {
+    if (pdflink.contains("\n"))
+      pdflink.substring(0, pdflink.indexOf('\n'))
+    else
+      pdflink
   }
 
   @Transient var testthing = "" // not in DB!
@@ -81,6 +91,7 @@ class Topic(var title: String = "", var parent: Long = 0, var expanded: Boolean 
     childrenTopics.toList.sortWith( (s1, s2) => AlphaNumStringSorter(s1.title, s2.title))
   }
   override def toString: String = title
+
 }
 
 class Topic2Article(val TOPIC: Long, val ARTICLE: Long, var color: Int) extends KeyedEntity[CompositeKey2[Long, Long]] {
@@ -96,6 +107,7 @@ object ReftoolDB extends Schema with Logging {
 
 
   val TORPHANS = "0000-ORPHANS"
+  val TSTACK = "0000-stack"
 
   /*
     there are issues in squeryl with renaming of columns ("named"). if a foreign key does not work, use uppercase!
@@ -180,9 +192,8 @@ object ReftoolDB extends Schema with Logging {
         troot = new Topic("root", 0, true)
         topics.insert(troot)
       }
-      if (topics.where(t => t.title === TORPHANS).isEmpty)
-        topics.insert(new Topic(TORPHANS, troot.id, false)
-      )
+      if (topics.where(t => t.title === TORPHANS).isEmpty) topics.insert(new Topic(TORPHANS, troot.id, false))
+      if (topics.where(t => t.title === TSTACK).isEmpty) topics.insert(new Topic(TSTACK, troot.id, false))
     }
     info("Database loaded!")
   }
