@@ -25,8 +25,16 @@ import framework.{ApplicationController, ViewContainer, Logging}
 import scalafx.stage.WindowEvent
 
 object Main extends JFXApp with Logging {
-  AppStorage.load()
-  ReftoolDB.initialize()
+
+  try {
+    AppStorage.load()
+    ReftoolDB.initialize()
+  } catch {
+    case e: Exception => {
+      error("Exception during reftool startup:")
+      e.printStackTrace()
+    }
+  }
 
   // TODO: unneeded??
   Thread.currentThread().setUncaughtExceptionHandler(new UncaughtExceptionHandler {
