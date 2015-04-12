@@ -74,7 +74,7 @@ class ViewContainer extends Pane with Logging {
   ApplicationController.containers += this
 }
 
-class MyAction(category: String, title: String) extends Logging {
+class MyAction(val category: String, val title: String) extends Logging {
   private var _tooltipString: String = ""
   private var _image: Image = null
   private var _enabled: Boolean = true
@@ -117,13 +117,14 @@ class MyAction(category: String, title: String) extends Logging {
       // TODO show tooltip in statusbar if mouse over
     }
   }
-  // TODO: add automatically to menu?
 
+  ApplicationController.actions += this
 }
 
 object ApplicationController extends Logging {
   val views = new ArrayBuffer[GenericView]
   val containers = new ArrayBuffer[ViewContainer]
+  val actions = new ArrayBuffer[MyAction]
 
   def isAnyoneDirty = {
     views.exists(v => v.isDirty.value)
@@ -143,6 +144,19 @@ object ApplicationController extends Logging {
     containers.foreach(vc => vc.updateToolbar(0))
     main.Main.setUIsettings(AppStorage.config.uiSettings.getOrElse("main", ""))
     views.foreach(c => c.setUIsettings(AppStorage.config.uiSettings.getOrElse(c.uisettingsID, "")))
+
+    // menus
+    val mb = main.Main.menuBar
+    actions.foreach( action => {
+      var menu = mb.menus.find(m => m.getText == action.category)
+      debug(s"action=${action.title} menu=" + menu)
+      if (menu.isEmpty) {
+        menu = Some(new Menu(action.category))
+        mb.menus += menu.get
+      }
+      menu.get.items += action.menuEntry
+    })
+
   }
 
   val articleChangedListeners = new ArrayBuffer[(Article) => Unit]()
