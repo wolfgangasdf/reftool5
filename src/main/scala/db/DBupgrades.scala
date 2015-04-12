@@ -97,6 +97,8 @@ object DBupgrades extends Logging {
     modCol("TOPICS", "PARENT")
     s.execute("alter table TOPICS add column EXPANDED boolean not null default false")
     s.execute("alter table TOPICS alter column TITLE set data type VARCHAR(512)")
+    s.execute("alter table TOPICS add column EXPORTFN VARCHAR(1024)")
+    modCol("TOPICS", "EXPORTFN", "''")
     modCol("TOPICS", "TITLE", "''")
 
     s.execute("alter table ARTICLES alter column AUTHORS set data type VARCHAR(4096)")

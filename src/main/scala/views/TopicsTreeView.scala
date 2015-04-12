@@ -1,7 +1,10 @@
 package views
 
+import java.io.{FileOutputStream, PrintWriter}
+
 import scala.collection.mutable
 import scala.collection.JavaConversions._
+import scalafx.scene.control.Alert.AlertType
 
 import scalafx.scene.control._
 import scalafx.scene.effect.{DropShadow, InnerShadow}
@@ -18,6 +21,9 @@ import org.squeryl.PrimitiveTypeMode._
 import db.{Article, ReftoolDB, Topic}
 import framework.{MyAction, ApplicationController, Logging, GenericView}
 import util.{DnDHelper, ImportHelper}
+
+import scalafx.stage.FileChooser
+import scalafx.stage.FileChooser.ExtensionFilter
 
 
 class myTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
@@ -168,14 +174,33 @@ class myTreeCell extends TreeCell[Topic] with Logging {
         treeView.value.getUserData.asInstanceOf[TopicsTreeView].revealAndSelect(dt)
       }
     } else if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "articles") {
-      inTransaction {
-        for (a <- DnDHelper.articles) {
-          if (de.getAcceptedTransferMode == TransferMode.COPY) {
-            a.topics.associate(treeItem.value.getValue)
-          } else {
-            a.topics.dissociate(DnDHelper.articlesTopic)
-            a.topics.associate(treeItem.value.getValue)
+      // TODO workaround because multiple TransferModes doesn't work: show dialog if MOVE & COPY allowed!
+      var transfermode = 1 // 1-copy 2-move
+      if (de.dragboard.transferModes.contains(TransferMode.MOVE)) {
+        val btCopy = new ButtonType("copy")
+        val btMove = new ButtonType("move")
+        val res = new Alert(AlertType.Confirmation) {
+          title = "Drag and Drop of articles"
+          headerText = "Decide what to do"
+          contentText = "Here:"
+          buttonTypes = Seq( btCopy, btMove, ButtonType.Cancel)
+        }.showAndWait()
+        if (res.get == btCopy) transfermode = 1
+        else if (res.get == btMove) transfermode = 2
+        else transfermode = 0
+      }
+      if (transfermode != 0) {
+        inTransaction {
+          dropOk = true
+          for (a <- DnDHelper.articles) {
+            if (transfermode == 1) {
+              a.topics.associate(treeItem.value.getValue)
+            } else {
+              a.topics.dissociate(DnDHelper.articlesTopic)
+              a.topics.associate(treeItem.value.getValue)
+            }
           }
+          ApplicationController.submitShowArticlesFromTopic(treeItem.value.getValue)
         }
       }
 
@@ -228,11 +253,6 @@ class TopicsTreeView extends GenericView("topicsview") {
     showRoot = false
     userData = gv
     editable = true
-    // click
-    selectionModel().selectedItem.onChange { (_, _, newVal) => {
-      if (newVal != null)
-        ApplicationController.submitShowArticlesFromTopic(newVal.getValue)
-    }}
 
     onEditCommit = (ee: TreeView.EditEvent[Topic]) => {
       debug("edit commit: " + ee.newValue)
@@ -245,7 +265,7 @@ class TopicsTreeView extends GenericView("topicsview") {
   // recursively from top reveal topics (lazy-loading!)
   def revealAndSelect(t: Topic): Unit = {
     var found = false
-    debug(" reveal: expand required " + t)
+    debug(" reveal " + t)
     inTransaction{
       var pt = t.parentTopic.head
       while (pt != null) {
@@ -261,6 +281,7 @@ class TopicsTreeView extends GenericView("topicsview") {
       val tin = it.next()
       if (tin.getValue != null) if (tin.getValue.id == t.id) {
         tv.selectionModel.value.select(tin)
+        tv.scrollTo(tv.selectionModel.value.getSelectedIndex)
         found = true
       }
     }
@@ -289,33 +310,29 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   text = "Topics"
 
-  val aAddArticle = new MyAction("Topic", "Add empty article") {
+  val aAddArticle: MyAction = new MyAction("Topic", "Add empty article") {
     image = new Image(getClass.getResource("/images/new_con.gif").toExternalForm)
     tooltipString = "Create new article in current topic"
     action = () => {
-      val si = tv.selectionModel.value.getSelectedItems
-      if (si.size() == 1) {
-        inTransaction {
-          val t = ReftoolDB.topics.get(si.head.getValue.id)
-          val a = new Article(title = "new content")
-          ReftoolDB.articles.insert(a)
-          a.topics.associate(t)
-          ApplicationController.submitShowArticlesFromTopic(t)
-          ApplicationController.submitRevealArticleInList(a)
-        }
+      val si = tv.getSelectionModel.getSelectedItem
+      inTransaction {
+        val t = ReftoolDB.topics.get(si.getValue.id)
+        val a = new Article(title = "new content")
+        ReftoolDB.articles.insert(a)
+        a.topics.associate(t)
+        ApplicationController.submitShowArticlesFromTopic(t)
+        ApplicationController.submitRevealArticleInList(a)
       }
     }
   }
-  val aAddTopic = new MyAction("Topic", "Add new topic") {
+  val aAddTopic: MyAction = new MyAction("Topic", "Add new topic") {
     image = new Image(getClass.getResource("/images/addtsk_tsk.gif").toExternalForm)
-    tooltipString = "Add topic below selected topic"
-    action = () => {
-      val si = tv.selectionModel.value.getSelectedItems
-      val pid = if (si.size() == 1) si.head.getValue.id else troot.id
-      val t2 = new Topic(title = "new topic", parent = pid)
+    tooltipString = "Add topic below selected topic, shift+click to add root topic"
+    def addNewTopic(parendID: Long) = {
+      val t2 = new Topic(title = "new topic", parent = parendID)
       inTransaction {
         ReftoolDB.topics.insert(t2)
-        val pt = ReftoolDB.topics.get(pid)
+        val pt = ReftoolDB.topics.get(parendID)
         pt.expanded = true
         ReftoolDB.topics.update(pt)
         debug(" add topic " + t2 + "  id=" + t2.id)
@@ -323,9 +340,73 @@ class TopicsTreeView extends GenericView("topicsview") {
       loadTopics() // refresh
       revealAndSelect(t2)
     }
+    toolbarButton.onMouseClicked = (me: MouseEvent) => {
+      // this is always called after action. but with shift-click, action() is not called!
+      if (me.shiftDown) addNewTopic(troot.id)
+    }
+    action = () => {
+      val si = tv.getSelectionModel.getSelectedItem
+      val pid = si.getValue.id
+      addNewTopic(pid)
+    }
+  }
+  val aExportBibtex: MyAction = new MyAction("Topic", "Export to bibtex") {
+    image = new Image(getClass.getResource("/images/export2bib.png").toExternalForm)
+    tooltipString = "Export all articles in current topic to bibtex file"
+    action = () => {
+      val t = tv.getSelectionModel.getSelectedItem.getValue
+      val fc = new FileChooser() {
+        title = "Select bibtex export file"
+        extensionFilters += new ExtensionFilter("bibtex files", "*.bib")
+        if (t.exportfn != "") {
+          val oldef = new java.io.File(t.exportfn)
+          initialFileName = oldef.getName
+          initialDirectory = oldef.getParentFile
+        } else initialFileName = "articles.bib"
+      }
+      val fn = fc.showSaveDialog(toolbarButton.getParent.getScene.getWindow)
+      if (fn != null) {
+        if (t.exportfn != fn.getPath) inTransaction {
+          t.exportfn = fn.getPath
+          ReftoolDB.topics.update(t)
+        }
+        val pw = new PrintWriter(new FileOutputStream(fn, false))
+        inTransaction {
+          t.articles.foreach( a => {
+            pw.write(a.bibtexentry)
+          })
+        }
+        pw.close()
+      }
+    }
+  }
+  val aCollapseAll: MyAction = new MyAction("Topic", "Collapse all") {
+    image = new Image(getClass.getResource("/images/collapse.png").toExternalForm)
+    tooltipString = "Collapse all topics"
+    action = () => {
+      tiroot.expanded = false
+      inTransaction {
+        update(ReftoolDB.topics)(t =>
+          where(t.expanded === true and t.parent <> 0)
+          set(t.expanded := false)
+        )
+      }
+      loadTopics()
+    }
+    enabled = true
   }
 
-  toolbar ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton )
+
+  toolbar ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aCollapseAll.toolbarButton )
+
+  tv.selectionModel().selectedItem.onChange { (_, _, newVal) => {
+    if (newVal != null) {
+      ApplicationController.submitShowArticlesFromTopic(newVal.getValue)
+      aAddArticle.enabled = true
+      aAddTopic.enabled = true
+      aExportBibtex.enabled = true
+    }
+  }}
 
   content = new BorderPane {
     center = tv

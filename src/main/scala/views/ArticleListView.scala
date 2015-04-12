@@ -232,7 +232,10 @@ class ArticleListView extends GenericView("articlelistview") {
 
   ApplicationController.showArticlesListListeners += ( (al: List[Article], title: String) => setArticles(al, title, null) )
   ApplicationController.showArticlesFromTopicListeners += ( (t: Topic) => setArticlesTopic(t) )
-  ApplicationController.revealArticleInListListeners += ( (a: Article) => alv.getSelectionModel.select(a) )
+  ApplicationController.revealArticleInListListeners += ( (a: Article) => {
+    alv.getSelectionModel.select(a)
+    alv.scrollTo(alv.getSelectionModel.getSelectedIndex)
+  } )
   ApplicationController.articleChangedListeners += ( (a: Article) => {
     val oldart = articles.find(oa => oa.id == a.id)
     if (oldart.isDefined) { articles.replaceAll(oldart.get, a) }

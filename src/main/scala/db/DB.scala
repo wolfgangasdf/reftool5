@@ -68,7 +68,7 @@ class Article(var entrytype: String = "",
 
 }
 
-class Topic(var title: String = "", var parent: Long = 0, var expanded: Boolean = false) extends BaseEntity {
+class Topic(var title: String = "", var parent: Long = 0, var expanded: Boolean = false, var exportfn: String = "") extends BaseEntity {
   lazy val articles = ReftoolDB.topics2articles.left(this)
   lazy val childrenTopics = ReftoolDB.topics.where( t => t.parent === id)
   lazy val parentTopic = ReftoolDB.topics.where( t => t.id === parent)
@@ -109,6 +109,7 @@ object ReftoolDB extends Schema with Logging {
   val TORPHANS = "0000-ORPHANS"
   val TSTACK = "0000-stack"
 
+//  throw new Exception("huhu")
   /*
     there are issues in squeryl with renaming of columns ("named"). if a foreign key does not work, use uppercase!
    */
@@ -123,6 +124,7 @@ object ReftoolDB extends Schema with Logging {
     t.id is named("ID"),
     t.title.is(dbType("varchar(512)"), named("TITLE")), t.title defaultsTo "",
     t.expanded is(dbType("BOOLEAN"), named("EXPANDED")), t.expanded defaultsTo false,
+    t.exportfn is(dbType("varchar(1024)"), named("EXPORTFN")), t.exportfn defaultsTo "",
     t.parent is named("PARENT") // if 0, root topic!
   ))
 
