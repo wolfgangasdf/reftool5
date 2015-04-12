@@ -14,7 +14,6 @@ import util.AppStorage
 import framework.Logging
 
 import scala.language.postfixOps
-
 /*
 
   KEEP it simple! don't add unneeded stuff (keys, indices, constraints)...
@@ -45,13 +44,12 @@ class Article(var entrytype: String = "",
   extends BaseEntity {
 
   lazy val topics = ReftoolDB.topics2articles.right(this)
+  def getT2a(t: Topic) = ReftoolDB.topics2articles.where(t2a => t2a.ARTICLE === id and t2a.TOPIC === t.id).head
+  def color(t: Topic) = getT2a(t).color
 
-  def headString(s: String, len: Int) = {
-    if (s.length < len) s else s.substring(0, len - 1)
-  }
   override def toString: String = {
     if (bibtexid == "")
-      headString(authors, 10) + ":" + headString(title, 10)
+      StringHelper.headString(authors, 10) + ":" + StringHelper.headString(title, 10)
     else
       bibtexid
   }
@@ -85,7 +83,7 @@ class Topic(var title: String = "", var parent: Long = 0, var expanded: Boolean 
   override def toString: String = title
 }
 
-class Topic2Article(val TOPIC: Long, val ARTICLE: Long, val color: Int) extends KeyedEntity[CompositeKey2[Long, Long]] {
+class Topic2Article(val TOPIC: Long, val ARTICLE: Long, var color: Int) extends KeyedEntity[CompositeKey2[Long, Long]] {
    def id = compositeKey(TOPIC, ARTICLE)
 }
 

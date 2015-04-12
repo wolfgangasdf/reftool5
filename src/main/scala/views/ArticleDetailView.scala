@@ -169,8 +169,9 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
-  val aUpdateFromDOI = new MyAction("Article", "AfromDOI") {
-    tooltipString = "Update bibtex from DOI"
+  val aUpdateFromDOI = new MyAction("Article", "Get bibtex from DOI") {
+    tooltipString = "Update bibtex from DOI via crossref.org"
+    image = new Image(getClass.getResource("/images/bib2article.png").toExternalForm)
     action = () => {
       val newa = ImportHelper.updateBibtexFromDoi(article)
       inTransaction {
