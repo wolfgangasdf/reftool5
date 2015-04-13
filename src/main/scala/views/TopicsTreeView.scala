@@ -4,6 +4,7 @@ import java.io.{FileOutputStream, PrintWriter}
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
+import scalafx.event.ActionEvent
 import scalafx.scene.control.Alert.AlertType
 
 import scalafx.scene.control._
@@ -26,13 +27,13 @@ import scalafx.stage.FileChooser
 import scalafx.stage.FileChooser.ExtensionFilter
 
 
-class myTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
+class MyTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
   var hasloadedchilds: Boolean = false
 
   inTransaction {
     if (vv.expanded) {
       for (c <- vv.orderedChilds) {
-        children += new myTreeItem(c)
+        children += new MyTreeItem(c)
       }
       expanded = true
     } else {
@@ -53,7 +54,7 @@ class myTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
         inTransaction {
           for (newt <- vv.orderedChilds) {
             // debug(s"  add child ($newt)")
-            var newti = new myTreeItem(newt)
+            var newti = new MyTreeItem(newt)
             children += newti
           }
           vv.expanded = true
@@ -75,7 +76,7 @@ class myTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
 }
 
 // https://gist.github.com/andytill/4009620
-class myTreeCell extends TreeCell[Topic] with Logging {
+class MyTreeCell extends TreeCell[Topic] with Logging {
 
   treeItem.onChange((_, _, p) =>
     text = if (p != null) p.getValue.title else "?"
@@ -92,9 +93,9 @@ class myTreeCell extends TreeCell[Topic] with Logging {
   }
 
   def clearDnDFormatting() {
-    if (myTreeCell.lastDragoverCell != null) { // clear old formatting
-      myTreeCell.lastDragoverCell.effect = null
-      myTreeCell.lastDragoverCell = null
+    if (MyTreeCell.lastDragoverCell != null) { // clear old formatting
+      MyTreeCell.lastDragoverCell.effect = null
+      MyTreeCell.lastDragoverCell = null
     }
   }
 
@@ -103,8 +104,8 @@ class myTreeCell extends TreeCell[Topic] with Logging {
     var res = 0
     val tvpossc = treeView.value.localToScene(0d, 0d)
     val tvheight = treeView.value.getHeight
-    val tipossc = myTreeCell.this.localToScene(0d, 0d)
-    val tiheight = myTreeCell.this.getHeight
+    val tipossc = MyTreeCell.this.localToScene(0d, 0d)
+    val tiheight = MyTreeCell.this.getHeight
     val tirely = de.getSceneY - tipossc.getY
     if (de.getSceneY - tvpossc.getY < tiheight) { // javafx can't really scroll yet...
       treeView.value.scrollTo(treeView.value.row(treeItem.value) - 1)
@@ -135,13 +136,13 @@ class myTreeCell extends TreeCell[Topic] with Logging {
     if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "topic") {
       val dti = DnDHelper.topicTreeItem
       if (dti.getParent != treeItem.value) {
-        myTreeCell.lastDragoverCell = this
+        MyTreeCell.lastDragoverCell = this
         de.acceptTransferModes(TransferMode.MOVE)
       }
     } else if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "articles") {
-      myTreeCell.lastDragoverCell = this
+      MyTreeCell.lastDragoverCell = this
       debug(" dragboard: " + de.dragboard.transferModes)
-      de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE) // TODO: move not accepted...
+      de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE)
       debug("  acc tm = " + de.acceptedTransferMode + "  acc=" + de.accepted)
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
@@ -174,36 +175,18 @@ class myTreeCell extends TreeCell[Topic] with Logging {
         treeView.value.getUserData.asInstanceOf[TopicsTreeView].revealAndSelect(dt)
       }
     } else if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "articles") {
-      // TODO workaround because multiple TransferModes doesn't work: show dialog if MOVE & COPY allowed!
-      var transfermode = 1 // 1-copy 2-move
-      if (de.dragboard.transferModes.contains(TransferMode.MOVE)) {
-        val btCopy = new ButtonType("copy")
-        val btMove = new ButtonType("move")
-        val res = new Alert(AlertType.Confirmation) {
-          title = "Drag and Drop of articles"
-          headerText = "Decide what to do"
-          contentText = "Here:"
-          buttonTypes = Seq( btCopy, btMove, ButtonType.Cancel)
-        }.showAndWait()
-        if (res.get == btCopy) transfermode = 1
-        else if (res.get == btMove) transfermode = 2
-        else transfermode = 0
-      }
-      if (transfermode != 0) {
-        inTransaction {
-          dropOk = true
-          for (a <- DnDHelper.articles) {
-            if (transfermode == 1) {
-              a.topics.associate(treeItem.value.getValue)
-            } else {
-              a.topics.dissociate(DnDHelper.articlesTopic)
-              a.topics.associate(treeItem.value.getValue)
-            }
+      inTransaction {
+        dropOk = true
+        for (a <- DnDHelper.articles) {
+          if (de.transferMode == TransferMode.COPY) {
+            a.topics.associate(treeItem.value.getValue)
+          } else {
+            a.topics.dissociate(DnDHelper.articlesTopic)
+            a.topics.associate(treeItem.value.getValue)
           }
-          ApplicationController.submitShowArticlesFromTopic(treeItem.value.getValue)
         }
+        ApplicationController.submitShowArticlesFromTopic(treeItem.value.getValue)
       }
-
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
       debug("  dropped files: " + files)
@@ -225,7 +208,7 @@ class myTreeCell extends TreeCell[Topic] with Logging {
   }
 
 }
-object myTreeCell {
+object MyTreeCell {
   var lastDragoverCell: TreeCell[Topic] = null
 }
 
@@ -245,7 +228,7 @@ class TreeIterator[T](root: TreeItem[T]) extends Iterator[TreeItem[T]] with Logg
 
 class TopicsTreeView extends GenericView("topicsview") {
   var troot: Topic = null
-  var tiroot: myTreeItem = null
+  var tiroot: MyTreeItem = null
   val gv = this
 
   val tv = new TreeView[Topic] {
@@ -258,7 +241,7 @@ class TopicsTreeView extends GenericView("topicsview") {
       debug("edit commit: " + ee.newValue)
     }
 
-    cellFactory = (v: TreeView[Topic]) => new myTreeCell()
+    cellFactory = (v: TreeView[Topic]) => new MyTreeCell()
   }
 
 
@@ -274,6 +257,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         if (pt.parentTopic.isEmpty) pt = null else pt = pt.parentTopic.head
       }
     }
+    loadTopics() // also actually load the stuff
     debug(" find " + t)
     // find treeitem
     val it = new TreeIterator[Topic](tiroot)
@@ -288,27 +272,26 @@ class TopicsTreeView extends GenericView("topicsview") {
     assert(found, "Error finding treeitem for topic " + t + " id=" + t.id)
   }
 
-  def loadTopics(): Unit = {
+  def loadTopics(revealLastTopic: Boolean = true): Unit = {
     debug("ttv: loadtopics!")
     val tlast = if (tv.selectionModel.value.getSelectedItems.length > 0)
       tv.selectionModel.value.getSelectedItems.head.getValue
     else null
 
-    tv.selectionModel.value.clearSelection() // TODO: store old selection & expanded states!
+    tv.selectionModel.value.clearSelection()
     inTransaction {
       troot = ReftoolDB.topics.where(t => t.parent === 0).single // root item must have parent == 0
       debug("ttv: root topic=" + troot)
-      tiroot = new myTreeItem(troot)
+      tiroot = new MyTreeItem(troot)
       tv.root = tiroot
       tiroot.setExpanded(true)
     }
 
-    if (tlast != null) revealAndSelect(tlast)
+    if (revealLastTopic)
+      if (tlast != null) revealAndSelect(tlast)
 
     debug("ttv: loadtopics done!")
   }
-
-  text = "Topics"
 
   val aAddArticle: MyAction = new MyAction("Topic", "Add empty article") {
     image = new Image(getClass.getResource("/images/new_con.gif").toExternalForm)
@@ -395,9 +378,35 @@ class TopicsTreeView extends GenericView("topicsview") {
     }
     enabled = true
   }
+  val aRemoveTopic: MyAction = new MyAction("Topic", "Collapse all") {
+    image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
+    tooltipString = "Remove topic"
+    action = () => {
+      val t = tv.getSelectionModel.getSelectedItem.getValue
+      inTransaction {
+        if (t.childrenTopics.nonEmpty) {
+          ApplicationController.showNotification("Topic has children, cannot delete")
+        } else {
+          var doit = true
+          if (t.articles.nonEmpty) {
+            val res = new Alert(AlertType.Confirmation, "Topic contains articles, they might become orphans if topic is removed.").showAndWait()
+            res match {
+              case Some(ButtonType.OK) =>
+              case _ => doit = false
+            }
+          }
+          if (doit) {
+            t.articles.dissociateAll
+            ReftoolDB.topics.delete(t.id)
+          }
+          loadTopics(revealLastTopic = false)
+        }
+      }
+    }
+  }
 
 
-  toolbar ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aCollapseAll.toolbarButton )
+  toolbar ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton)
 
   tv.selectionModel().selectedItem.onChange { (_, _, newVal) => {
     if (newVal != null) {
@@ -405,10 +414,48 @@ class TopicsTreeView extends GenericView("topicsview") {
       aAddArticle.enabled = true
       aAddTopic.enabled = true
       aExportBibtex.enabled = true
+      aRemoveTopic.enabled = true
     }
   }}
 
+  text = "Topics"
+
+  var lastSearchString = ""
+  var lastSearchResultTopic: Topic = null
+  val tfSearch = new TextField {
+    promptText = "search..."
+    onAction = (ae: ActionEvent) => {
+      inTransaction {
+        if (text.value == lastSearchString && lastSearchString != "") {
+          // find next
+          val search = ReftoolDB.topics.where(t => t.title like s"%${text.value}%").iterator
+          while (search.hasNext && search.next() != lastSearchResultTopic) {} // go until last search result
+          if (search.hasNext) {
+            val newt = search.next()
+            revealAndSelect(newt)
+            lastSearchResultTopic = newt
+          } else {
+            lastSearchString = "" // wrap
+            ApplicationController.showNotification("search wrapped")
+          }
+        }
+        if (text.value != lastSearchString || lastSearchString == "") { // find first
+          val search = ReftoolDB.topics.where(t => t.title like s"%${text.value}%")
+          if (search.nonEmpty) {
+            lastSearchString = text.value
+            lastSearchResultTopic = search.head
+            revealAndSelect(lastSearchResultTopic)
+          } else {
+            ApplicationController.showNotification("cannot find any topic!")
+            lastSearchString = ""
+          }
+        }
+      }
+    }
+  }
+
   content = new BorderPane {
+    top = tfSearch
     center = tv
   }
 

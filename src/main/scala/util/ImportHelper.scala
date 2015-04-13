@@ -1,12 +1,12 @@
 package util
 
-import org.jbibtex.{BibTeXEntry, Key}
+import org.jbibtex._
 import org.squeryl.PrimitiveTypeMode._
 
 import db.{ReftoolDB, Article, Topic}
 import framework.Logging
 
-import java.io.{StringReader, FileFilter, File}
+import java.io.{StringWriter, StringReader, FileFilter, File}
 
 import scala.util.Random
 
@@ -210,9 +210,9 @@ object ImportHelper extends Logging {
     s
   }
 
+  val months = List("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
   // https://github.com/jbibtex/jbibtex
   def updateArticleFromBibtex(a: Article): Article = {
-    val months = List("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
     val btparser = new org.jbibtex.BibTeXParser
     // debug("bibtexentry: \n" + a.bibtexentry)
     val btdb = btparser.parse(new StringReader(a.bibtexentry))
@@ -222,8 +222,8 @@ object ImportHelper extends Logging {
       // debug(s"key=$btkey val=$btentry")
       // only update these if not present
       if (a.bibtexid == "") a.bibtexid = btentry.getKey.getValue
-      if (a.entrytype == "") a.entrytype = btentry.getType.getValue
       // update these always!
+      a.entrytype = btentry.getType.getValue
       a.title = getPlainTextField(btentry, a.title, BibTeXEntry.KEY_TITLE)
       a.authors = getPlainTextField(btentry, a.authors, BibTeXEntry.KEY_AUTHOR)
       a.journal = getPlainTextField(btentry, a.journal, BibTeXEntry.KEY_JOURNAL)
@@ -237,6 +237,26 @@ object ImportHelper extends Logging {
         a.pubdate = year
       }
     }
+    a
+  }
+
+  def createBibtexFromArticle(a: Article): Article = {
+    val bdb = new BibTeXDatabase()
+    val be = new BibTeXEntry(new Key(a.entrytype), new Key(a.bibtexid))
+    be.addField(BibTeXEntry.KEY_TITLE, new StringValue(a.title, StringValue.Style.BRACED))
+    be.addField(BibTeXEntry.KEY_AUTHOR, new StringValue(a.authors, StringValue.Style.BRACED))
+    be.addField(BibTeXEntry.KEY_JOURNAL, new StringValue(a.journal, StringValue.Style.BRACED))
+    be.addField(BibTeXEntry.KEY_DOI, new StringValue(a.doi, StringValue.Style.BRACED))
+    if (a.pubdate.length >= 4) {
+      be.addField(BibTeXEntry.KEY_YEAR, new StringValue(a.pubdate.substring(0, 3), StringValue.Style.BRACED))
+      if (a.pubdate.length >= 6)
+        be.addField(BibTeXEntry.KEY_MONTH, new StringValue(months(a.pubdate.substring(4,5).toInt), StringValue.Style.BRACED))
+    }
+    bdb.addObject(be)
+    val bf = new BibTeXFormatter()
+    val writer = new StringWriter()
+    bf.format(bdb, writer)
+    a.bibtexentry = writer.toString
     a
   }
 
