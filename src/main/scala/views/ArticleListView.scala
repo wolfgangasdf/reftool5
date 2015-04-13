@@ -81,11 +81,18 @@ class ArticleListView extends GenericView("articlelistview") {
 
   val alv: TableView[Article] = new TableView[Article](articles) {
     columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview)
-    delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY) // TODO in scalafx...
+    delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY)
     sortOrder += (cPubdate, cTitle)
     selectionModel.value.selectionMode = SelectionMode.MULTIPLE
     onDragDetected = (me: MouseEvent) => {
-      val db = if (currentTopic == null) startDragAndDrop(TransferMode.COPY) else startDragAndDrop(TransferMode.COPY, TransferMode.MOVE)
+      val db = if (currentTopic == null) startDragAndDrop(TransferMode.COPY) else {
+        debug("me: " + me.controlDown + " " + me.altDown + " " + me.metaDown)
+        ApplicationController.showNotification("Drag'n'drop: press ctrl BEFORE you click to drag to copy articles to topic!")
+        if (me.controlDown) // TODO workaround for not-working multiple transfermodes.
+          startDragAndDrop(TransferMode.COPY)
+        else
+          startDragAndDrop(TransferMode.MOVE)
+      }
       val cont = new ClipboardContent()
       cont.putString("articles") // can't easily make custom DataFormats on mac (!)
       DnDHelper.articles.clear()
@@ -275,7 +282,7 @@ class ArticleListView extends GenericView("articlelistview") {
   }
 
   override def setUIsettings(s: String): Unit = {
-    // TODO doesnt work
+    // TODO fixme doesnt work
     debug("alv: settings = " + s)
     if (s != "")
       s.split(",").zipWithIndex.foreach { case (s: String, i: Int) => alv.columns(i).setPrefWidth(s.toDouble) }

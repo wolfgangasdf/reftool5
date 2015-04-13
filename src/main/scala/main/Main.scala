@@ -36,14 +36,14 @@ object Main extends JFXApp with Logging {
     }
   }
 
-  // TODO: unneeded??
-  Thread.currentThread().setUncaughtExceptionHandler(new UncaughtExceptionHandler {
-    override def uncaughtException(t: Thread, e: Throwable): Unit = {
-      error("Handler caught exception: "+e.getMessage)
-      e.printStackTrace()
-    }
-  })
-
+//  // TODO: unneeded??
+//  Thread.currentThread().setUncaughtExceptionHandler(new UncaughtExceptionHandler {
+//    override def uncaughtException(t: Thread, e: Throwable): Unit = {
+//      error("Handler caught exception: "+e.getMessage)
+//      e.printStackTrace()
+//    }
+//  })
+//
   debug("I am here: " + new java.io.File(".").getAbsolutePath)
 
   private def createMenuBar = new MenuBar {
@@ -142,8 +142,9 @@ object Main extends JFXApp with Logging {
     items +=(lefttabs, spv)
   }
 
+  val statusBarLabel = new Label("") { hgrow = Priority.Always }
   val statusbar = new VBox {
-    children += new Button("stat1")
+    children += statusBarLabel
   }
 
   val menuBar: MenuBar = createMenuBar

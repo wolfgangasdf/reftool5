@@ -25,6 +25,8 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     aSave.enabled = isDirty.value
     aUpdateFromBibtex.enabled = !isDirty.value
     aUpdateFromDOI.enabled = !isDirty.value
+    aCreateBibtex.enabled = !isDirty.value
+    aUpdateDOIfromPDF.enabled = !isDirty.value
   })
 
   override def canClose = {
@@ -79,6 +81,9 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     article.title = lTitle.tf.text.value
     article.authors = lAuthors.tf.text.value
     article.pubdate = lPubdate.tf.text.value
+    article.bibtexentry = lBibtexentry.tf.text.value
+    if (article.bibtexid != lBibtexid.tf.text.value)
+      article.bibtexentry = article.bibtexentry.replaceAllLiterally(s"{${article.bibtexid},", s"{${lBibtexid.tf.text.value},")
     article.bibtexid = lBibtexid.tf.text.value
     article.journal = lJournal.tf.text.value
     article.review = lReview.tf.text.value
@@ -86,12 +91,12 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     article.pdflink = lPdflink.tf.text.value
     article.linkurl = lLinkURL.tf.text.value
     article.doi = lDOI.tf.text.value
-    article.bibtexentry = lBibtexentry.tf.text.value
     inTransaction {
       ReftoolDB.articles.update(article)
     }
     isDirty.value = false
     ApplicationController.submitArticleChanged(article)
+    setArticle(article)
   }
 
   class MyLine(gpRow: Int, labelText: String, rows: Int = 1) {
@@ -130,7 +135,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   val lReview = new MyLine(0, "Review", 10)
 
   val lEntryType = new MyLine(0, "Entry type")
-  val lPdflink = new MyLine(1, "PDF Link") // TODO
+  val lPdflink = new MyLine(1, "PDF Link") // TODO implement
   val lLinkURL = new MyLine(2, "Link URL")
   val lDOI = new MyLine(3, "DOI")
   val lBibtexentry = new MyLine(4, "Bibtex entry", 10)
@@ -170,6 +175,25 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
+  val aUpdateDOIfromPDF = new MyAction("Article", "Get DOI from pdf") {
+    tooltipString = "Update DOI by parsing PDF"
+    image = new Image(getClass.getResource("/images/pdf2doi.png").toExternalForm)
+    action = () => {
+      var doi = util.PdfHelper.getDOI(new java.io.File(article.getFirstPDFlink))
+      if (doi == "") {
+        doi = util.ImportHelper.getDOImanually(new java.io.File(article.getFirstPDFlink).getName)
+      }
+      if (doi != "") {
+        article.doi = doi
+        inTransaction {
+          ReftoolDB.articles.update(article)
+        }
+        ApplicationController.submitArticleChanged(article)
+        setArticle(article)
+      }
+    }
+  }
+
   val aUpdateFromDOI = new MyAction("Article", "Get bibtex from DOI") {
     tooltipString = "Update bibtex from DOI via crossref.org"
     image = new Image(getClass.getResource("/images/bib2article.png").toExternalForm)
@@ -183,15 +207,30 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
-  val aTest = new MyAction("Test", "test") {
-    enabled = true
+  val aCreateBibtex = new MyAction("Article", "Create bibtex entry") {
+    tooltipString = "Create the article's bibtex entry from article fields"
+    image = new Image(getClass.getResource("/images/article2bib.png").toExternalForm)
     action = () => {
-      val res = ImportHelper.getDOImanually("Attosecond gamma-ray pulses via nonlinear Compton scattering in the radiation dominated regime")
-      debug("res = " + res)
+      val newa = ImportHelper.createBibtexFromArticle(article)
+      inTransaction {
+        ReftoolDB.articles.update(newa)
+      }
+      ApplicationController.submitArticleChanged(newa)
+      setArticle(newa)
     }
   }
 
-  toolbar ++= Seq(aSave.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateFromDOI.toolbarButton, aTest.toolbarButton)
+  val aTest = new MyAction("Test", "test") {
+    enabled = true
+    action = () => {
+//      val res = ImportHelper.getDOImanually("Attosecond gamma-ray pulses via nonlinear Compton scattering in the radiation dominated regime")
+//      debug("res = " + res)
+      ApplicationController.showNotification("noti 1")
+      ApplicationController.showNotification("noti 2")
+    }
+  }
+
+  toolbar ++= Seq(aSave.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateDOIfromPDF.toolbarButton, aUpdateFromDOI.toolbarButton, aCreateBibtex.toolbarButton, aTest.toolbarButton)
 
   content = new BorderPane {
     top = lbCurrentArticle

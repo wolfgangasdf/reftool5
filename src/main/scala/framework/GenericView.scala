@@ -1,9 +1,12 @@
 package framework
 
+import java.util.concurrent.FutureTask
+
 import db.{Topic, Article}
 import util.AppStorage
 
 import scala.collection.mutable.ArrayBuffer
+import scalafx.animation.{Interpolator, KeyFrame, Timeline}
 import scalafx.beans.property.BooleanProperty
 import scalafx.event.ActionEvent
 import scalafx.scene.image.{ImageView, Image}
@@ -183,4 +186,13 @@ object ApplicationController extends Logging {
     revealArticleInListListeners.foreach( acl => acl(a) )
   }
 
+  val notificationTimer = new java.util.Timer()
+  def showNotification(string: String): Unit = {
+    main.Main.statusBarLabel.text = string
+    notificationTimer.schedule( // remove Notification later
+      new java.util.TimerTask {
+        override def run(): Unit = { Helpers.runUI( main.Main.statusBarLabel.text = "" ) }
+      }, 3000
+    )
+  }
 }

@@ -47,8 +47,6 @@ object AppSettings extends Logging {
   }
 }
 
-// TODO this should largely go into framework... each view can store some settings, also the app,...
-
 object AppStorage extends Logging {
   var config : Config = null
 
