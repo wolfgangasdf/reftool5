@@ -23,7 +23,7 @@ class ArticleListView extends GenericView("articlelistview") {
   var currentTopic: Topic = null
 
   val colors = List("-fx-background-color: white", "-fx-background-color: red", "-fx-background-color: LightSalmon", "-fx-background-color: LightGreen")
-  val colorsn = List(Color.White, Color.Red, Color.LightSalmon, Color.LightGreen)
+  val colorsn = List(Color.White, Color.Salmon, Color.LightSalmon, Color.LightGreen)
 
   // for coloring of cells.
   class MyTableCell extends javafx.scene.control.TableCell[Article, String] {

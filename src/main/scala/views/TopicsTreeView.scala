@@ -9,10 +9,10 @@ import scalafx.scene.control.Alert.AlertType
 
 import scalafx.scene.control._
 import scalafx.scene.effect.{DropShadow, InnerShadow}
-import scalafx.scene.image.Image
+import scalafx.scene.image.{ImageView, Image}
 import scalafx.scene.input._
 import scalafx.Includes._
-import scalafx.scene.layout.BorderPane
+import scalafx.scene.layout.{HBox, Priority, BorderPane}
 import scalafx.scene.paint.Color
 
 import javafx.scene.{control => jfxsc}
@@ -33,7 +33,8 @@ class MyTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
   inTransaction {
     if (vv.expanded) {
       for (c <- vv.orderedChilds) {
-        children += new MyTreeItem(c)
+        val doit = if (TopicsTreeView.searchActive) { if (c.expanded) true else false } else true
+        if (doit) children += new MyTreeItem(c)
       }
       expanded = true
     } else {
@@ -54,8 +55,8 @@ class MyTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
         inTransaction {
           for (newt <- vv.orderedChilds) {
             // debug(s"  add child ($newt)")
-            var newti = new MyTreeItem(newt)
-            children += newti
+            val doit = if (TopicsTreeView.searchActive) { if (newt.expanded) true else false } else true
+            if (doit) children += new MyTreeItem(newt)
           }
           vv.expanded = true
           ReftoolDB.topics.update(vv)
@@ -78,9 +79,14 @@ class MyTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
 // https://gist.github.com/andytill/4009620
 class MyTreeCell extends TreeCell[Topic] with Logging {
 
-  treeItem.onChange((_, _, p) =>
-    text = if (p != null) p.getValue.title else "?"
-  )
+  treeItem.onChange((_, oldti, newti) => {
+    // debug("tconchange sa=" + TopicsTreeView.searchActive + ": oldti=" + oldti + "  newti=" + newti)
+    if (newti != null)
+      text = newti.getValue.title
+    else {
+      text = null
+    }
+  })
 
   // drag'n'drop
   onDragDetected = (me: MouseEvent) => {
@@ -245,17 +251,20 @@ class TopicsTreeView extends GenericView("topicsview") {
   }
 
 
+  def expandAllParents(t: Topic) = {
+    var pt = t.parentTopic.head
+    while (pt != null) {
+      pt.expanded = true
+      ReftoolDB.topics.update(pt)
+      if (pt.parentTopic.isEmpty) pt = null else pt = pt.parentTopic.head
+    }
+  }
   // recursively from top reveal topics (lazy-loading!)
   def revealAndSelect(t: Topic): Unit = {
     var found = false
     debug(" reveal " + t)
     inTransaction{
-      var pt = t.parentTopic.head
-      while (pt != null) {
-        pt.expanded = true
-        ReftoolDB.topics.update(pt)
-        if (pt.parentTopic.isEmpty) pt = null else pt = pt.parentTopic.head
-      }
+      expandAllParents(t)
     }
     loadTopics() // also actually load the stuff
     debug(" find " + t)
@@ -277,8 +286,20 @@ class TopicsTreeView extends GenericView("topicsview") {
     val tlast = if (tv.selectionModel.value.getSelectedItems.length > 0)
       tv.selectionModel.value.getSelectedItems.head.getValue
     else null
-
     tv.selectionModel.value.clearSelection()
+    // remove all treeitems!
+    debug("  clear all items...")
+//    if (tv.root.value != null) tv.root = null
+    if (tv.root.value != null) {
+      def removeRec(ti: TreeItem[Topic]): Unit = {
+        if (ti.children.nonEmpty) ti.children.foreach( child => removeRec(child) )
+        ti.children.clear()
+      }
+      removeRec(tv.root.value)
+      tv.root = null
+    }
+
+    debug("  add items...")
     inTransaction {
       troot = ReftoolDB.topics.where(t => t.parent === 0).single // root item must have parent == 0
       debug("ttv: root topic=" + troot)
@@ -363,16 +384,20 @@ class TopicsTreeView extends GenericView("topicsview") {
       }
     }
   }
+
+  def collapseAllTopics() = {
+    update(ReftoolDB.topics)(t =>
+      where(t.expanded === true and t.parent <> 0)
+        set(t.expanded := false)
+    )
+  }
   val aCollapseAll: MyAction = new MyAction("Topic", "Collapse all") {
     image = new Image(getClass.getResource("/images/collapse.png").toExternalForm)
     tooltipString = "Collapse all topics"
     action = () => {
       tiroot.expanded = false
       inTransaction {
-        update(ReftoolDB.topics)(t =>
-          where(t.expanded === true and t.parent <> 0)
-          set(t.expanded := false)
-        )
+        collapseAllTopics()
       }
       loadTopics()
     }
@@ -420,42 +445,34 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   text = "Topics"
 
-  var lastSearchString = ""
-  var lastSearchResultTopic: Topic = null
   val tfSearch = new TextField {
+    hgrow = Priority.Always
     promptText = "search..."
     onAction = (ae: ActionEvent) => {
       inTransaction {
-        if (text.value == lastSearchString && lastSearchString != "") {
-          // find next
-          val search = ReftoolDB.topics.where(t => t.title like s"%${text.value}%").iterator
-          while (search.hasNext && search.next() != lastSearchResultTopic) {} // go until last search result
-          if (search.hasNext) {
-            val newt = search.next()
-            revealAndSelect(newt)
-            lastSearchResultTopic = newt
-          } else {
-            lastSearchString = "" // wrap
-            ApplicationController.showNotification("search wrapped")
-          }
-        }
-        if (text.value != lastSearchString || lastSearchString == "") { // find first
-          val search = ReftoolDB.topics.where(t => t.title like s"%${text.value}%")
-          if (search.nonEmpty) {
-            lastSearchString = text.value
-            lastSearchResultTopic = search.head
-            revealAndSelect(lastSearchResultTopic)
-          } else {
-            ApplicationController.showNotification("cannot find any topic!")
-            lastSearchString = ""
-          }
-        }
+        debug("initiate search...")
+        collapseAllTopics()
+        ReftoolDB.topics.where(t => upper(t.title) like s"%${text.value.toUpperCase}%").foreach(t => {
+          t.expanded = true // also for leaves if in search!
+          ReftoolDB.topics.update(t)
+          expandAllParents(t)
+        })
+        debug("finished initiate search search...")
       }
+      TopicsTreeView.searchActive = true
+      loadTopics(revealLastTopic = false)
+    }
+  }
+  val btClearSearch = new Button() {
+    graphic = new ImageView(new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm))
+    onAction = (ae: ActionEvent) => {
+      TopicsTreeView.searchActive = false
+      loadTopics(revealLastTopic = true)
     }
   }
 
   content = new BorderPane {
-    top = tfSearch
+    top = new HBox { children ++= Seq(tfSearch, btClearSearch) }
     center = tv
   }
 
@@ -468,4 +485,7 @@ class TopicsTreeView extends GenericView("topicsview") {
   override def setUIsettings(s: String): Unit = {}
 
   override val uisettingsID: String = "ttv"
+}
+object TopicsTreeView {
+  var searchActive: Boolean = false
 }
