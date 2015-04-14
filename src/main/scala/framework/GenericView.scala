@@ -1,12 +1,9 @@
 package framework
 
-import java.util.concurrent.FutureTask
-
 import db.{Topic, Article}
 import util.AppStorage
 
 import scala.collection.mutable.ArrayBuffer
-import scalafx.animation.{Interpolator, KeyFrame, Timeline}
 import scalafx.beans.property.BooleanProperty
 import scalafx.event.ActionEvent
 import scalafx.scene.image.{ImageView, Image}

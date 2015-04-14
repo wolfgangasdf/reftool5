@@ -8,6 +8,7 @@ import scalafx.event.ActionEvent
 import scalafx.scene.control.Alert.AlertType
 
 import scalafx.scene.control._
+import scalafx.scene.control.cell.TextFieldTreeCell
 import scalafx.scene.effect.{DropShadow, InnerShadow}
 import scalafx.scene.image.{ImageView, Image}
 import scalafx.scene.input._
@@ -25,6 +26,8 @@ import util.{DnDHelper, ImportHelper}
 
 import scalafx.stage.FileChooser
 import scalafx.stage.FileChooser.ExtensionFilter
+import scalafx.util.StringConverter
+import scalafx.util.StringConverter._
 
 
 class MyTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
@@ -76,16 +79,27 @@ class MyTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
 
 }
 
+
 // https://gist.github.com/andytill/4009620
-class MyTreeCell extends TreeCell[Topic] with Logging {
+class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
+
+  val myStringConverter = new StringConverter[Topic]() {
+    override def fromString(string: String): Topic = {
+      val t = treeItem.value.getValue
+      t.title = string
+      t
+    }
+
+    override def toString(t: Topic): String = {
+      t.title
+    }
+  }
+//  converter = myStringConverter // TODO scalafx bug doesn't work
+  delegate.setConverter(myStringConverter)
 
   treeItem.onChange((_, oldti, newti) => {
     // debug("tconchange sa=" + TopicsTreeView.searchActive + ": oldti=" + oldti + "  newti=" + newti)
-    if (newti != null)
-      text = newti.getValue.title
-    else {
-      text = null
-    }
+    text = if (newti != null) newti.getValue.title else null
   })
 
   // drag'n'drop
@@ -244,12 +258,13 @@ class TopicsTreeView extends GenericView("topicsview") {
     editable = true
 
     onEditCommit = (ee: TreeView.EditEvent[Topic]) => {
-      debug("edit commit: " + ee.newValue)
+      inTransaction {
+        ReftoolDB.topics.update(ee.newValue)
+      }
     }
 
     cellFactory = (v: TreeView[Topic]) => new MyTreeCell()
   }
-
 
   def expandAllParents(t: Topic) = {
     var pt = t.parentTopic.head
