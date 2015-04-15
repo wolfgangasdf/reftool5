@@ -10,8 +10,6 @@ package util
 
 import java.io._
 
-import framework.ApplicationController
-
 object FileHelper {
 
   def write(file: File, text : String) : Unit = {
@@ -67,6 +65,9 @@ object FileHelper {
         desktop.open(getDocumentFileAbs(relPath))
       }
     }
+
+    // TODO http://stackoverflow.com/questions/10478306/windows-explorer-select-mac-finder-equivalent
+    // also change mac, doesn't work above.
 /*
     if (!file.exists || !file.canRead) {
       ApplicationController.showNotification("Error opening file: " + file.getAbsolutePath)
@@ -78,7 +79,6 @@ object FileHelper {
             "-e", "reveal (POSIX file p) as alias", "-e", "activate", "-e", "end tell")
           Runtime.getRuntime.exec(params.toArray)
       } else if (whichOS.contains("win")) {
-        // TODO crossplatform
         ApplicationController.showNotification("not supported OS, tell me how to do it!")
         //			try {
         //				String[] params = new String[] { "explorer", file.getCanonicalPath() };
@@ -87,7 +87,6 @@ object FileHelper {
         //				MessageDialog.openError(Display.getCurrent().getActiveShell(), "Exception", eee.getMessage());
         //			}
       } else if (whichOS.contains("nix")) {
-        // TODO crossplatform
         ApplicationController.showNotification("not supported OS, tell me how to do it!")
       } else {
         ApplicationController.showNotification("not supported OS, tell me how to do it!")
