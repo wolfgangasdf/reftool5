@@ -1,6 +1,5 @@
 package main
 
-import java.lang.Thread.UncaughtExceptionHandler
 
 import scalafx.application.JFXApp
 import scalafx.Includes._
@@ -36,15 +35,17 @@ object Main extends JFXApp with Logging {
     }
   }
 
-//  // TODO: unneeded??
-//  Thread.currentThread().setUncaughtExceptionHandler(new UncaughtExceptionHandler {
-//    override def uncaughtException(t: Thread, e: Throwable): Unit = {
-//      error("Handler caught exception: "+e.getMessage)
-//      e.printStackTrace()
-//    }
-//  })
-//
   debug("I am here: " + new java.io.File(".").getAbsolutePath)
+
+  override def main(args: Array[String]): Unit = {
+    try {
+      super.main(args)
+    } catch {
+      case t: Throwable => t.printStackTrace()
+    }
+  }
+
+
 
   private def createMenuBar = new MenuBar {
     //    useSystemMenuBar = true
@@ -106,27 +107,40 @@ object Main extends JFXApp with Logging {
     toolBar
   }
 
+  // this should be used for anything in javafx startup, as the stacktrace is missing if e.g. an icon file is not present!
+  def tryit[T]( f: => T ): T = {
+    try {
+      f
+    } catch {
+      case t: Throwable => {
+        debug("tryit: exception " + t.getMessage)
+        t.printStackTrace()
+        null.asInstanceOf[T]
+      }
+    }
+  }
+
   val history = new VBox
 
   val aListView = new ListView[String]() {
     //articlelist
   }
 
-  val articleDetailView = new ArticleDetailView
-  var searchView = new SearchView
+  val articleDetailView = tryit { new ArticleDetailView }
+  var searchView = tryit { new SearchView }
 
   val bottomtabs = new ViewContainer {
     addView(articleDetailView)
     addView(searchView)
   }
 
-  val articleListView = new ArticleListView
+  val articleListView = tryit { new ArticleListView }
 
   val toptabs = new ViewContainer {
     addView(articleListView)
   }
 
-  val topicTreeView = new TopicsTreeView
+  val topicTreeView = tryit { new TopicsTreeView }
 
   val lefttabs = new ViewContainer {
     addView(topicTreeView)
@@ -173,7 +187,10 @@ object Main extends JFXApp with Logging {
       try {
         ApplicationController.afterShown()
       } catch {
-        case e: Exception => e.printStackTrace()
+        case e: Exception => {
+          error("Exception during reftool startup:")
+          e.printStackTrace()
+        }
       }
     }
   }

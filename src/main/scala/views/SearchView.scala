@@ -6,6 +6,8 @@ import scalafx.scene.layout.BorderPane
 import framework.GenericView
 
 class SearchView extends GenericView("searchview") {
+  debug(" initializing searchview...")
+
   text = "Search"
 
   toolbar += new Button("bbb")

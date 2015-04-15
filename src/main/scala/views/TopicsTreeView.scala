@@ -94,7 +94,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       t.title
     }
   }
-//  converter = myStringConverter // TODO scalafx bug doesn't work
+//  converter = myStringConverter // scalafx bug doesn't work
   delegate.setConverter(myStringConverter)
 
   treeItem.onChange((_, oldti, newti) => {
@@ -247,6 +247,9 @@ class TreeIterator[T](root: TreeItem[T]) extends Iterator[TreeItem[T]] with Logg
 }
 
 class TopicsTreeView extends GenericView("topicsview") {
+
+  debug(" initializing ttv...")
+
   var troot: Topic = null
   var tiroot: MyTreeItem = null
   val gv = this
@@ -260,6 +263,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     onEditCommit = (ee: TreeView.EditEvent[Topic]) => {
       inTransaction {
         ReftoolDB.topics.update(ee.newValue)
+        loadTopics(true)
       }
     }
 
@@ -460,11 +464,22 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   text = "Topics"
 
+  def clearSearch(): Unit = {
+    tfSearch.text = ""
+    btClearSearch.disable = true
+    TopicsTreeView.searchActive = false
+    loadTopics(revealLastTopic = true)
+  }
+  val btClearSearch = new Button() {
+    graphic = new ImageView(new Image(getClass.getResource("/images/delete_obj_grey.gif").toExternalForm))
+    disable = true
+    onAction = (ae: ActionEvent) => clearSearch()
+  }
   val tfSearch = new TextField {
     hgrow = Priority.Always
     promptText = "search..."
     onAction = (ae: ActionEvent) => {
-      inTransaction {
+      if (text.value.trim != "") inTransaction {
         debug("initiate search...")
         collapseAllTopics()
         ReftoolDB.topics.where(t => upper(t.title) like s"%${text.value.toUpperCase}%").foreach(t => {
@@ -473,16 +488,11 @@ class TopicsTreeView extends GenericView("topicsview") {
           expandAllParents(t)
         })
         debug("finished initiate search search...")
-      }
+        btClearSearch.disable = false
+      } else clearSearch()
+
       TopicsTreeView.searchActive = true
       loadTopics(revealLastTopic = false)
-    }
-  }
-  val btClearSearch = new Button() {
-    graphic = new ImageView(new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm))
-    onAction = (ae: ActionEvent) => {
-      TopicsTreeView.searchActive = false
-      loadTopics(revealLastTopic = true)
     }
   }
 

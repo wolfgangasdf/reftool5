@@ -100,6 +100,7 @@ class Topic2Article(val TOPIC: Long, val ARTICLE: Long, var color: Int) extends 
 
 object ReftoolDB extends Schema with Logging {
 
+  debug(" initializing reftooldb...")
 
   val settings = table[Setting]("SETTING")
   val articles = table[Article]("ARTICLES")

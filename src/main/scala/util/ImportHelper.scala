@@ -131,11 +131,11 @@ object ImportHelper extends Logging {
     }
     if (!lastfolder.exists()) lastfolder.mkdir()
 
-    // get new unique filename
-    val newf1 = new File(lastfolder.getAbsolutePath + "/" +sourceFile.getName)
+    // get new unique and clean filename
+    val newf1 = new File(lastfolder.getAbsolutePath + "/" + FileHelper.cleanFileName(sourceFile.getName))
     var newf = newf1
     while (newf.exists()) {
-      val (name, extension) = FileHelper.splitName(newf1)
+      val (name, extension) = FileHelper.splitName(newf1.getName)
       newf = new File(lastfolder.getAbsolutePath + "/" + name + "-" + Random.nextInt(1000) + "." + extension)
     }
 
@@ -143,7 +143,7 @@ object ImportHelper extends Logging {
     sourceFile.renameTo(newf)
 
     debug("create article...")
-    val relnewf = newf.getAbsolutePath.substring( (AppStorage.config.pdfpath + "/").length )
+    val relnewf = FileHelper.getDocumentPathRelative(newf)
     var a = article
     if (a == null) { // no article given, create new and get bibtex etc.
       // create new article
@@ -191,6 +191,8 @@ object ImportHelper extends Logging {
     debug(s"""curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
     if (response.code == 200) {
       a.bibtexentry = response.body
+      val (_, btentry) = parseBibtex(a)
+      a.bibtexentry = bibtexFromBtentry(btentry)
     }
     a
   }
@@ -210,38 +212,48 @@ object ImportHelper extends Logging {
     s
   }
 
+  def parseBibtex(a: Article): (Key, BibTeXEntry) = {
+    val btparser = new org.jbibtex.BibTeXParser
+    val btdb = btparser.parse(new StringReader(a.bibtexentry))
+    val btentries = btdb.getEntries
+    assert(btentries.size() == 1)
+    btentries.head
+  }
+
   val months = List("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
   // https://github.com/jbibtex/jbibtex
   def updateArticleFromBibtex(a: Article): Article = {
-    val btparser = new org.jbibtex.BibTeXParser
-    // debug("bibtexentry: \n" + a.bibtexentry)
-    val btdb = btparser.parse(new StringReader(a.bibtexentry))
-    val btentries = btdb.getEntries
-    if (btentries.size() == 1) {
-      val (btkey, btentry) = btentries.head
-      // debug(s"key=$btkey val=$btentry")
-      // only update these if not present
-      if (a.bibtexid == "") a.bibtexid = btentry.getKey.getValue
-      // update these always!
-      a.entrytype = btentry.getType.getValue
-      a.title = getPlainTextField(btentry, a.title, BibTeXEntry.KEY_TITLE)
-      a.authors = getPlainTextField(btentry, a.authors, BibTeXEntry.KEY_AUTHOR)
-      a.journal = getPlainTextField(btentry, a.journal, BibTeXEntry.KEY_JOURNAL)
-      a.linkurl = getPlainTextField(btentry, a.linkurl, BibTeXEntry.KEY_URL)
-      a.doi = getPlainTextField(btentry, a.doi, BibTeXEntry.KEY_DOI)
-      var year = getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
-      val month = getPlainTextField(btentry, "", BibTeXEntry.KEY_MONTH).toLowerCase
-      val monthi = months.indexOf(month)
-      if (year != "") {
-        if (monthi > -1) year += (monthi + 1).formatted("%02d")
-        a.pubdate = year
-      }
+    val (_, btentry) = parseBibtex(a)
+    // debug(s"key=$btkey val=$btentry")
+    // only update these if not present
+    if (a.bibtexid == "") a.bibtexid = btentry.getKey.getValue
+    // update these always!
+    a.entrytype = btentry.getType.getValue
+    a.title = getPlainTextField(btentry, a.title, BibTeXEntry.KEY_TITLE)
+    a.authors = getPlainTextField(btentry, a.authors, BibTeXEntry.KEY_AUTHOR)
+    a.journal = getPlainTextField(btentry, a.journal, BibTeXEntry.KEY_JOURNAL)
+    a.linkurl = getPlainTextField(btentry, a.linkurl, BibTeXEntry.KEY_URL)
+    a.doi = getPlainTextField(btentry, a.doi, BibTeXEntry.KEY_DOI)
+    var year = getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
+    val month = getPlainTextField(btentry, "", BibTeXEntry.KEY_MONTH).toLowerCase
+    val monthi = months.indexOf(month)
+    if (year != "") {
+      if (monthi > -1) year += (monthi + 1).formatted("%02d")
+      a.pubdate = year
     }
     a
   }
 
-  def createBibtexFromArticle(a: Article): Article = {
+  def bibtexFromBtentry(be: BibTeXEntry): String = {
     val bdb = new BibTeXDatabase()
+    bdb.addObject(be)
+    val bf = new BibTeXFormatter()
+    val writer = new StringWriter()
+    bf.format(bdb, writer)
+    writer.toString
+  }
+
+  def createBibtexFromArticle(a: Article): Article = {
     val be = new BibTeXEntry(new Key(a.entrytype), new Key(a.bibtexid))
     be.addField(BibTeXEntry.KEY_TITLE, new StringValue(a.title, StringValue.Style.BRACED))
     be.addField(BibTeXEntry.KEY_AUTHOR, new StringValue(a.authors, StringValue.Style.BRACED))
@@ -252,11 +264,7 @@ object ImportHelper extends Logging {
       if (a.pubdate.length >= 6)
         be.addField(BibTeXEntry.KEY_MONTH, new StringValue(months(a.pubdate.substring(4,5).toInt), StringValue.Style.BRACED))
     }
-    bdb.addObject(be)
-    val bf = new BibTeXFormatter()
-    val writer = new StringWriter()
-    bf.format(bdb, writer)
-    a.bibtexentry = writer.toString
+    a.bibtexentry = bibtexFromBtentry(be)
     a
   }
 
