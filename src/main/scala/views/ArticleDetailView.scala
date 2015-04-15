@@ -19,6 +19,8 @@ import db.{ReftoolDB, Article}
 
 class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
+  debug(" initializing adv...")
+
   val title = "Article details"
   isDirty.onChange({
     text = if (isDirty.value) title + " *" else title
@@ -135,7 +137,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   val lReview = new MyLine(0, "Review", 10)
 
   val lEntryType = new MyLine(0, "Entry type")
-  val lPdflink = new MyLine(1, "PDF Link") // TODO implement
+  val lPdflink = new MyLine(1, "Documents") // TODO implement
   val lLinkURL = new MyLine(2, "Link URL")
   val lDOI = new MyLine(3, "DOI")
   val lBibtexentry = new MyLine(4, "Bibtex entry", 10)
@@ -196,7 +198,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   val aUpdateFromDOI = new MyAction("Article", "Get bibtex from DOI") {
     tooltipString = "Update bibtex from DOI via crossref.org"
-    image = new Image(getClass.getResource("/images/bib2article.png").toExternalForm)
+    image = new Image(getClass.getResource("/images/doi2bib.png").toExternalForm)
     action = () => {
       val newa = ImportHelper.updateBibtexFromDoi(article)
       inTransaction {

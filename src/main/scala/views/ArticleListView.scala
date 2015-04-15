@@ -20,6 +20,8 @@ import scalafx.scene.paint.Color
 //https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/TableWithCustomCellDemo.scala
 class ArticleListView extends GenericView("articlelistview") {
 
+  debug(" initializing alv...")
+
   var currentTopic: Topic = null
 
   val colors = List("-fx-background-color: white", "-fx-background-color: red", "-fx-background-color: LightSalmon", "-fx-background-color: LightGreen")
@@ -186,6 +188,15 @@ class ArticleListView extends GenericView("articlelistview") {
       FileHelper.openDocument(a.getFirstPDFlink)
     }
   }
+  val aRevealPDF = new MyAction("Article", "Reveal document") {
+    tooltipString = "Reveal document in file browser"
+    image = new Image(getClass.getResource("/images/Finder_icon.png").toExternalForm)
+    action = () => {
+      val a = alv.selectionModel.value.getSelectedItem
+      FileHelper.revealDocument(a.getFirstPDFlink)
+    }
+  }
+
   val aRemoveFromTopic = new MyAction("Article", "Remove from topic") {
     tooltipString = "Remove articles from current topic"
     image = new Image(getClass.getResource("/images/remove_correction.gif").toExternalForm)
@@ -224,6 +235,7 @@ class ArticleListView extends GenericView("articlelistview") {
         if (ob.size == 1) {
           aSetColor.enabled = currentTopic != null
           aOpenPDF.enabled = true
+          aRevealPDF.enabled = true
           ApplicationController.submitShowArticle(ob.head)
         }
       }
@@ -231,7 +243,7 @@ class ArticleListView extends GenericView("articlelistview") {
   )
 
   toolbar ++= Seq( lbCurrentTitle, aSetColor.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
-    aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveArticle.toolbarButton )
+    aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveArticle.toolbarButton, aRevealPDF.toolbarButton )
 
   content = new BorderPane {
     center = alv

@@ -10,6 +10,8 @@ package util
 
 import java.io._
 
+import framework.ApplicationController
+
 object FileHelper {
 
   def write(file: File, text : String) : Unit = {
@@ -32,20 +34,66 @@ object FileHelper {
     }
     deleteFile(file)
   }
-  def splitName(ff: File) = {
-    val f = ff.getName
+  def splitName(f: String) = {
     val extension = f.substring(f.lastIndexOf('.'))
     val name = f.substring(0, f.lastIndexOf('.'))
     (name, extension)
   }
+  def cleanFileName(fn: String) = {
+    val (name, ext) = splitName(fn)
+    val newn = StringHelper.headString(name.replaceAll("[^a-zA-Z0-9]", ""), 30)
+    newn + "." + ext
+  }
+
+  def getDocumentFileAbs(relPath: String) = new File(AppStorage.config.pdfpath + "/" + relPath)
+
+  def getDocumentPathRelative(file: File) = file.getAbsolutePath.substring( (AppStorage.config.pdfpath + "/").length )
+
   def openDocument(relPath: String) = {
     import java.awt.Desktop
     if (Desktop.isDesktopSupported) {
       val desktop = Desktop.getDesktop
       if (desktop.isSupported(Desktop.Action.OPEN)) {
-        desktop.open(new File(AppStorage.config.pdfpath + "/" + relPath))
+        desktop.open(getDocumentFileAbs(relPath))
       }
     }
+  }
+
+  def revealDocument(relPath: String) {
+    import java.awt.Desktop
+    if (Desktop.isDesktopSupported) {
+      val desktop = Desktop.getDesktop
+      if (desktop.isSupported(Desktop.Action.BROWSE)) {
+        desktop.open(getDocumentFileAbs(relPath))
+      }
+    }
+/*
+    if (!file.exists || !file.canRead) {
+      ApplicationController.showNotification("Error opening file: " + file.getAbsolutePath)
+    } else {
+      val whichOS = System.getProperty("os.name").toLowerCase
+      if (whichOS.contains("mac")) {
+          val params = List("osascript", "-e",
+            "set p to \"" + file.getCanonicalPath + "\"", "-e", "tell application \"Finder\"",
+            "-e", "reveal (POSIX file p) as alias", "-e", "activate", "-e", "end tell")
+          Runtime.getRuntime.exec(params.toArray)
+      } else if (whichOS.contains("win")) {
+        // TODO crossplatform
+        ApplicationController.showNotification("not supported OS, tell me how to do it!")
+        //			try {
+        //				String[] params = new String[] { "explorer", file.getCanonicalPath() };
+        //				Runtime.getRuntime().exec(params);
+        //			} catch (Exception eee) {
+        //				MessageDialog.openError(Display.getCurrent().getActiveShell(), "Exception", eee.getMessage());
+        //			}
+      } else if (whichOS.contains("nix")) {
+        // TODO crossplatform
+        ApplicationController.showNotification("not supported OS, tell me how to do it!")
+      } else {
+        ApplicationController.showNotification("not supported OS, tell me how to do it!")
+      }
+    }
+*/
   }
 
 }
