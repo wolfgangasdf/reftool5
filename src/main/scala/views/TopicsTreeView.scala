@@ -263,7 +263,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     onEditCommit = (ee: TreeView.EditEvent[Topic]) => {
       inTransaction {
         ReftoolDB.topics.update(ee.newValue)
-        loadTopics(true)
+        loadTopics(revealLastTopic = true)
       }
     }
 

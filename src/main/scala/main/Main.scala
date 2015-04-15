@@ -14,8 +14,6 @@ import scalafx.scene.input.KeyCombination
 import scalafx.scene.Scene
 import scalafx.event.ActionEvent
 
-import scalafx.scene.shape.Circle
-import scalafx.scene.paint.Color
 import views.{SearchView, ArticleDetailView, ArticleListView, TopicsTreeView}
 import util._
 import db.ReftoolDB
@@ -25,27 +23,24 @@ import scalafx.stage.WindowEvent
 
 object Main extends JFXApp with Logging {
 
-  try {
+  // this should be used for anything in javafx startup, as the stacktrace is missing if e.g. an icon file is not present!
+  def tryit[T]( f: => T ): T = {
+    try {
+      f
+    } catch {
+      case t: Throwable =>
+        debug("tryit: exception " + t.getMessage)
+        t.printStackTrace()
+        null.asInstanceOf[T]
+    }
+  }
+
+  tryit {
     AppStorage.load()
     ReftoolDB.initialize()
-  } catch {
-    case e: Exception => {
-      error("Exception during reftool startup:")
-      e.printStackTrace()
-    }
   }
 
   debug("I am here: " + new java.io.File(".").getAbsolutePath)
-
-  override def main(args: Array[String]): Unit = {
-    try {
-      super.main(args)
-    } catch {
-      case t: Throwable => t.printStackTrace()
-    }
-  }
-
-
 
   private def createMenuBar = new MenuBar {
     //    useSystemMenuBar = true
@@ -76,48 +71,6 @@ object Main extends JFXApp with Logging {
         )
       }
     )
-  }
-
-  private def createToolBar = {
-    val toolBar = new ToolBar {
-      content = List(
-        new Button {
-          //          id = "newButton"
-          //          graphic = new ImageView(new Image(getClass.getResource("/images/paper.png").toExternalForm))
-          //          tooltip = Tooltip("New Document... Ctrl+N")
-          onAction = (ae: ActionEvent) => {
-            println("New toolbar button clicked")
-          }
-        },
-        new Button {
-          id = "editButton"
-          graphic = new Circle {
-            fill = Color.Green
-            radius = 8
-          }
-        },
-        new Button {
-          id = "deleteButton"
-          graphic = new Circle {
-            fill = Color.Blue
-            radius = 8
-          }
-        })
-    }
-    toolBar
-  }
-
-  // this should be used for anything in javafx startup, as the stacktrace is missing if e.g. an icon file is not present!
-  def tryit[T]( f: => T ): T = {
-    try {
-      f
-    } catch {
-      case t: Throwable => {
-        debug("tryit: exception " + t.getMessage)
-        t.printStackTrace()
-        null.asInstanceOf[T]
-      }
-    }
   }
 
   val history = new VBox
@@ -162,11 +115,8 @@ object Main extends JFXApp with Logging {
   }
 
   val menuBar: MenuBar = createMenuBar
-  val toolBar = createToolBar
   val maincontent = new BorderPane() {
-    top = new VBox {
-      children = List(menuBar, toolBar)
-    }
+    top = menuBar
     center = sph
     bottom = statusbar
   }
@@ -184,14 +134,7 @@ object Main extends JFXApp with Logging {
     onShown = (we: WindowEvent) => {
       sph.dividerPositions = 0.25
       spv.dividerPositions = 0.6
-      try {
-        ApplicationController.afterShown()
-      } catch {
-        case e: Exception => {
-          error("Exception during reftool startup:")
-          e.printStackTrace()
-        }
-      }
+      tryit { ApplicationController.afterShown() }
     }
   }
   maincontent.prefHeight <== stage.scene.height
