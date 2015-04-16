@@ -42,7 +42,7 @@ object FileHelper {
   def cleanFileName(fn: String) = {
     val (name, ext) = splitName(fn)
     val newn = StringHelper.headString(name.replaceAll("[^a-zA-Z0-9]", ""), 30)
-    newn + "." + ext
+    newn + ext
   }
 
   def getDocumentFileAbs(relPath: String) = new File(AppStorage.config.pdfpath + "/" + relPath)

@@ -45,6 +45,7 @@ class Article(var entrytype: String = "",
 
   lazy val topics = ReftoolDB.topics2articles.right(this)
   def getT2a(t: Topic) = ReftoolDB.topics2articles.where(t2a => t2a.ARTICLE === id and t2a.TOPIC === t.id).headOption
+  def getURL: String = if (doi != "") "http://dx.doi.org/" + doi else linkurl
   def color(t: Topic) = if (t == null) 0 else getT2a(t) match {
     case None => 0
     case Some(t2a) => t2a.color
@@ -57,11 +58,12 @@ class Article(var entrytype: String = "",
       bibtexid
   }
 
-  def getFirstPDFlink = {
-    if (pdflink.contains("\n"))
+  def getFirstDocRelative = {
+    val res = if (pdflink.contains("\n"))
       pdflink.substring(0, pdflink.indexOf('\n'))
     else
       pdflink
+    res
   }
 
   @Transient var testthing = "" // not in DB!
