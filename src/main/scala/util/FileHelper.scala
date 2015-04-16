@@ -10,6 +10,8 @@ package util
 
 import java.io._
 
+import framework.{Helpers, ApplicationController}
+
 object FileHelper {
 
   def write(file: File, text : String) : Unit = {
@@ -58,41 +60,16 @@ object FileHelper {
   }
 
   def revealDocument(relPath: String) {
-    import java.awt.Desktop
-    if (Desktop.isDesktopSupported) {
-      val desktop = Desktop.getDesktop
-      if (desktop.isSupported(Desktop.Action.BROWSE)) {
-        desktop.open(getDocumentFileAbs(relPath))
-      }
-    }
-
-    // TODO http://stackoverflow.com/questions/10478306/windows-explorer-select-mac-finder-equivalent
-    // also change mac, doesn't work above.
-/*
-    if (!file.exists || !file.canRead) {
-      ApplicationController.showNotification("Error opening file: " + file.getAbsolutePath)
+    val file = getDocumentFileAbs(relPath)
+    if (Helpers.isMac) {
+      Runtime.getRuntime.exec("open -R " + file.getAbsolutePath)
+    } else if (Helpers.isWin) {
+      Runtime.getRuntime.exec("explorer.exe /select,"+file.getCanonicalPath)
+    } else if (Helpers.isLinux) {
+      ApplicationController.showNotification("not supported OS, tell me how to do it!")
     } else {
-      val whichOS = System.getProperty("os.name").toLowerCase
-      if (whichOS.contains("mac")) {
-          val params = List("osascript", "-e",
-            "set p to \"" + file.getCanonicalPath + "\"", "-e", "tell application \"Finder\"",
-            "-e", "reveal (POSIX file p) as alias", "-e", "activate", "-e", "end tell")
-          Runtime.getRuntime.exec(params.toArray)
-      } else if (whichOS.contains("win")) {
-        ApplicationController.showNotification("not supported OS, tell me how to do it!")
-        //			try {
-        //				String[] params = new String[] { "explorer", file.getCanonicalPath() };
-        //				Runtime.getRuntime().exec(params);
-        //			} catch (Exception eee) {
-        //				MessageDialog.openError(Display.getCurrent().getActiveShell(), "Exception", eee.getMessage());
-        //			}
-      } else if (whichOS.contains("nix")) {
-        ApplicationController.showNotification("not supported OS, tell me how to do it!")
-      } else {
-        ApplicationController.showNotification("not supported OS, tell me how to do it!")
-      }
+      ApplicationController.showNotification("not supported OS, tell me how to do it!")
     }
-*/
   }
 
 }
