@@ -10,11 +10,14 @@ import scalafx.Includes._
 import scalafx.beans.property.StringProperty
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.Insets
+import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control._
 import scalafx.scene.image.Image
-import scalafx.scene.input.{MouseEvent, ClipboardContent, TransferMode}
+import scalafx.scene.input.{Clipboard, MouseEvent, ClipboardContent, TransferMode}
 import scalafx.scene.layout._
+import scalafx.scene.input.ClipboardContent._
 import scalafx.scene.paint.Color
+import scalafx.stage.DirectoryChooser
 
 // see https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/SimpleTableViewSorted.scala
 //https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/TableWithCustomCellDemo.scala
@@ -185,7 +188,7 @@ class ArticleListView extends GenericView("articlelistview") {
     image = new Image(getClass.getResource("/images/pdf.png").toExternalForm)
     action = () => {
       val a = alv.selectionModel.value.getSelectedItem
-      FileHelper.openDocument(a.getFirstPDFlink)
+      FileHelper.openDocument(a.getFirstDocRelative)
     }
   }
   val aRevealPDF = new MyAction("Article", "Reveal document") {
@@ -193,7 +196,7 @@ class ArticleListView extends GenericView("articlelistview") {
     image = new Image(getClass.getResource("/images/Finder_icon.png").toExternalForm)
     action = () => {
       val a = alv.selectionModel.value.getSelectedItem
-      FileHelper.revealDocument(a.getFirstPDFlink)
+      FileHelper.revealDocument(a.getFirstDocRelative)
     }
   }
 
@@ -211,12 +214,47 @@ class ArticleListView extends GenericView("articlelistview") {
     tooltipString = "Deletes articles completely"
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
     action = () => inTransaction {
-      alv.selectionModel.value.getSelectedItems.foreach( a => {
-        for (t <- a.topics.toList)
-          a.topics.dissociate(t)
-        ReftoolDB.articles.delete(a.id)
-      })
-      setArticlesTopic(currentTopic)
+      new Alert(AlertType.Confirmation, "Really deleted selected articles, including their documents?", ButtonType.Yes, ButtonType.No).showAndWait() match {
+        case Some(ButtonType.OK) =>
+          alv.selectionModel.value.getSelectedItems.foreach( a => {
+            for (t <- a.topics.toList)
+              a.topics.dissociate(t)
+            // TODO delete pdfs
+            ReftoolDB.articles.delete(a.id)
+          })
+          setArticlesTopic(currentTopic)
+        case _ =>
+      }
+    }
+  }
+  val aCopyURLs = new MyAction("Article", "Copy article URLs") {
+    tooltipString = "Copy article URLs to clipboard"
+    image = new Image(getClass.getResource("/images/copyurls.png").toExternalForm)
+    action = () => {
+      val res = alv.selectionModel.value.getSelectedItems.map(a => {
+        a.bibtexid + " " + a.getURL
+      }).mkString("\n")
+      val clipboard = Clipboard.systemClipboard
+      val content = new ClipboardContent {
+        putString(res)
+      }
+      clipboard.setContent(content)
+    }
+  }
+
+  val aCopyPDFs = new MyAction("Article", "Copy documents") {
+    tooltipString = "Copy documents of articles somewhere"
+    image = new Image(getClass.getResource("/images/copypdfs.png").toExternalForm)
+    action = () => {
+      val res = new DirectoryChooser {
+        title = "Select folder for copying documents"
+      }.showDialog(toolbarButton.getParent.getScene.getWindow)
+      if (res != null) {
+        alv.selectionModel.value.getSelectedItems.foreach( a => {
+          val f = FileHelper.getDocumentFileAbs(a.getFirstDocRelative)
+          java.nio.file.Files.copy(f.toPath, new java.io.File(res.getPath + "/" + f.getName).toPath)
+        } )
+      }
     }
   }
 
@@ -227,11 +265,18 @@ class ArticleListView extends GenericView("articlelistview") {
         aMoveToStack.enabled = false
         aRemoveFromTopic.enabled = false
         aRemoveArticle.enabled = false
+        aCopyURLs.enabled = false
+        aCopyPDFs.enabled = false
+        aCopyToStack.enabled = false
+        aOpenPDF.enabled = false
+        aRevealPDF.enabled = false
       } else {
         aRemoveArticle.enabled = true
         aCopyToStack.enabled = true
         aMoveToStack.enabled = currentTopic != null
         aRemoveFromTopic.enabled = currentTopic != null
+        aCopyURLs.enabled = true
+        aCopyPDFs.enabled = true
         if (ob.size == 1) {
           aSetColor.enabled = currentTopic != null
           aOpenPDF.enabled = true
@@ -243,7 +288,7 @@ class ArticleListView extends GenericView("articlelistview") {
   )
 
   toolbar ++= Seq( lbCurrentTitle, aSetColor.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
-    aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveArticle.toolbarButton, aRevealPDF.toolbarButton )
+    aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveArticle.toolbarButton, aRevealPDF.toolbarButton, aCopyURLs.toolbarButton, aCopyPDFs.toolbarButton)
 
   content = new BorderPane {
     center = alv

@@ -1,6 +1,6 @@
 package views
 
-import util.ImportHelper
+import util.{FileHelper, ImportHelper}
 
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.image.Image
@@ -181,9 +181,9 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     tooltipString = "Update DOI by parsing PDF"
     image = new Image(getClass.getResource("/images/pdf2doi.png").toExternalForm)
     action = () => {
-      var doi = util.PdfHelper.getDOI(new java.io.File(article.getFirstPDFlink))
+      var doi = util.PdfHelper.getDOI(FileHelper.getDocumentFileAbs(article.getFirstDocRelative))
       if (doi == "") {
-        doi = util.ImportHelper.getDOImanually(new java.io.File(article.getFirstPDFlink).getName)
+        doi = util.ImportHelper.getDOImanually(FileHelper.getDocumentFileAbs(article.getFirstDocRelative).getName)
       }
       if (doi != "") {
         article.doi = doi
@@ -232,19 +232,16 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
-  toolbar ++= Seq(aSave.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateDOIfromPDF.toolbarButton, aUpdateFromDOI.toolbarButton, aCreateBibtex.toolbarButton, aTest.toolbarButton)
+  toolbar ++= Seq(lbCurrentArticle, aSave.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateDOIfromPDF.toolbarButton, aUpdateFromDOI.toolbarButton, aCreateBibtex.toolbarButton, aTest.toolbarButton)
 
-  content = new BorderPane {
-    top = lbCurrentArticle
-    center = new ScrollPane {
-      fitToWidth = true
-      content = new VBox {
-        vgrow = Priority.Always
-        hgrow = Priority.Always
-        spacing = 10
-        padding = Insets(10)
-        children = List(grid1, new Separator(), grid2, new Separator(), grid3)
-      }
+  content = new ScrollPane {
+    fitToWidth = true
+    content = new VBox {
+      vgrow = Priority.Always
+      hgrow = Priority.Always
+      spacing = 10
+      padding = Insets(10)
+      children = List(grid1, new Separator(), grid2, new Separator(), grid3)
     }
   }
 

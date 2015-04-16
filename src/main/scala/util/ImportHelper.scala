@@ -102,14 +102,14 @@ object ImportHelper extends Logging {
   }
 
   // topic OR article can be NULL, but both should not be set!
-  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article): Article = {
+  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article, copyFile: Boolean): Article = {
     debug(s"importDocument: topic=$topic article=$article sourceFile=$sourceFile")
     assert(!( (article == null) == (topic == null) )) // xor for now
 
     // check topic
 //    if (topic == null)
 
-    debug("move document to reftool database...")
+    debug("import document to reftool database...")
     val pdfpath = new File(AppStorage.config.pdfpath)
     val ifolders = pdfpath.listFiles(new FileFilter {
       override def accept(pathname: File): Boolean = pathname.getName.startsWith(AppStorage.config.importfolderprefix)
@@ -139,8 +139,24 @@ object ImportHelper extends Logging {
       newf = new File(lastfolder.getAbsolutePath + "/" + name + "-" + Random.nextInt(1000) + "." + extension)
     }
 
-    // move file
-    sourceFile.renameTo(newf)
+    // move or copy file
+//    val BtCopy = new ButtonType("Copy")
+//    val BtMove = new ButtonType("Move")
+//    val ale = new Alert(AlertType.Confirmation) {
+//      headerText = "Import file into reftool database"
+//      contentText = "Should i copy or move the file?"
+//      buttonTypes = Seq(BtMove, BtCopy, ButtonType.Cancel)
+//    }
+//    val res = ale.showAndWait()
+//    res match {
+//      case Some(BtCopy) => java.nio.file.Files.copy(sourceFile.toPath, newf.toPath)
+//      case Some(BtMove) => java.nio.file.Files.move(sourceFile.toPath, newf.toPath)
+//      case _ => return null
+//    }
+    if (copyFile)
+      java.nio.file.Files.copy(sourceFile.toPath, newf.toPath)
+    else
+      java.nio.file.Files.move(sourceFile.toPath, newf.toPath)
 
     debug("create article...")
     val relnewf = FileHelper.getDocumentPathRelative(newf)

@@ -151,7 +151,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
   }
 
   onDragOver = (de: DragEvent) => {
-    debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}")
+    debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}  tm = " + de.transferMode)
     clearDnDFormatting()
     if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "topic") {
       val dti = DnDHelper.topicTreeItem
@@ -167,7 +167,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
       debug("  files: " + files)
-      de.acceptTransferModes(TransferMode.MOVE)
+      de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK)
     }
   }
 
@@ -176,6 +176,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
     clearDnDFormatting()
     val dropPos = getDropPositionScroll(de)
     var dropOk = false
+
     if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "topic") {
       val dti = DnDHelper.topicTreeItem
       inTransaction {
@@ -212,7 +213,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       debug("  dropped files: " + files)
       for (f <- files) {
         debug(s" importing file $f treeItem=$treeItem")
-        val a = ImportHelper.importDocument(f, treeItem.value.getValue, null)
+        val a = ImportHelper.importDocument(f, treeItem.value.getValue, null, de.transferMode == TransferMode.COPY)
         ApplicationController.submitShowArticlesFromTopic(treeItem.value.getValue)
         ApplicationController.submitRevealArticleInList(a)
       }
