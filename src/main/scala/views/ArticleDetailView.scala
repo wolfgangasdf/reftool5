@@ -47,8 +47,6 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   var article: Article = null
 
-  ApplicationController.showArticleListeners += ( (a: Article) => setArticle(a) )
-
   def setArticle(a: Article) {
     val doit = if (isDirty.value) {
       val res = new Alert(AlertType.Confirmation) {
@@ -235,6 +233,9 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   }
 
   toolbar ++= Seq(lbCurrentArticle, aSave.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateDOIfromPDF.toolbarButton, aUpdateFromDOI.toolbarButton, aCreateBibtex.toolbarButton, aTest.toolbarButton)
+
+  ApplicationController.showArticleListeners += ( (a: Article) => setArticle(a) )
+
 
   content = new ScrollPane {
     fitToWidth = true

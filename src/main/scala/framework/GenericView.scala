@@ -1,6 +1,7 @@
 package framework
 
 import db.{Topic, Article}
+import main.Main
 import util.AppStorage
 
 import scala.collection.mutable.ArrayBuffer
@@ -153,7 +154,7 @@ object ApplicationController extends Logging {
     views.foreach(c => c.setUIsettings(AppStorage.config.uiSettings.getOrElse(c.uisettingsID, "")))
 
     // menus
-    val mb = main.Main.menuBar
+    val mb = Main.myScene.menuBar
     actions.foreach( action => {
       var menu = mb.menus.find(m => m.getText == action.category)
       debug(s"action=${action.title} menu=" + menu)
@@ -193,10 +194,10 @@ object ApplicationController extends Logging {
 
   val notificationTimer = new java.util.Timer()
   def showNotification(string: String): Unit = {
-    main.Main.statusBarLabel.text = string
+    Main.myScene.statusBarLabel.text = string
     notificationTimer.schedule( // remove Notification later
       new java.util.TimerTask {
-        override def run(): Unit = { Helpers.runUI( main.Main.statusBarLabel.text = "" ) }
+        override def run(): Unit = { Helpers.runUI( Main.myScene.statusBarLabel.text = "" ) }
       }, 3000
     )
   }
