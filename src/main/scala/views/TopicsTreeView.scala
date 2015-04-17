@@ -30,14 +30,14 @@ import scalafx.util.StringConverter
 import scalafx.util.StringConverter._
 
 
-class MyTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
+class MyTreeItem(vv: Topic, ttv: TopicsTreeView) extends TreeItem[Topic](vv) with Logging {
   var hasloadedchilds: Boolean = false
 
   inTransaction {
     if (vv.expanded) {
       for (c <- vv.orderedChilds) {
-        val doit = if (TopicsTreeView.searchActive) { if (c.expanded) true else false } else true
-        if (doit) children += new MyTreeItem(c)
+        val doit = if (ttv.searchActive) { if (c.expanded) true else false } else true
+        if (doit) children += new MyTreeItem(c, ttv)
       }
       expanded = true
     } else {
@@ -58,8 +58,8 @@ class MyTreeItem(vv: Topic) extends TreeItem[Topic](vv) with Logging {
         inTransaction {
           for (newt <- vv.orderedChilds) {
             // debug(s"  add child ($newt)")
-            val doit = if (TopicsTreeView.searchActive) { if (newt.expanded) true else false } else true
-            if (doit) children += new MyTreeItem(newt)
+            val doit = if (ttv.searchActive) { if (newt.expanded) true else false } else true
+            if (doit) children += new MyTreeItem(newt, ttv)
           }
           vv.expanded = true
           ReftoolDB.topics.update(vv)
@@ -181,7 +181,6 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       val dti = DnDHelper.topicTreeItem
       inTransaction {
         val dt = ReftoolDB.topics.get(dti.getValue.id)
-        val oldParent = dt.parentTopic.head
         val newParent = if (dropPos == 2) {
           treeItem.value.getValue.parentTopic.head
         } else {
@@ -254,6 +253,7 @@ class TopicsTreeView extends GenericView("topicsview") {
   var troot: Topic = null
   var tiroot: MyTreeItem = null
   val gv = this
+  var searchActive: Boolean = false
 
   val tv = new TreeView[Topic] {
     id = "treeview"
@@ -323,7 +323,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     inTransaction {
       troot = ReftoolDB.topics.where(t => t.parent === 0).single // root item must have parent == 0
       debug("ttv: root topic=" + troot)
-      tiroot = new MyTreeItem(troot)
+      tiroot = new MyTreeItem(troot, this)
       tv.root = tiroot
       tiroot.setExpanded(true)
     }
@@ -468,7 +468,7 @@ class TopicsTreeView extends GenericView("topicsview") {
   def clearSearch(): Unit = {
     tfSearch.text = ""
     btClearSearch.disable = true
-    TopicsTreeView.searchActive = false
+    searchActive = false
     loadTopics(revealLastTopic = true)
   }
   val btClearSearch = new Button() {
@@ -492,7 +492,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         btClearSearch.disable = false
       } else clearSearch()
 
-      TopicsTreeView.searchActive = true
+      searchActive = true
       loadTopics(revealLastTopic = false)
     }
   }
@@ -511,7 +511,4 @@ class TopicsTreeView extends GenericView("topicsview") {
   override def setUIsettings(s: String): Unit = {}
 
   override val uisettingsID: String = "ttv"
-}
-object TopicsTreeView {
-  var searchActive: Boolean = false
 }
