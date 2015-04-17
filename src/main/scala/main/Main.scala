@@ -43,31 +43,16 @@ object Main extends JFXApp with Logging {
   debug("I am here: " + new java.io.File(".").getAbsolutePath)
 
   private def createMenuBar = new MenuBar {
-    //    useSystemMenuBar = true
+    useSystemMenuBar = true
     menus = List(
-      new Menu("File") {
+      new Menu("Reftool") {
         items = List(
-          new MenuItem("New...") {
-            graphic = new ImageView(new Image(getClass.getResource("/images/paper.png").toExternalForm))
-            accelerator = KeyCombination.keyCombination("Ctrl +N")
-            onAction = (e: ActionEvent) => {
-              println(e.eventType + " occurred on MenuItem New")
-            }
-          },
-          new MenuItem("Save"),
           new MenuItem("reload CSS") {
             onAction = (e: ActionEvent) => {
               info("reload CSS!")
               myScene.stylesheets = List(AppStorage.config.csspath)
             }
           }
-        )
-      },
-      new Menu("Edit") {
-        items = List(
-          new MenuItem("Cut"),
-          new MenuItem("Copy"),
-          new MenuItem("Paste")
         )
       }
     )

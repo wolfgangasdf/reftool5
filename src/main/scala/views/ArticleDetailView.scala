@@ -4,6 +4,7 @@ import util.{FileHelper, ImportHelper}
 
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.image.Image
+import scalafx.scene.input.KeyCombination
 import scalafx.scene.layout.ColumnConstraints._
 import scalafx.scene.control._
 import scalafx.Includes._
@@ -161,6 +162,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   val aSave = new MyAction("Article", "Save") {
     tooltipString = "Save changes to current article"
     image = new Image(getClass.getResource("/images/save_edit.gif").toExternalForm)
+    accelerator = KeyCombination.keyCombination("shortcut +S")
     action = () => saveArticle()
   }
 

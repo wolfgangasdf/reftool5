@@ -7,6 +7,7 @@ import scala.collection.mutable.ArrayBuffer
 import scalafx.beans.property.BooleanProperty
 import scalafx.event.ActionEvent
 import scalafx.scene.image.{ImageView, Image}
+import scalafx.scene.input.KeyCombination
 import scalafx.scene.{Node, Group}
 import scalafx.scene.control._
 import scalafx.scene.control.Tab._
@@ -78,6 +79,8 @@ class MyAction(val category: String, val title: String) extends Logging {
   private var _tooltipString: String = ""
   private var _image: Image = null
   private var _enabled: Boolean = false
+  private var _accelerator: KeyCombination = null
+
   var action: () => Unit = null
 
   // TODO keyboard shortcut
@@ -102,6 +105,11 @@ class MyAction(val category: String, val title: String) extends Logging {
     _enabled = b
     toolbarButton.disable = !b
     menuEntry.disable = !b
+  }
+
+  def accelerator = _accelerator
+  def accelerator_= (keyCombination: KeyCombination): Unit = {
+    menuEntry.accelerator = keyCombination
   }
 
   val toolbarButton = {
