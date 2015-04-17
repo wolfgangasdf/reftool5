@@ -3,11 +3,24 @@ package framework
 import java.nio.charset.Charset
 import java.util.concurrent.FutureTask
 
-object Helpers {
+object Helpers extends Logging {
 
   val filecharset = Charset.forName("UTF-8")
 
   val insetsstd = scalafx.geometry.Insets(5)
+
+  // this should be used for anything in javafx startup, as the stacktrace is missing if e.g. an icon file is not present!
+  def tryit[T]( f: => T ): T = {
+    try {
+      f
+    } catch {
+      case t: Throwable =>
+        debug("tryit: exception " + t.getMessage)
+        t.printStackTrace()
+        null.asInstanceOf[T]
+    }
+  }
+
 
   def toJavaPathSeparator(in: String) = {
     if (isWin) in.replaceAll("""\\""", "/")
