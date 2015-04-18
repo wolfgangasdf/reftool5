@@ -114,6 +114,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
 
   def clearDnDFormatting() {
     if (MyTreeCell.lastDragoverCell != null) { // clear old formatting
+      debug("clear DnD format " + MyTreeCell.lastDragoverCell)
       MyTreeCell.lastDragoverCell.effect = null
       MyTreeCell.lastDragoverCell = null
     }
@@ -134,9 +135,10 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       treeView.value.scrollTo(newtopindex.toInt)
       debug(s" scroll: newtopindex=$newtopindex")
     } else {
+      MyTreeCell.lastDragoverCell = this
+      debug("setting effects for " + MyTreeCell.lastDragoverCell)
       if (tirely < (tiheight * .25d)) { // determine drop position: onto or below
-      val shadow = new DropShadow(5.0, 0.0, -3.0, Color.web("#666666"))
-        effect = shadow
+        effect = new DropShadow(5.0, 0.0, -3.0, Color.web("#666666"))
         res = 2
       } else {
         val shadow = new InnerShadow()
@@ -153,6 +155,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
   onDragOver = (de: DragEvent) => {
     debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}  tm = " + de.transferMode)
     clearDnDFormatting()
+    getDropPositionScroll(de)
     if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "topic") {
       val dti = DnDHelper.topicTreeItem
       if (dti.getParent != treeItem.value) {
@@ -161,18 +164,14 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       }
     } else if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "articles") {
       MyTreeCell.lastDragoverCell = this
-      debug(" dragboard: " + de.dragboard.transferModes)
-      de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE)
-      debug("  acc tm = " + de.acceptedTransferMode + "  acc=" + de.accepted)
+      de.acceptTransferModes(TransferMode.COPY, TransferMode.LINK)
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
-      debug("  files: " + files)
       de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK)
     }
   }
 
   onDragDropped = (de: DragEvent) => {
-//    debug("dragdropped! dragged: " + myTreeCell.draggedTreeItem + " onto: " + treeItem + " below=" + myTreeCell.lastDragoverBelow)
     clearDnDFormatting()
     val dropPos = getDropPositionScroll(de)
     var dropOk = false
@@ -191,8 +190,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
         newParent.expanded = true
         ReftoolDB.topics.update(newParent)
         dropOk = true
-        treeView.value.getUserData.asInstanceOf[TopicsTreeView].loadTopics() // refresh
-        treeView.value.getUserData.asInstanceOf[TopicsTreeView].revealAndSelect(dt)
+        treeView.value.getUserData.asInstanceOf[TopicsTreeView].loadTopics(revealLastTopic = false, revealTopic = dt)
       }
     } else if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "articles") {
       inTransaction {
@@ -279,37 +277,18 @@ class TopicsTreeView extends GenericView("topicsview") {
       if (pt.parentTopic.isEmpty) pt = null else pt = pt.parentTopic.head
     }
   }
-  // recursively from top reveal topics (lazy-loading!)
-  def revealAndSelect(t: Topic): Unit = {
-    var found = false
-    debug(" reveal " + t)
-    inTransaction{
-      expandAllParents(t)
-    }
-    loadTopics(revealLastTopic = false) // also actually load the stuff
-    debug(" find " + t)
-    // find treeitem
-    val it = new TreeIterator[Topic](tiroot)
-    while (!found && it.hasNext) {
-      val tin = it.next()
-      if (tin.getValue != null) if (tin.getValue.id == t.id) {
-        tv.selectionModel.value.select(tin)
-        tv.scrollTo(tv.selectionModel.value.getSelectedIndex)
-        found = true
-      }
-    }
-    assert(found, "Error finding treeitem for topic " + t + " id=" + t.id)
-  }
 
-  def loadTopics(revealLastTopic: Boolean = true): Unit = {
+  def loadTopics(revealLastTopic: Boolean = true, revealTopic: Topic = null): Unit = {
+    assert(!( revealLastTopic && (revealTopic != null) ))
     debug("ttv: loadtopics!")
-    val tlast = if (tv.selectionModel.value.getSelectedItems.length > 0)
-      tv.selectionModel.value.getSelectedItems.head.getValue
-    else null
+    var tlast: Topic = null
+    if (revealLastTopic)
+      tv.selectionModel.value.getSelectedItems.headOption.map(t => tlast = t.getValue)
+    else if (revealTopic != null)
+      tlast = revealTopic
     tv.selectionModel.value.clearSelection()
     // remove all treeitems!
     debug("  clear all items...")
-//    if (tv.root.value != null) tv.root = null
     if (tv.root.value != null) {
       def removeRec(ti: TreeItem[Topic]): Unit = {
         if (ti.children.nonEmpty) ti.children.foreach( child => removeRec(child) )
@@ -321,6 +300,7 @@ class TopicsTreeView extends GenericView("topicsview") {
 
     debug("  add items...")
     inTransaction {
+      if (tlast != null) expandAllParents(tlast) // expand topic to be revealed
       troot = ReftoolDB.topics.where(t => t.parent === 0).single // root item must have parent == 0
       debug("ttv: root topic=" + troot)
       tiroot = new MyTreeItem(troot, this)
@@ -328,8 +308,20 @@ class TopicsTreeView extends GenericView("topicsview") {
       tiroot.setExpanded(true)
     }
 
-    if (revealLastTopic)
-      if (tlast != null) revealAndSelect(tlast)
+    if (tlast != null) { // reveal
+      var found = false
+      val it = new TreeIterator[Topic](tiroot)
+      while (!found && it.hasNext) {
+        val tin = it.next()
+        if (tin.getValue != null) if (tin.getValue.id == tlast.id) {
+          tv.selectionModel.value.select(tin)
+          val idx = tv.selectionModel.value.getSelectedIndex
+          tv.scrollTo(math.max(0, idx - 5))
+          found = true
+        }
+      }
+      assert(found, "Error finding treeitem for topic " + tlast + " id=" + tlast.id)
+    }
 
     debug("ttv: loadtopics done!")
   }
@@ -361,8 +353,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         ReftoolDB.topics.update(pt)
         debug(" add topic " + t2 + "  id=" + t2.id)
       }
-      loadTopics() // refresh
-      revealAndSelect(t2)
+      loadTopics(revealLastTopic = false, revealTopic = t2)
     }
     toolbarButton.onMouseClicked = (me: MouseEvent) => {
       // this is always called after action. but with shift-click, action() is not called!
@@ -450,7 +441,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     }
   }
 
-  ApplicationController.revealTopicListener += ( (t: Topic) => revealAndSelect(t) )
+  ApplicationController.revealTopicListener += ( (t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t) )
 
   toolbar ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton)
 
