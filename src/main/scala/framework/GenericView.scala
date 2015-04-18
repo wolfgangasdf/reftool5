@@ -14,6 +14,7 @@ import scalafx.scene.control._
 import scalafx.scene.control.Tab._
 import scalafx.Includes._
 import scalafx.scene.layout.{HBox, Pane}
+import scalafx.stage.WindowEvent
 
 
 trait HasUISettings {
@@ -156,13 +157,22 @@ object ApplicationController extends Logging {
 
   def beforeClose(): Unit = {
     views.foreach(c => AppStorage.config.uiSettings.put(c.uisettingsID, c.getUIsettings))
-    AppStorage.config.uiSettings.put("main", main.Main.getMainUIsettings)
+    AppStorage.config.uiSettings.put("main", main.Main.mainScene.getMainUIsettings)
   }
 
   def afterShown(): Unit = {
     debug("aftershown!")
+
+    Main.mainScene.window.value.onCloseRequest = (we: WindowEvent) => {
+      if (!ApplicationController.canClose)
+        we.consume()
+      else {
+        ApplicationController.beforeClose()
+      }
+    }
+
     containers.foreach(vc => vc.updateToolbar(0))
-    main.Main.setMainUIsettings(AppStorage.config.uiSettings.getOrElse("main", ""))
+    main.Main.mainScene.setMainUIsettings(AppStorage.config.uiSettings.getOrElse("main", ""))
     views.foreach(c => c.setUIsettings(AppStorage.config.uiSettings.getOrElse(c.uisettingsID, "")))
 
     // menus

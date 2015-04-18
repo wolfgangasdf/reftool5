@@ -8,3 +8,4 @@ JFX.mainClass := Some("main.Main")
 
 JFX.devKit := JFX.jdk(System.getenv("JAVA_HOME"))
 
+JFX.verbose := true

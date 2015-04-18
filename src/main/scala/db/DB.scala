@@ -1,6 +1,7 @@
 package db
 
 import java.io.File
+import java.sql.{SQLNonTransientConnectionException, SQLException}
 
 import org.squeryl.adapters.DerbyAdapter
 import org.squeryl.PrimitiveTypeMode._
@@ -125,6 +126,8 @@ class Topic2Article(val TOPIC: Long, val ARTICLE: Long, var color: Int) extends 
 
 object ReftoolDB extends Schema with Logging {
 
+  val lastschemaversion = 1
+
   debug(" initializing reftooldb...")
 
   val settings = table[Setting]("SETTING")
@@ -134,6 +137,7 @@ object ReftoolDB extends Schema with Logging {
 
   val TORPHANS = "0000-ORPHANS"
   val TSTACK = "0000-stack"
+  val SSCHEMAVERSION = "schemaversion"
 
 //  throw new Exception("huhu")
   /*
@@ -182,21 +186,36 @@ object ReftoolDB extends Schema with Logging {
     beforeInsert(topics) call((x:Topic) => x.id = from(topics)(a => select(a).orderBy(a.id desc)).headOption.getOrElse(new Topic()).id + 1)
   )
 
-
-  def initialize() {
-
-
-    val startwithempty = false // true: create schema with squeryl ; false: migrate old db
-
-    // TODO DB selection dialog etc
-    if (!startwithempty) {
-      if (!new java.io.File(AppStorage.config.dbpath).exists()) {
-        DBupgrades.upgrade4to5()
-        new File(AppStorage.config.pdfpath).mkdir()
-      }
-    } else {
-      FileHelper.deleteAll(new java.io.File(AppStorage.config.dbpath))
+  def dbShutdown(dbpath: String): Unit = {
+    try { java.sql.DriverManager.getConnection(s"jdbc:derby:$dbpath;shutdown=true") } catch {
+      case se: SQLException => if (!se.getSQLState.equals("08006")) throw se
+      case se: SQLNonTransientConnectionException => if (!se.getSQLState.equals("08006")) throw se
     }
+  }
+  def dbGetSchemaVersion(dbpath: String): Int = {
+    val dbconnx = java.sql.DriverManager.getConnection(s"jdbc:derby:$dbpath")
+    val s = dbconnx.createStatement()
+    val rs = s.executeQuery(s"select * from SETTING where NAME = '$SSCHEMAVERSION'")
+    val r = if (rs.next()) rs.getString("VALUE").toInt else -1
+    dbconnx.close()
+    dbShutdown(dbpath)
+    r
+  }
+
+  def initialize(startwithempty: Boolean) {
+
+    val pp = new File(AppStorage.config.pdfpath)
+    if (!startwithempty) {
+      if (!new java.io.File(AppStorage.config.dbpath).exists() && new java.io.File(AppStorage.config.olddbpath).exists()) {
+        DBupgrades.upgrade4to5()
+      }
+      assert(new java.io.File(AppStorage.config.dbpath).exists())
+      assert(pp.exists())
+      val sv = dbGetSchemaVersion(AppStorage.config.dbpath)
+      if (sv != 1) throw new Exception("wrong DB schema version " + sv) // in future, handle DB upgrades via SSCHEMAVERSION
+    }
+    if (!pp.exists()) pp.mkdir()
+
     info("Loading database at " + AppStorage.config.dbpath + " ...")
     val dbs = if (!startwithempty)
       s"jdbc:derby:${AppStorage.config.dbpath}"
@@ -222,6 +241,7 @@ object ReftoolDB extends Schema with Logging {
       }
       if (topics.where(t => t.title === TORPHANS).isEmpty) topics.insert(new Topic(TORPHANS, troot.id, false))
       if (topics.where(t => t.title === TSTACK).isEmpty) topics.insert(new Topic(TSTACK, troot.id, false))
+      if (settings.where(s => s.name === SSCHEMAVERSION).isEmpty) settings.insert(new Setting(SSCHEMAVERSION, "1"))
     }
     info("Database loaded!")
   }
