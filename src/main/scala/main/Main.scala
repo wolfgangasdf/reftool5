@@ -12,7 +12,7 @@ import scalafx.application.JFXApp.PrimaryStage
 import scalafx.scene.Scene
 import scalafx.event.ActionEvent
 
-import views.{SearchView, ArticleDetailView, ArticleListView, TopicsTreeView}
+import views._
 import util._
 import db.ReftoolDB
 import framework.{ApplicationController, ViewContainer, Logging}
@@ -45,11 +45,16 @@ class MainScene extends Scene with Logging {
   }
 
   val articleDetailView = tryit { new ArticleDetailView }
+  val articleTopicsView = tryit { new ArticleTopicsView }
   var searchView = tryit { new SearchView }
 
   val bottomtabs = new ViewContainer {
     addView(articleDetailView)
     addView(searchView)
+  }
+
+  val bottomrighttabs = new ViewContainer {
+    addView(articleTopicsView)
   }
 
   val articleListView = tryit { new ArticleListView }
@@ -64,9 +69,13 @@ class MainScene extends Scene with Logging {
     addView(topicTreeView)
   }
 
+  val spbottom = new SplitPane {
+    orientation = Orientation.HORIZONTAL
+    items += (bottomtabs, bottomrighttabs)
+  }
   val spv = new SplitPane {
     orientation = Orientation.VERTICAL
-    items +=(toptabs, bottomtabs)
+    items += (toptabs, spbottom)
   }
 
   val sph = new SplitPane {
@@ -123,18 +132,29 @@ object Main extends JFXApp with Logging {
   }
 
   def getMainUIsettings: String = {
-    s"${stage.width.getValue};${stage.height.getValue};${mainScene.sph.dividerPositions.head};${mainScene.spv.dividerPositions.head};${stage.x.getValue};${stage.y.getValue}"
+    val vals = List(
+      stage.x.getValue,
+      stage.y.getValue,
+      stage.width.getValue,
+      stage.height.getValue,
+      mainScene.sph.dividerPositions.head,
+      mainScene.spv.dividerPositions.head,
+      mainScene.spbottom.dividerPositions.head
+    )
+    vals.mkString(";")
   }
 
   def setMainUIsettings(s: String) = {
     val parms = s.split(";")
-    if (parms.length == 6) {
-      stage.setWidth(parms(0).toDouble)
-      stage.setHeight(parms(1).toDouble)
-      mainScene.sph.dividerPositions = parms(2).toDouble
-      mainScene.spv.dividerPositions = parms(3).toDouble
-      stage.setX(parms(4).toDouble)
-      stage.setY(parms(5).toDouble)
+    if (parms.length == getMainUIsettings.split(";").length) {
+      val it = parms.iterator
+      stage.setX(it.next().toDouble)
+      stage.setY(it.next().toDouble)
+      stage.setWidth(it.next().toDouble)
+      stage.setHeight(it.next().toDouble)
+      mainScene.sph.dividerPositions = it.next().toDouble
+      mainScene.spv.dividerPositions = it.next().toDouble
+      mainScene.spbottom.dividerPositions = it.next().toDouble
     }
   }
 

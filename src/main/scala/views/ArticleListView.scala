@@ -298,7 +298,8 @@ class ArticleListView extends GenericView("articlelistview") {
   }
 
   toolbar ++= Seq( lbCurrentTitle, aSetColor.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
-    aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveArticle.toolbarButton, aRevealPDF.toolbarButton, aCopyURLs.toolbarButton, aCopyPDFs.toolbarButton)
+    aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveFromTopic.toolbarButton, aRemoveArticle.toolbarButton, aRevealPDF.toolbarButton,
+    aCopyURLs.toolbarButton, aCopyPDFs.toolbarButton)
 
   content = new BorderPane {
     center = alv
@@ -311,8 +312,16 @@ class ArticleListView extends GenericView("articlelistview") {
     alv.scrollTo(alv.getSelectionModel.getSelectedIndex)
   } )
   ApplicationController.articleChangedListeners += ( (a: Article) => {
-    val oldart = articles.find(oa => oa.id == a.id)
-    if (oldart.isDefined) { articles.replaceAll(oldart.get, a) }
+    if (currentTopic != null) {
+      val oldsel = alv.getSelectionModel.getSelectedItems.headOption
+      setArticlesTopic(currentTopic)
+      if (oldsel.nonEmpty) {
+        if (articles.contains(oldsel.get)) alv.getSelectionModel.select(oldsel.get)
+      }
+    } else {
+      val oldart = articles.find(oa => oa.id == a.id)
+      if (oldart.isDefined) { articles.replaceAll(oldart.get, a) }
+    }
   })
 
   def setArticles(al: List[Article], title: String, topic: Topic): Unit = {

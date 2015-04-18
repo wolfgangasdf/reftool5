@@ -286,7 +286,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     inTransaction{
       expandAllParents(t)
     }
-    loadTopics() // also actually load the stuff
+    loadTopics(revealLastTopic = false) // also actually load the stuff
     debug(" find " + t)
     // find treeitem
     val it = new TreeIterator[Topic](tiroot)
@@ -450,6 +450,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     }
   }
 
+  ApplicationController.revealTopicListener += ( (t: Topic) => revealAndSelect(t) )
 
   toolbar ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton)
 
