@@ -99,8 +99,6 @@ class MyAction(val category: String, val title: String) extends Logging {
 
   var action: () => Unit = null
 
-  // TODO keyboard shortcut
-
   // must use getter & setter because toolbarbutton etc has to be modified after it's instantiated
   def image = _image
   def image_= (i: Image): Unit = {
@@ -137,7 +135,6 @@ class MyAction(val category: String, val title: String) extends Logging {
   val menuEntry = {
     new MenuItem(title) {
       onAction = (ae: ActionEvent) => action()
-      // TODO show tooltip in statusbar if mouse over
     }
   }
   enabled = false
@@ -183,29 +180,22 @@ object ApplicationController extends Logging {
   }
 
   val articleChangedListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitArticleChanged(a: Article): Unit = {
-    articleChangedListeners.foreach( acl => acl(a) )
-  }
+  def submitArticleChanged(a: Article): Unit = articleChangedListeners.foreach( acl => acl(a) )
 
   val showArticleListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitShowArticle(a: Article): Unit = {
-    showArticleListeners.foreach( acl => acl(a) )
-  }
+  def submitShowArticle(a: Article): Unit = showArticleListeners.foreach( acl => acl(a) )
 
   val showArticlesListListeners = new ArrayBuffer[(List[Article], String) => Unit]()
-  def submitShowArticlesList(al: List[Article], text: String): Unit = {
-    showArticlesListListeners.foreach( acl => acl(al, text) )
-  }
+  def submitShowArticlesList(al: List[Article], text: String): Unit = showArticlesListListeners.foreach( acl => acl(al, text) )
 
   val showArticlesFromTopicListeners = new ArrayBuffer[(Topic) => Unit]()
-  def submitShowArticlesFromTopic(t: Topic): Unit = {
-    showArticlesFromTopicListeners.foreach( acl => acl(t) )
-  }
+  def submitShowArticlesFromTopic(t: Topic): Unit = showArticlesFromTopicListeners.foreach( acl => acl(t) )
 
   val revealArticleInListListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitRevealArticleInList(a: Article) = {
-    revealArticleInListListeners.foreach( acl => acl(a) )
-  }
+  def submitRevealArticleInList(a: Article) = revealArticleInListListeners.foreach( acl => acl(a) )
+
+  val revealTopicListener = new ArrayBuffer[(Topic) => Unit]()
+  def submitRevealTopic(t: Topic): Unit = revealTopicListener.foreach( rtl => rtl(t) )
 
   val notificationTimer = new java.util.Timer()
   def showNotification(string: String): Unit = {

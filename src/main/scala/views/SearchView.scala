@@ -1,7 +1,6 @@
 package views
 
 import db.ReftoolDB
-import framework.Helpers._
 import framework.{ApplicationController, GenericView}
 
 import org.squeryl.PrimitiveTypeMode._
@@ -63,9 +62,7 @@ class SearchView extends GenericView("searchview") {
   }
 
   override def onViewClicked(): Unit = {
-    debug("huhu" + this.getTabPane.getScene)
-    runUI { tfSearch.requestFocus() }
-    debug("focus: " + this.getTabPane.getScene.getFocusOwner)
+    tfSearch.requestFocus()
   }
 
   override def canClose: Boolean = true
