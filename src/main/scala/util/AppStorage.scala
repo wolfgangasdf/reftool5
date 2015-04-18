@@ -11,7 +11,7 @@ class Config extends Logging {
 
   val uiSettings = new mutable.HashMap[String, String]()
 
-  var datadir = "/tmp/reftool5data" // TODO
+  var datadir = ""
   def dbpath = datadir + "/db5"
   def olddbpath = datadir + "/db" // reftool4
   def pdfpath = datadir + "/files"
