@@ -287,6 +287,16 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   )
 
+  alv.rowFactory = (fact: TableView[Article]) => {
+    new TableRow[Article] {
+      onMouseClicked = (me: MouseEvent) => {
+        if (me.clickCount == 3) {
+          aOpenPDF.action()
+        }
+      }
+    }
+  }
+
   toolbar ++= Seq( lbCurrentTitle, aSetColor.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
     aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveArticle.toolbarButton, aRevealPDF.toolbarButton, aCopyURLs.toolbarButton, aCopyPDFs.toolbarButton)
 

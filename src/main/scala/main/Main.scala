@@ -102,19 +102,19 @@ object Main extends JFXApp with Logging {
   }
 
 
-  val myScene = tryit { new MainScene }
+  val mainScene = tryit { new MainScene }
 
   stage = new PrimaryStage {
     title = "Reftool 5"
     width = 800
     height = 600
-    scene = myScene
+    scene = mainScene
     onShown = (we: WindowEvent) => {
       tryit { ApplicationController.afterShown() }
     }
   }
 
-  myScene.window.value.onCloseRequest = (we: WindowEvent) => {
+  mainScene.window.value.onCloseRequest = (we: WindowEvent) => {
     if (!ApplicationController.canClose)
       we.consume()
     else {
@@ -122,17 +122,17 @@ object Main extends JFXApp with Logging {
     }
   }
 
-  def getUIsettings: String = {
-    s"${stage.width.getValue};${stage.height.getValue};${myScene.sph.dividerPositions.head};${myScene.spv.dividerPositions.head};${stage.x.getValue};${stage.y.getValue}"
+  def getMainUIsettings: String = {
+    s"${stage.width.getValue};${stage.height.getValue};${mainScene.sph.dividerPositions.head};${mainScene.spv.dividerPositions.head};${stage.x.getValue};${stage.y.getValue}"
   }
 
-  def setUIsettings(s: String) = {
+  def setMainUIsettings(s: String) = {
     val parms = s.split(";")
     if (parms.length == 6) {
       stage.setWidth(parms(0).toDouble)
       stage.setHeight(parms(1).toDouble)
-      myScene.sph.dividerPositions = parms(2).toDouble
-      myScene.spv.dividerPositions = parms(3).toDouble
+      mainScene.sph.dividerPositions = parms(2).toDouble
+      mainScene.spv.dividerPositions = parms(3).toDouble
       stage.setX(parms(4).toDouble)
       stage.setY(parms(5).toDouble)
     }

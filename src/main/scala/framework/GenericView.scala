@@ -32,6 +32,12 @@ abstract class GenericView(id: String) extends Tab with HasUISettings with Loggi
   val toolbar = new ArrayBuffer[Node]
 
   def canClose: Boolean
+
+  def activateThisTab() = {
+    tabPane.value.getSelectionModel.select(this)
+  }
+
+  def onViewClicked() = {}
 }
 
 class ViewContainer extends Pane with Logging {
@@ -50,10 +56,19 @@ class ViewContainer extends Pane with Logging {
     }
   }
 
-  val tabpane = new TabPane {
-    selectionModel().selectedItemProperty().onChange({
-      debug("tab sel: " + selectionModel().getSelectedItem.text.value + "  views.le = " + views.length)
-      updateToolbar(selectionModel().getSelectedIndex)
+  val tabpane: TabPane = new TabPane {
+    selectionModel.value.selectedItemProperty.onChange({
+      val si = selectionModel.value.getSelectedIndex
+      updateToolbar(si)
+      if (views.length > si) {
+        // cannot directly use .requestFocus in onViewClicked as the tabpane steals focus
+        val clickedTimer = new java.util.Timer()
+        clickedTimer.schedule(
+          new java.util.TimerTask {
+            override def run(): Unit = { Helpers.runUI( views(selectionModel.value.getSelectedIndex).onViewClicked() ) }
+          }, 500
+        )
+      }
     })
   }
 
@@ -144,17 +159,17 @@ object ApplicationController extends Logging {
 
   def beforeClose(): Unit = {
     views.foreach(c => AppStorage.config.uiSettings.put(c.uisettingsID, c.getUIsettings))
-    AppStorage.config.uiSettings.put("main", main.Main.getUIsettings)
+    AppStorage.config.uiSettings.put("main", main.Main.getMainUIsettings)
   }
 
   def afterShown(): Unit = {
     debug("aftershown!")
     containers.foreach(vc => vc.updateToolbar(0))
-    main.Main.setUIsettings(AppStorage.config.uiSettings.getOrElse("main", ""))
+    main.Main.setMainUIsettings(AppStorage.config.uiSettings.getOrElse("main", ""))
     views.foreach(c => c.setUIsettings(AppStorage.config.uiSettings.getOrElse(c.uisettingsID, "")))
 
     // menus
-    val mb = Main.myScene.menuBar
+    val mb = Main.mainScene.menuBar
     actions.foreach( action => {
       var menu = mb.menus.find(m => m.getText == action.category)
       debug(s"action=${action.title} menu=" + menu)
@@ -194,10 +209,10 @@ object ApplicationController extends Logging {
 
   val notificationTimer = new java.util.Timer()
   def showNotification(string: String): Unit = {
-    Main.myScene.statusBarLabel.text = string
+    Main.mainScene.statusBarLabel.text = string
     notificationTimer.schedule( // remove Notification later
       new java.util.TimerTask {
-        override def run(): Unit = { Helpers.runUI( Main.myScene.statusBarLabel.text = "" ) }
+        override def run(): Unit = { Helpers.runUI( Main.mainScene.statusBarLabel.text = "" ) }
       }, 3000
     )
   }
