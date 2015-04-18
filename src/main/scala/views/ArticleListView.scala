@@ -91,30 +91,6 @@ class ArticleListView extends GenericView("articlelistview") {
     sortOrder += (cPubdate, cTitle)
     selectionModel.value.selectionMode = SelectionMode.MULTIPLE
 
-    onDragDetected = (me: MouseEvent) => {
-      debug("me y=" + me.y + "  alv: " + alv.localToScreen(0, 0))
-      if (me.y > 30.0) { // don't intercept drag in header bar!!! TODO: put in rowFactory?
-        debug("me: " + me.controlDown + " " + me.altDown + " " + me.metaDown)
-        ApplicationController.showNotification("Drag'n'drop: press ctrl BEFORE you click to drag to copy articles to topic!")
-        val db = if (currentTopic == null) startDragAndDrop(TransferMode.COPY) else {
-          if (me.controlDown) // TODO workaround for not-working multiple transfermodes. TODO: does not work anymore
-            startDragAndDrop(TransferMode.COPY)
-          else
-            startDragAndDrop(TransferMode.MOVE)
-        }
-        val cont = new ClipboardContent {
-          putString("articles") // can't easily make custom DataFormats on mac (!)
-        }
-        DnDHelper.articles.clear()
-        DnDHelper.articles ++= selectionModel.value.getSelectedItems
-        DnDHelper.articlesTopic = currentTopic
-        debug(" db transfm=" + db.getTransferModes)
-        db.delegate.setContent(cont)
-        debug(" db transfm=" + db.transferModes)
-        me.consume()
-      }
-    }
-
   }
 
   text = "Article list"
@@ -304,6 +280,21 @@ class ArticleListView extends GenericView("articlelistview") {
           aOpenPDF.action()
         }
       }
+      onDragDetected = (me: MouseEvent) => {
+        ApplicationController.showNotification("Drag'n'drop: 'link' means 'move'!")
+        val db = if (currentTopic == null) startDragAndDrop(TransferMode.COPY) else {
+          startDragAndDrop(TransferMode.ANY:_*) // TODO workaround, MOVE and COPY does not work! I use LINK therefore...
+        }
+        val cont = new ClipboardContent {
+          putString("articles") // can't easily make custom DataFormats on mac (!)
+        }
+        DnDHelper.articles.clear()
+        DnDHelper.articles ++= alv.selectionModel.value.getSelectedItems
+        DnDHelper.articlesTopic = currentTopic
+        db.delegate.setContent(cont)
+        me.consume()
+      }
+
     }
   }
 
