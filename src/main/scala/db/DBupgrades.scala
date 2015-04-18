@@ -5,21 +5,14 @@ import java.sql.{SQLNonTransientConnectionException, SQLException}
 
 import framework.Logging
 import util.{FileHelper, AppStorage}
+import ReftoolDB.dbShutdown
 
 
 object DBupgrades extends Logging {
 
-  // upgrades old reftool4 database
-  // what a mess, but this is due to hibernate <> squeryl... and now I understand everything!
+  // upgrades old reftool4 database, from config.olddbpath into config.dbpath
   def upgrade4to5() {
     info("Upgrade4to5 of " + AppStorage.config.olddbpath + " ...")
-
-    def dbShutdown(dbpath: String): Unit = {
-      try { java.sql.DriverManager.getConnection(s"jdbc:derby:$dbpath;shutdown=true") } catch {
-        case se: SQLException => if (!se.getSQLState.equals("08006")) throw se
-        case se: SQLNonTransientConnectionException => if (!se.getSQLState.equals("08006")) throw se
-      }
-    }
 
     def dbStats(dbpath: String, clobx: Boolean): Unit = {
       val dbconnx = java.sql.DriverManager.getConnection(s"jdbc:derby:$dbpath")
@@ -80,6 +73,7 @@ object DBupgrades extends Logging {
 
     modCol("SETTING", "NAME", "''")
     modCol("SETTING", "VALUE", "''")
+    s.execute(s"insert into SETTING (ID, NAME, VALUE) values (0, '${ReftoolDB.SSCHEMAVERSION}', '1')")
 
     s.execute("alter table TOPIC2ARTICLE drop column PREDECESSORINTOPIC")
     modCol("TOPIC2ARTICLE", "TOPIC")
