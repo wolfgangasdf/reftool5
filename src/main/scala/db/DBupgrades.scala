@@ -45,7 +45,6 @@ object DBupgrades extends Logging {
     }
     // clean
     val pdir = new File(AppStorage.config.dbpath)
-    FileHelper.deleteAll(pdir) // TODO remove later...
     //    val w = new java.io.PrintWriter(new java.io.OutputStreamWriter(System.out))
     //    java.sql.DriverManager.setLogWriter(w)
     debug("checking old db...")

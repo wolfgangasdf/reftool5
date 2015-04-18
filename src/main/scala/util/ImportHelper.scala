@@ -121,7 +121,7 @@ object ImportHelper extends Logging {
     else
       ifolders.last
     if (lastfolder.exists()) {
-      if (lastfolder.list().length > 3) { // TODO: 3 is for testing
+      if (lastfolder.list().length > 99) {
         val rex = """.*-([0-9]+)""".r
         val lastno = lastfolder.getName match {
           case rex(s) => s.toInt
