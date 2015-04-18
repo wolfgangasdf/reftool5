@@ -234,7 +234,10 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   toolbar ++= Seq(lbCurrentArticle, aSave.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateDOIfromPDF.toolbarButton, aUpdateFromDOI.toolbarButton, aCreateBibtex.toolbarButton, aTest.toolbarButton)
 
-  ApplicationController.showArticleListeners += ( (a: Article) => setArticle(a) )
+  ApplicationController.showArticleListeners += ( (a: Article) => {
+    setArticle(a)
+    activateThisTab()
+  } )
 
 
   content = new ScrollPane {
