@@ -179,8 +179,12 @@ object ApplicationController extends Logging {
 
   }
 
+
   val articleChangedListeners = new ArrayBuffer[(Article) => Unit]()
   def submitArticleChanged(a: Article): Unit = articleChangedListeners.foreach( acl => acl(a) )
+
+  val articleRemovedListeners = new ArrayBuffer[(Article) => Unit]()
+  def submitArticleRemoved(a: Article): Unit = articleRemovedListeners.foreach( acl => acl(a) )
 
   val showArticleListeners = new ArrayBuffer[(Article) => Unit]()
   def submitShowArticle(a: Article): Unit = showArticleListeners.foreach( acl => acl(a) )

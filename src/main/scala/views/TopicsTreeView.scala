@@ -212,7 +212,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       debug("  dropped files: " + files)
       for (f <- files) {
         debug(s" importing file $f treeItem=$treeItem")
-        val a = ImportHelper.importDocument(f, treeItem.value.getValue, null, de.transferMode == TransferMode.COPY)
+        val a = ImportHelper.importDocument(f, treeItem.value.getValue, null, Some(de.transferMode == TransferMode.COPY))
         ApplicationController.submitShowArticlesFromTopic(treeItem.value.getValue)
         ApplicationController.submitRevealArticleInList(a)
       }

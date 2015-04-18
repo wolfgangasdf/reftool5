@@ -19,7 +19,7 @@ class Config extends Logging {
   val olddbpath = "/Unencrypted_Data/temp/reftool5dbtest/db"
 
 //  val csspath = getClass.getResource("/reftool.css").toExternalForm
-  val csspath = "file:" + new java.io.File("src/main/resources/reftool.css").getAbsolutePath // TODO testing
+  val csspath = "file:" + new java.io.File("src/main/resources/reftool.css").getAbsolutePath
   debug("csspath: " + csspath)
 }
 

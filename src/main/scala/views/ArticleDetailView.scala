@@ -48,6 +48,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   var article: Article = null
 
   def setArticle(a: Article) {
+    debug("adv: set article " + a)
     val doit = if (isDirty.value) {
       val res = new Alert(AlertType.Confirmation) {
         headerText = "Article is modified."
@@ -70,7 +71,6 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
       lJournal.tf.text = a.journal
       lReview.tf.text = a.review
       lEntryType.tf.text = a.entrytype
-      lPdflink.tf.text = a.pdflink
       lLinkURL.tf.text = a.linkurl
       lDOI.tf.text = a.doi
       lBibtexentry.tf.text = a.bibtexentry
@@ -89,7 +89,6 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     article.journal = lJournal.tf.text.value
     article.review = lReview.tf.text.value
     article.entrytype = lEntryType.tf.text.value
-    article.pdflink = lPdflink.tf.text.value
     article.linkurl = lLinkURL.tf.text.value
     article.doi = lDOI.tf.text.value
     inTransaction {
@@ -136,7 +135,6 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   val lReview = new MyLine(0, "Review", 10)
 
   val lEntryType = new MyLine(0, "Entry type")
-  val lPdflink = new MyLine(1, "Documents") // TODO implement
   val lLinkURL = new MyLine(2, "Link URL")
   val lDOI = new MyLine(3, "DOI")
   val lBibtexentry = new MyLine(4, "Bibtex entry", 10)
@@ -150,7 +148,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   }
 
   val grid3 = new MyGridPane {
-    children ++= lEntryType.content ++ lPdflink.content ++ lLinkURL.content ++ lDOI.content ++ lBibtexentry.content
+    children ++= lEntryType.content ++ lLinkURL.content ++ lDOI.content ++ lBibtexentry.content
   }
 
   text = "Article details"
@@ -239,6 +237,14 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     activateThisTab()
   } )
 
+  ApplicationController.articleRemovedListeners += ( (a: Article) => {
+    if (a == article) setArticle(null)
+  } )
+
+  ApplicationController.articleChangedListeners += ( (a: Article) => {
+    // TODO prevent own calls?!
+    if (a == article) setArticle(a)
+  } )
 
   content = new ScrollPane {
     fitToWidth = true

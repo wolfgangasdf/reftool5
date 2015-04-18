@@ -46,6 +46,7 @@ class MainScene extends Scene with Logging {
 
   val articleDetailView = tryit { new ArticleDetailView }
   val articleTopicsView = tryit { new ArticleTopicsView }
+  val articleDocumentsView = tryit { new ArticleDocumentsView }
   var searchView = tryit { new SearchView }
 
   val bottomtabs = new ViewContainer {
@@ -55,6 +56,7 @@ class MainScene extends Scene with Logging {
 
   val bottomrighttabs = new ViewContainer {
     addView(articleTopicsView)
+    addView(articleDocumentsView)
   }
 
   val articleListView = tryit { new ArticleListView }
