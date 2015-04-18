@@ -13,6 +13,7 @@ import util._
 import util.AppStorage
 import framework.Logging
 
+import scala.collection.mutable.ArrayBuffer
 import scala.language.postfixOps
 /*
 
@@ -29,6 +30,14 @@ class BaseEntity extends KeyedEntity[Long] {
 }
 
 class Setting(var name: String = "", var value: String = "") extends BaseEntity
+
+class Document(var docName: String, var docPath: String) extends Ordered[Document] {
+  override def compare(that: Document): Int = {
+    if (docName == that.docName) 0
+    else if (docName > that.docName) 1
+    else -1
+  }
+}
 
 class Article(var entrytype: String = "",
               var title: String = "",
@@ -58,12 +67,26 @@ class Article(var entrytype: String = "",
       bibtexid
   }
 
+  def getDocuments: ArrayBuffer[Document] = {
+    debug("getdocs: " + pdflink)
+    val res = if (pdflink.contains("\n")) {
+      pdflink.split("\n").map(s => {
+        val docinfo = s.split("\t")
+        new Document(docinfo(0), docinfo(1))
+      })
+    }.toList else
+      List(new Document("0-main", pdflink))
+    new ArrayBuffer[Document]() ++= res
+  }
+  def setDocuments(dl: List[Document]) = {
+    pdflink = dl.map(d => s"${d.docName}\t${d.docPath}").mkString("\n")
+    debug("setdocs: " + pdflink)
+  }
+
+  // list of <docname>\t<docpath>\n OR <docpath>
   def getFirstDocRelative = {
-    val res = if (pdflink.contains("\n"))
-      pdflink.substring(0, pdflink.indexOf('\n'))
-    else
-      pdflink
-    res
+    val docs = getDocuments
+    if (docs.nonEmpty) docs.head.docPath else ""
   }
 
   @Transient var testthing = "" // not in DB!

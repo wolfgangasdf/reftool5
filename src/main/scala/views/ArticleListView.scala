@@ -13,7 +13,7 @@ import scalafx.geometry.Insets
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control._
 import scalafx.scene.image.Image
-import scalafx.scene.input.{Clipboard, MouseEvent, ClipboardContent, TransferMode}
+import scalafx.scene.input._
 import scalafx.scene.layout._
 import scalafx.scene.input.ClipboardContent._
 import scalafx.scene.paint.Color
@@ -48,13 +48,13 @@ class ArticleListView extends GenericView("articlelistview") {
     text = "Title"
     cellValueFactory = (a) => new StringProperty(a.value.title)
     cellFactory = (tc) => new MyTableCell
-    prefWidth = 280
+//    prefWidth = 280
   }
   val cPubdate = new TableColumn[Article, String] {
     text = "Date"
     cellValueFactory = (a) => new StringProperty(a.value.pubdate)
     cellFactory = (tc) => new MyTableCell
-    prefWidth = 80
+//    prefWidth = 80
   }
   val cEntrytype = new TableColumn[Article, String] {
     text = "Type"
@@ -87,25 +87,34 @@ class ArticleListView extends GenericView("articlelistview") {
   val alv: TableView[Article] = new TableView[Article](articles) {
     columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview)
     delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY)
+
     sortOrder += (cPubdate, cTitle)
     selectionModel.value.selectionMode = SelectionMode.MULTIPLE
+
     onDragDetected = (me: MouseEvent) => {
-      val db = if (currentTopic == null) startDragAndDrop(TransferMode.COPY) else {
+      debug("me y=" + me.y + "  alv: " + alv.localToScreen(0, 0))
+      if (me.y > 30.0) { // don't intercept drag in header bar!!! TODO: put in rowFactory?
         debug("me: " + me.controlDown + " " + me.altDown + " " + me.metaDown)
         ApplicationController.showNotification("Drag'n'drop: press ctrl BEFORE you click to drag to copy articles to topic!")
-        if (me.controlDown) // TODO workaround for not-working multiple transfermodes.
-          startDragAndDrop(TransferMode.COPY)
-        else
-          startDragAndDrop(TransferMode.MOVE)
+        val db = if (currentTopic == null) startDragAndDrop(TransferMode.COPY) else {
+          if (me.controlDown) // TODO workaround for not-working multiple transfermodes. TODO: does not work anymore
+            startDragAndDrop(TransferMode.COPY)
+          else
+            startDragAndDrop(TransferMode.MOVE)
+        }
+        val cont = new ClipboardContent {
+          putString("articles") // can't easily make custom DataFormats on mac (!)
+        }
+        DnDHelper.articles.clear()
+        DnDHelper.articles ++= selectionModel.value.getSelectedItems
+        DnDHelper.articlesTopic = currentTopic
+        debug(" db transfm=" + db.getTransferModes)
+        db.delegate.setContent(cont)
+        debug(" db transfm=" + db.transferModes)
+        me.consume()
       }
-      val cont = new ClipboardContent()
-      cont.putString("articles") // can't easily make custom DataFormats on mac (!)
-      DnDHelper.articles.clear()
-      DnDHelper.articles ++= selectionModel.value.getSelectedItems
-      DnDHelper.articlesTopic = currentTopic
-      db.delegate.setContent(cont)
-      me.consume()
     }
+
   }
 
   text = "Article list"
@@ -215,12 +224,13 @@ class ArticleListView extends GenericView("articlelistview") {
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
     action = () => inTransaction {
       new Alert(AlertType.Confirmation, "Really deleted selected articles, including their documents?", ButtonType.Yes, ButtonType.No).showAndWait() match {
-        case Some(ButtonType.OK) =>
+        case Some(ButtonType.Yes) =>
           alv.selectionModel.value.getSelectedItems.foreach( a => {
             for (t <- a.topics.toList)
               a.topics.dissociate(t)
-            // TODO delete pdfs
+            a.getDocuments.foreach( d => FileHelper.getDocumentFileAbs(d.docPath).delete() )
             ReftoolDB.articles.delete(a.id)
+            ApplicationController.submitArticleRemoved(a)
           })
           setArticlesTopic(currentTopic)
         case _ =>
@@ -358,10 +368,7 @@ class ArticleListView extends GenericView("articlelistview") {
   }
 
   override def setUIsettings(s: String): Unit = {
-    // TODO fixme doesnt work
-    debug("alv: settings = " + s)
-    if (s != "")
-      s.split(",").zipWithIndex.foreach { case (s: String, i: Int) => alv.columns(i).setPrefWidth(s.toDouble) }
+    if (s != "") s.split(",").zipWithIndex.foreach { case (s: String, i: Int) => alv.columns(i).setPrefWidth(s.toDouble) }
   }
 
   override val uisettingsID: String = "alv"

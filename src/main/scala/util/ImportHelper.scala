@@ -3,7 +3,7 @@ package util
 import org.jbibtex._
 import org.squeryl.PrimitiveTypeMode._
 
-import db.{ReftoolDB, Article, Topic}
+import db.{Document, ReftoolDB, Article, Topic}
 import framework.Logging
 
 import java.io.{StringWriter, StringReader, FileFilter, File}
@@ -13,6 +13,7 @@ import scala.util.Random
 import scala.collection.JavaConversions._
 import scalafx.event.ActionEvent
 import scalafx.scene.Scene
+import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control._
 import scalafx.scene.control.Button._
 import scalafx.scene.layout.{Priority, HBox, VBox}
@@ -102,7 +103,7 @@ object ImportHelper extends Logging {
   }
 
   // topic OR article can be NULL, but both should not be set!
-  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article, copyFile: Boolean): Article = {
+  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article, copyFile: Option[Boolean]): Article = {
     debug(s"importDocument: topic=$topic article=$article sourceFile=$sourceFile")
     assert(!( (article == null) == (topic == null) )) // xor for now
 
@@ -140,29 +141,33 @@ object ImportHelper extends Logging {
     }
 
     // move or copy file
-//    val BtCopy = new ButtonType("Copy")
-//    val BtMove = new ButtonType("Move")
-//    val ale = new Alert(AlertType.Confirmation) {
-//      headerText = "Import file into reftool database"
-//      contentText = "Should i copy or move the file?"
-//      buttonTypes = Seq(BtMove, BtCopy, ButtonType.Cancel)
-//    }
-//    val res = ale.showAndWait()
-//    res match {
-//      case Some(BtCopy) => java.nio.file.Files.copy(sourceFile.toPath, newf.toPath)
-//      case Some(BtMove) => java.nio.file.Files.move(sourceFile.toPath, newf.toPath)
-//      case _ => return null
-//    }
-    if (copyFile)
+
+    val copyIt = if (copyFile.isEmpty) {
+      val BtCopy = new ButtonType("Copy")
+      val BtMove = new ButtonType("Move")
+      val ale = new Alert(AlertType.Confirmation) {
+        headerText = "Import file into reftool database"
+        contentText = "Should i copy or move the file?"
+        buttonTypes = Seq(BtMove, BtCopy, ButtonType.Cancel)
+      }
+      val res = ale.showAndWait()
+      res match {
+        case Some(BtCopy) => true
+        case Some(BtMove) => false
+        case _ => return null
+      }
+    } else copyFile.get
+
+    if (copyIt)
       java.nio.file.Files.copy(sourceFile.toPath, newf.toPath)
     else
       java.nio.file.Files.move(sourceFile.toPath, newf.toPath)
 
-    debug("create article...")
     val relnewf = FileHelper.getDocumentPathRelative(newf)
     var a = article
     if (a == null) { // no article given, create new and get bibtex etc.
       // create new article
+      debug("create article...")
       a = new Article(title = sourceFile.getName, pdflink = relnewf)
       debug("parse for DOI...")
       var doi = ""
@@ -186,13 +191,15 @@ object ImportHelper extends Logging {
       }
     } else { // existing article!
       // article given, add document
-      if (a.pdflink == "") a.pdflink += relnewf else a.pdflink += "\n" + relnewf
+      val docs = a.getDocuments
+      docs += new Document(StringHelper.headString(sourceFile.getName, 10), relnewf)
+      a.setDocuments(docs.toList)
     }
-
 
     debug("save article...")
     inTransaction {
       ReftoolDB.articles.insertOrUpdate(a)
+      debug("new pdflink = " + a.pdflink)
       if (topic != null) a.topics.associate(topic)
     }
 

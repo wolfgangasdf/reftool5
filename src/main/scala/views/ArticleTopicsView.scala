@@ -12,7 +12,7 @@ import scalafx.scene.input.MouseEvent
 class ArticleTopicsView extends GenericView("articletopicsview") {
   debug(" initializing articletopicsview...")
 
-  text = "Article topics"
+  text = "A.topics"
 
   var article: Article = null
 
