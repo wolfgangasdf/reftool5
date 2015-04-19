@@ -22,7 +22,7 @@ import db.ReftoolDB
 import framework.{ApplicationController, ViewContainer, Logging}
 import framework.Helpers._
 
-import scalafx.stage.{DirectoryChooser, Stage}
+import scalafx.stage.{WindowEvent, DirectoryChooser, Stage}
 
 
 class MainScene(stage: Stage) extends Scene with Logging {
@@ -77,18 +77,18 @@ class MainScene(stage: Stage) extends Scene with Logging {
     addView(topicTreeView)
   }
 
-  val spbottom = new SplitPane {
+  val sph = new SplitPane {
     orientation = Orientation.HORIZONTAL
-    items += (bottomtabs, bottomrighttabs)
+    items +=(lefttabs, spv)
   }
+
   val spv = new SplitPane {
     orientation = Orientation.VERTICAL
     items += (toptabs, spbottom)
   }
-
-  val sph = new SplitPane {
+  val spbottom = new SplitPane {
     orientation = Orientation.HORIZONTAL
-    items +=(lefttabs, spv)
+    items += (bottomtabs, bottomrighttabs)
   }
 
   val statusBarLabel = new Label("") { hgrow = Priority.Always }
@@ -175,12 +175,13 @@ object Main extends JFXApp with Logging {
         new MainScene(this)
       }
       scene = mainScene
-      //            onShown = (we: WindowEvent) => { // works only if no stage shown before...
-      debug(" onshown!!!!!!!!!!!!!!!!")
-      tryit {
-        ApplicationController.afterShown()
+      onShown = (we: WindowEvent) => {
+        debug("onshown!!!!!!")
       }
-      //            }
+    }
+//    stage.show()
+    tryit {
+      ApplicationController.afterShown()
     }
   }
 
@@ -212,7 +213,6 @@ object Main extends JFXApp with Logging {
                   }
                 }
               }
-              disable = !new java.io.File(AppStorage.config.datadir).isDirectory
             },
             new Button("Open last reftool data directory \n" + AppStorage.config.datadir) {
               onAction = (ae: ActionEvent) => {
