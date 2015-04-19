@@ -3,10 +3,10 @@
 // addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.5.1")
 
 ////////////////// sbt-javafx
-addSbtPlugin("no.vedaadata" %% "sbt-javafx" % "0.6")
+addSbtPlugin("no.vedaadata" %% "sbt-javafx" % "0.7")
 
 ////////// to find dependency problems
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.4")
+//addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.4")
 
 ///////////////// access build.scala info from scala
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.3.2")
@@ -14,3 +14,7 @@ addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.3.2")
 ////////////////// onejar, not needed
 // addSbtPlugin("com.github.retronym" % "sbt-onejar" % "0.8")
 
+///////////////// mac bundle
+addSbtPlugin("de.sciss" % "sbt-appbundle" % "1.0.2")
+
+//addSbtPlugin("de.djini" % "xsbt-osxapp" % "1.5.0")

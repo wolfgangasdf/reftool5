@@ -1,6 +1,8 @@
 package main
 
 
+import java.io.{File, PrintStream, FileOutputStream}
+
 import scalafx.application.JFXApp
 import scalafx.Includes._
 import scalafx.scene.control.Alert.AlertType
@@ -50,10 +52,12 @@ class MainScene(stage: Stage) extends Scene with Logging {
   val articleTopicsView = tryit { new ArticleTopicsView }
   val articleDocumentsView = tryit { new ArticleDocumentsView }
   var searchView = tryit { new SearchView }
+  var logView = tryit { new LogView }
 
   val bottomtabs = new ViewContainer {
     addView(articleDetailView)
     addView(searchView)
+    addView(logView)
   }
 
   val bottomrighttabs = new ViewContainer {
@@ -139,6 +143,24 @@ class MainScene(stage: Stage) extends Scene with Logging {
 
 object Main extends JFXApp with Logging {
 
+  // redirect console output, must happen on top of this object!
+  val oldOut = System.out
+  val oldErr = System.err
+  var logps: FileOutputStream = null
+  System.setOut(new PrintStream(new MyConsole(false), true))
+  System.setErr(new PrintStream(new MyConsole(true), true))
+
+  val logfile = File.createTempFile("reftool5log",".txt")
+  logps = new FileOutputStream(logfile)
+
+  class MyConsole(errchan: Boolean) extends java.io.OutputStream {
+    override def write(b: Int): Unit = {
+      runUI { if (mainScene != null) if (mainScene.logView != null) if (mainScene.logView.taLog != null) mainScene.logView.taLog.appendText(b.toChar.toString) }
+      if (logps != null) logps.write(b)
+      (if (errchan) oldErr else oldOut).print(b.toChar.toString)
+    }
+  }
+
   tryit { AppStorage.load() }
 
   var mainScene: MainScene = null
@@ -213,6 +235,9 @@ object Main extends JFXApp with Logging {
       }
     }
   }
+
+  println("logging to file " + logfile.getPath)
+
 //  stage = new PrimaryStage {
 //    title = "Reftool 5"
 //    width = 800
