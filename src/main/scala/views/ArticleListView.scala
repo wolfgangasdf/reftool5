@@ -216,7 +216,7 @@ class ArticleListView extends GenericView("articlelistview") {
             ReftoolDB.articles.delete(a.id)
             ApplicationController.submitArticleRemoved(a)
           })
-          setArticlesTopic(currentTopic)
+          articles --= alv.selectionModel.value.getSelectedItems
         case _ =>
       }
     }
