@@ -9,6 +9,7 @@ import util.{DnDHelper, FileHelper, StringHelper}
 import scalafx.Includes._
 import scalafx.beans.property.StringProperty
 import scalafx.collections.ObservableBuffer
+import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control._
@@ -176,6 +177,14 @@ class ArticleListView extends GenericView("articlelistview") {
       FileHelper.openDocument(a.getFirstDocRelative)
     }
   }
+  val aOpenURL = new MyAction("Article", "Open URL") {
+    tooltipString = "Opens URL of article"
+    image = new Image(getClass.getResource("/images/external_browser.gif").toExternalForm)
+    action = () => {
+      val a = alv.selectionModel.value.getSelectedItem
+      FileHelper.openURL(a.getURL)
+    }
+  }
   val aRevealPDF = new MyAction("Article", "Reveal document") {
     tooltipString = "Reveal document in file browser"
     image = new Image(getClass.getResource("/images/Finder_icon.png").toExternalForm)
@@ -256,6 +265,7 @@ class ArticleListView extends GenericView("articlelistview") {
         aCopyToStack.enabled = false
         aOpenPDF.enabled = false
         aRevealPDF.enabled = false
+        aOpenURL.enabled = false
       } else {
         aRemoveArticle.enabled = true
         aCopyToStack.enabled = true
@@ -267,6 +277,7 @@ class ArticleListView extends GenericView("articlelistview") {
           aSetColor.enabled = currentTopic != null
           aOpenPDF.enabled = true
           aRevealPDF.enabled = true
+          aOpenURL.enabled = true
           ApplicationController.submitShowArticle(ob.head)
         }
       }
@@ -298,9 +309,13 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   }
 
+  val btTest = new Button("test") {
+    onAction = (ae: ActionEvent) => alv.delegate.getColumns.get(0).setPrefWidth(400.0)
+//    alv.columnResizePolicy = new TableView.ResizeFeatures.()
+  }
   toolbar ++= Seq( lbCurrentTitle, aSetColor.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
     aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveFromTopic.toolbarButton, aRemoveArticle.toolbarButton, aRevealPDF.toolbarButton,
-    aCopyURLs.toolbarButton, aCopyPDFs.toolbarButton)
+    aCopyURLs.toolbarButton, aCopyPDFs.toolbarButton, aOpenURL.toolbarButton, btTest)
 
   content = new BorderPane {
     center = alv

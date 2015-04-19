@@ -47,8 +47,8 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   var article: Article = null
 
-  def setArticle(a: Article) {
-    debug("adv: set article " + a)
+  def setArticle(aa: Article) {
+    debug("adv: set article " + aa)
     val doit = if (isDirty.value) {
       val res = new Alert(AlertType.Confirmation) {
         headerText = "Article is modified."
@@ -62,6 +62,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
       }
     } else true
     if (doit) {
+      val a = if (aa == null) new Article() else aa
       article = a
       lbCurrentArticle.text = a.toString
       lTitle.tf.text = a.title

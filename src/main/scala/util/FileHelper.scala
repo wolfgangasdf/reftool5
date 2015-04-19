@@ -9,6 +9,7 @@ package util
  */
 
 import java.io._
+import java.net.URI
 
 import framework.{Helpers, ApplicationController}
 
@@ -55,6 +56,16 @@ object FileHelper {
       val desktop = Desktop.getDesktop
       if (desktop.isSupported(Desktop.Action.OPEN)) {
         desktop.open(getDocumentFileAbs(relPath))
+      }
+    }
+  }
+
+  def openURL(url: String) = {
+    import java.awt.Desktop
+    if (Desktop.isDesktopSupported) {
+      val desktop = Desktop.getDesktop
+      if (desktop.isSupported(Desktop.Action.BROWSE)) {
+        desktop.browse(new URI(url))
       }
     }
   }
