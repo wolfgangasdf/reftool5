@@ -87,7 +87,6 @@ class ArticleListView extends GenericView("articlelistview") {
 
   val alv: TableView[Article] = new TableView[Article](articles) {
     columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview)
-    delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY)
 
     sortOrder += (cPubdate, cTitle)
     selectionModel.value.selectionMode = SelectionMode.MULTIPLE
@@ -310,9 +309,14 @@ class ArticleListView extends GenericView("articlelistview") {
   }
 
   val btTest = new Button("test") {
-    onAction = (ae: ActionEvent) => alv.delegate.getColumns.get(0).setPrefWidth(400.0)
-//    alv.columnResizePolicy = new TableView.ResizeFeatures.()
+
+    onAction = (ae: ActionEvent) => {
+      alv.delegate.setColumnResizePolicy(javafx.scene.control.TableView.UNCONSTRAINED_RESIZE_POLICY)
+      cTitle.setPrefWidth(400.0)
+      alv.delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY)
+    }
   }
+
   toolbar ++= Seq( lbCurrentTitle, aSetColor.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
     aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveFromTopic.toolbarButton, aRemoveArticle.toolbarButton, aRevealPDF.toolbarButton,
     aCopyURLs.toolbarButton, aCopyPDFs.toolbarButton, aOpenURL.toolbarButton, btTest)
@@ -375,6 +379,7 @@ class ArticleListView extends GenericView("articlelistview") {
 
   override def setUIsettings(s: String): Unit = {
     if (s != "") s.split(",").zipWithIndex.foreach { case (s: String, i: Int) => alv.columns(i).setPrefWidth(s.toDouble) }
+    // alv.delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY) // TODO does not work in combi with setPrefWidth
   }
 
   override val uisettingsID: String = "alv"

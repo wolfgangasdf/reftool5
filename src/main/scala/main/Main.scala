@@ -1,28 +1,26 @@
 package main
 
 
-import java.io.{File, PrintStream, FileOutputStream}
+import java.io.{File, FileOutputStream, PrintStream}
 
-import scalafx.application.JFXApp
-import scalafx.Includes._
-import scalafx.scene.control.Alert.AlertType
-import scalafx.scene.image.{ImageView, Image}
-import scalafx.scene.layout._
-import scalafx.scene.control._
-
-import scala.language.{implicitConversions, reflectiveCalls, postfixOps}
-import scalafx.geometry.Orientation
-import scalafx.application.JFXApp.PrimaryStage
-import scalafx.scene.Scene
-import scalafx.event.ActionEvent
-
-import views._
-import util._
 import db.ReftoolDB
-import framework.{ApplicationController, ViewContainer, Logging}
 import framework.Helpers._
+import framework.{ApplicationController, Logging, ViewContainer}
+import util._
+import views._
 
-import scalafx.stage.{WindowEvent, DirectoryChooser, Stage}
+import scala.language.{implicitConversions, postfixOps, reflectiveCalls}
+import scalafx.Includes._
+import scalafx.application.JFXApp
+import scalafx.application.JFXApp.PrimaryStage
+import scalafx.event.ActionEvent
+import scalafx.geometry.Orientation
+import scalafx.scene.Scene
+import scalafx.scene.control.Alert.AlertType
+import scalafx.scene.control._
+import scalafx.scene.image.{Image, ImageView}
+import scalafx.scene.layout._
+import scalafx.stage.{DirectoryChooser, Stage}
 
 
 class MainScene(stage: Stage) extends Scene with Logging {
@@ -77,18 +75,18 @@ class MainScene(stage: Stage) extends Scene with Logging {
     addView(topicTreeView)
   }
 
-  val sph = new SplitPane {
+  val spbottom = new SplitPane {
     orientation = Orientation.HORIZONTAL
-    items +=(lefttabs, spv)
+    items += (bottomtabs, bottomrighttabs)
   }
-
   val spv = new SplitPane {
     orientation = Orientation.VERTICAL
     items += (toptabs, spbottom)
   }
-  val spbottom = new SplitPane {
+
+  val sph = new SplitPane {
     orientation = Orientation.HORIZONTAL
-    items += (bottomtabs, bottomrighttabs)
+    items +=(lefttabs, spv)
   }
 
   val statusBarLabel = new Label("") { hgrow = Priority.Always }
@@ -175,13 +173,12 @@ object Main extends JFXApp with Logging {
         new MainScene(this)
       }
       scene = mainScene
-      onShown = (we: WindowEvent) => {
-        debug("onshown!!!!!!")
+      //            onShown = (we: WindowEvent) => { // works only if no stage shown before...
+      debug(" onshown!!!!!!!!!!!!!!!!")
+      tryit {
+        ApplicationController.afterShown()
       }
-    }
-//    stage.show()
-    tryit {
-      ApplicationController.afterShown()
+      //            }
     }
   }
 
@@ -201,6 +198,12 @@ object Main extends JFXApp with Logging {
         content = new VBox(20) {
           children = List(
             new ImageView(new Image(getClass.getResource("/images/about.png").toExternalForm)),
+            new Button("Open last reftool data directory \n" + AppStorage.config.datadir) {
+              onAction = (ae: ActionEvent) => {
+                loadMainScene(createNewStorage = false)
+              }
+              disable = !new java.io.File(AppStorage.config.datadir).isDirectory
+            },
             new Button("Create new reftool data directory...") {
               onAction = (ae: ActionEvent) => {
                 val res = new DirectoryChooser { title = "Select new reftool data directory" }.showDialog(stage)
@@ -213,12 +216,6 @@ object Main extends JFXApp with Logging {
                   }
                 }
               }
-            },
-            new Button("Open last reftool data directory \n" + AppStorage.config.datadir) {
-              onAction = (ae: ActionEvent) => {
-                loadMainScene(createNewStorage = false)
-              }
-              disable = !new java.io.File(AppStorage.config.datadir).isDirectory
             },
             new Button("Open other reftool data directory") {
               onAction = (ae: ActionEvent) => {
