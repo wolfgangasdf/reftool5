@@ -1,6 +1,8 @@
 package views
 
 import java.io.{FileOutputStream, PrintWriter}
+import java.text.SimpleDateFormat
+import java.util.Date
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
@@ -166,7 +168,6 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       MyTreeCell.lastDragoverCell = this
       de.acceptTransferModes(TransferMode.COPY, TransferMode.LINK)
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
-      val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
       de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK)
     }
   }
@@ -283,7 +284,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     debug("ttv: loadtopics!")
     var tlast: Topic = null
     if (revealLastTopic)
-      tv.selectionModel.value.getSelectedItems.headOption.map(t => tlast = t.getValue)
+      tv.selectionModel.value.getSelectedItems.headOption.foreach(t => tlast = t.getValue)
     else if (revealTopic != null)
       tlast = revealTopic
     tv.selectionModel.value.clearSelection()
@@ -340,6 +341,26 @@ class TopicsTreeView extends GenericView("topicsview") {
         ApplicationController.submitRevealArticleInList(a)
       }
     }
+  }
+  val aDBstats: MyAction = new MyAction("Topic", "Generate DB statistics") {
+    image = new Image(getClass.getResource("/images/dbstats.png").toExternalForm)
+    tooltipString = "Generate DB statistics in " + ReftoolDB.TDBSTATS
+    action = () => {
+      val stats = ReftoolDB.getDBstats
+      inTransaction {
+        val st = ReftoolDB.topics.where(t => t.title === ReftoolDB.TDBSTATS).head
+        val a = new Article(title = "DB statistics",
+          pubdate = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()),
+          review = stats
+        )
+        ReftoolDB.articles.insert(a)
+        a.topics.associate(st)
+        ApplicationController.submitRevealTopic(st)
+        ApplicationController.submitShowArticlesFromTopic(st)
+        ApplicationController.submitRevealArticleInList(a)
+      }
+    }
+    enabled = true
   }
   val aAddTopic: MyAction = new MyAction("Topic", "Add new topic") {
     image = new Image(getClass.getResource("/images/addtsk_tsk.gif").toExternalForm)
@@ -443,7 +464,9 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   ApplicationController.revealTopicListener += ( (t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t) )
 
-  toolbar ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton)
+  toolbar ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton,
+    aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton
+  )
 
   tv.selectionModel().selectedItem.onChange { (_, _, newVal) => {
     if (newVal != null) {

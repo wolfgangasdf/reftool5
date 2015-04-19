@@ -134,9 +134,9 @@ object ReftoolDB extends Schema with Logging {
   val articles = table[Article]("ARTICLES")
   val topics = table[Topic]("TOPICS")
 
-
   val TORPHANS = "0000-ORPHANS"
   val TSTACK = "0000-stack"
+  val TDBSTATS = "9-DB statistics"
   val SSCHEMAVERSION = "schemaversion"
 
 //  throw new Exception("huhu")
@@ -202,6 +202,19 @@ object ReftoolDB extends Schema with Logging {
     r
   }
 
+  def getDBstats: String = {
+    var res = ""
+    inTransaction {
+      res += "article count=" + articles.Count.toLong + "\n"
+      res += "topics count=" + topics.Count.toLong + "\n"
+      res += "topics2articles count=" + topics2articles.Count.toLong + "\n"
+      res += "total review character count = " + from(articles)(a => select(a)).map( aa => aa.review.length).sum + "\n"
+      res += "total bibtexentry character count = " + from(articles)(a => select(a)).map( aa => aa.bibtexentry.length).sum + "\n"
+      res += "total pdflink character count = " + from(articles)(a => select(a)).map( aa => aa.pdflink.length).sum + "\n"
+    }
+    res
+  }
+
   def initialize(startwithempty: Boolean) {
 
     val pp = new File(AppStorage.config.pdfpath)
@@ -223,9 +236,8 @@ object ReftoolDB extends Schema with Logging {
       s"jdbc:derby:${AppStorage.config.dbpath};create=true"
 
     Class.forName("org.apache.derby.jdbc.EmbeddedDriver")
-    SessionFactory.concreteFactory = Some(() => Session.create(
-      java.sql.DriverManager.getConnection(dbs),
-      new DerbyAdapter))
+
+    SessionFactory.concreteFactory = Some(() => Session.create(java.sql.DriverManager.getConnection(dbs), new DerbyAdapter))
 
     transaction {
       ReftoolDB.printDdl
@@ -241,6 +253,7 @@ object ReftoolDB extends Schema with Logging {
       }
       if (topics.where(t => t.title === TORPHANS).isEmpty) topics.insert(new Topic(TORPHANS, troot.id, false))
       if (topics.where(t => t.title === TSTACK).isEmpty) topics.insert(new Topic(TSTACK, troot.id, false))
+      if (topics.where(t => t.title === TDBSTATS).isEmpty) topics.insert(new Topic(TDBSTATS, troot.id, false))
       if (settings.where(s => s.name === SSCHEMAVERSION).isEmpty) settings.insert(new Setting(SSCHEMAVERSION, "1"))
     }
     info("Database loaded!")

@@ -29,7 +29,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
   private def createMenuBar = new MenuBar {
     useSystemMenuBar = true
     menus = List(
-      new Menu("Reftool") {
+      new Menu("Reftool5") {
         items = List(
           new MenuItem("reload CSS") {
             onAction = (e: ActionEvent) => {
@@ -204,7 +204,6 @@ object Main extends JFXApp with Logging {
               onAction = (ae: ActionEvent) => {
                 val res = new DirectoryChooser { title = "Select new reftool data directory" }.showDialog(stage)
                 if (res != null) {
-                  val nd = res.getPath
                   if (res.listFiles.nonEmpty) {
                     new Alert(AlertType.Error, "Need empty new data directory").showAndWait()
                   } else {
@@ -237,18 +236,6 @@ object Main extends JFXApp with Logging {
   }
 
   println("logging to file " + logfile.getPath)
-
-//  stage = new PrimaryStage {
-//    title = "Reftool 5"
-//    width = 800
-//    height = 600
-//    mainScene = tryit { new MainScene(this) }
-//    scene = mainScene
-//    onShown = (we: WindowEvent) => {
-//      tryit { ApplicationController.afterShown() }
-//    }
-//  }
-//
 
   override def stopApp()
   {
