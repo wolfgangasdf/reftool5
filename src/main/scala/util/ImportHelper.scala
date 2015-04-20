@@ -4,7 +4,7 @@ import org.jbibtex._
 import org.squeryl.PrimitiveTypeMode._
 
 import db.{Document, ReftoolDB, Article, Topic}
-import framework.Logging
+import framework.{ApplicationController, Logging}
 
 import java.io.{StringWriter, StringReader, FileFilter, File}
 
@@ -59,7 +59,7 @@ object ImportHelper extends Logging {
     val tfDOI = new TextField {
       hgrow = Priority.Always
       onAction = (ae: ActionEvent) => {
-        doi = text.value
+        doi = text.value.replaceAll("http://dx.doi.org/", "")
         scene.value.getWindow.asInstanceOf[javafx.stage.Stage].close()
       }
     }
@@ -107,9 +107,6 @@ object ImportHelper extends Logging {
     debug(s"importDocument: topic=$topic article=$article sourceFile=$sourceFile")
     assert(!( (article == null) == (topic == null) )) // xor for now
 
-    // check topic
-//    if (topic == null)
-
     debug("import document to reftool database...")
     val pdfpath = new File(AppStorage.config.pdfpath)
     val ifolders = pdfpath.listFiles(new FileFilter {
@@ -132,16 +129,7 @@ object ImportHelper extends Logging {
     }
     if (!lastfolder.exists()) lastfolder.mkdir()
 
-    // get new unique and clean filename
-    val newf1 = new File(lastfolder.getAbsolutePath + "/" + FileHelper.cleanFileName(sourceFile.getName))
-    var newf = newf1
-    while (newf.exists()) {
-      val (name, extension) = FileHelper.splitName(newf1.getName)
-      newf = new File(lastfolder.getAbsolutePath + "/" + name + "-" + Random.nextInt(1000) + "." + extension)
-    }
-
-    // move or copy file
-
+    // check if move or copy file
     val copyIt = if (copyFile.isEmpty) {
       val BtCopy = new ButtonType("Copy")
       val BtMove = new ButtonType("Move")
@@ -158,21 +146,16 @@ object ImportHelper extends Logging {
       }
     } else copyFile.get
 
-    if (copyIt)
-      java.nio.file.Files.copy(sourceFile.toPath, newf.toPath)
-    else
-      java.nio.file.Files.move(sourceFile.toPath, newf.toPath)
-
-    val relnewf = FileHelper.getDocumentPathRelative(newf)
+    // before doing something (copy/move), first get nice filename: import article (user might cancel!)
     var a = article
     if (a == null) { // no article given, create new and get bibtex etc.
       // create new article
       debug("create article...")
-      a = new Article(title = sourceFile.getName, pdflink = relnewf)
+      a = new Article(title = sourceFile.getName)
       debug("parse for DOI...")
       var doi = ""
-      if (newf.getName.endsWith(".pdf")) {
-        doi = PdfHelper.getDOI(newf)
+      if (sourceFile.getName.endsWith(".pdf")) {
+        doi = PdfHelper.getDOI(sourceFile)
         if (doi == "") {
           doi = getDOImanually(sourceFile.getName)
         }
@@ -183,18 +166,31 @@ object ImportHelper extends Logging {
           a = updateBibtexFromDoi(a)
           debug("update document data from bibtex...")
           a = updateArticleFromBibtex(a)
-          debug("save article...")
-          inTransaction {
-            ReftoolDB.articles.insertOrUpdate(a)
-          }
         }
       }
-    } else { // existing article!
-      // article given, add document
-      val docs = a.getDocuments
-      docs += new Document(StringHelper.headString(sourceFile.getName, 10), relnewf)
-      a.setDocuments(docs.toList)
     }
+
+    // choose nice filename if possible
+    val (sourceName, sourceExt) = FileHelper.splitName(sourceFile.getName)
+    val newFileName = if (a.title != "" && a.bibtexid != "") {
+      a.bibtexid + "-" + FileHelper.cleanFileNameString(a.title) + "." + sourceExt
+    } else {
+      FileHelper.cleanFileNameString(sourceName) + "." + sourceExt
+    }
+
+    // get unique file
+    val newFile0 = new File(lastfolder.getAbsolutePath + "/" + newFileName)
+    var newFile1 = newFile0
+    while (newFile1.exists()) {
+      val (name, extension) = FileHelper.splitName(newFile1.getName)
+      newFile1 = new File(lastfolder.getAbsolutePath + "/" + name + "-" + Random.nextInt(1000) + "." + extension)
+    }
+    val newFile1rel = FileHelper.getDocumentPathRelative(newFile1)
+
+    // add pdf to documents
+    val docs = a.getDocuments
+    docs += new Document(if (article == null) "0main" else "1additional", newFile1rel)
+    a.setDocuments(docs.toList)
 
     debug("save article...")
     inTransaction {
@@ -203,6 +199,13 @@ object ImportHelper extends Logging {
       if (topic != null) a.topics.associate(topic)
     }
 
+    // actually copy/move file
+    if (copyIt)
+      java.nio.file.Files.copy(sourceFile.toPath, newFile1.toPath)
+    else
+      java.nio.file.Files.move(sourceFile.toPath, newFile1.toPath)
+
+    ApplicationController.showNotification("import successful of " + a)
     a
   }
   
@@ -214,8 +217,25 @@ object ImportHelper extends Logging {
     debug(s"""curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
     if (response.code == 200) {
       a.bibtexentry = response.body
-      val (_, btentry) = parseBibtex(a)
-      a.bibtexentry = bibtexFromBtentry(btentry)
+      val (_, btentry) = parseBibtex(a.bibtexentry)
+      a.bibtexentry = bibtexFromBtentry(btentry) // update to nice format
+      val bidorig = btentry.getKey.getValue
+      if (a.bibtexid == "") { // article has no bibtexid, generate one...
+        // get & update good & unique bibtexid (for crossref at least!)
+        val bid = bidorig.toLowerCase.replaceAll("_", "")
+        var bid2 = bid
+        var iii = 1
+        inTransaction { // add numbers if bibtexid exist...
+          while (ReftoolDB.articles.where(a => a.bibtexid === bid2).nonEmpty) {
+            bid2 = bid + iii
+            iii += 1
+          }
+        }
+        a.bibtexid = bid2
+        a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, bid2)
+      } else { // if bibtexid was set before, just update bibtexentry with this
+        a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, a.bibtexid)
+      }
     }
     a
   }
@@ -235,34 +255,41 @@ object ImportHelper extends Logging {
     s
   }
 
-  def parseBibtex(a: Article): (Key, BibTeXEntry) = {
+  def parseBibtex(bibtexentry: String): (Key, BibTeXEntry) = {
     val btparser = new org.jbibtex.BibTeXParser
-    val btdb = btparser.parse(new StringReader(a.bibtexentry))
+    val btdb = btparser.parse(new StringReader(bibtexentry))
     val btentries = btdb.getEntries
-    assert(btentries.size() == 1)
-    btentries.head
+    if (btentries.size() == 1)
+      btentries.head
+    else {
+      warn("error parsing bibtex for bibtexentry=\n" + bibtexentry)
+      (null, null)
+    }
   }
 
   val months = List("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
   // https://github.com/jbibtex/jbibtex
   def updateArticleFromBibtex(a: Article): Article = {
-    val (_, btentry) = parseBibtex(a)
-    // debug(s"key=$btkey val=$btentry")
-    // only update these if not present
-    if (a.bibtexid == "") a.bibtexid = btentry.getKey.getValue
-    // update these always!
-    a.entrytype = btentry.getType.getValue
-    a.title = getPlainTextField(btentry, a.title, BibTeXEntry.KEY_TITLE)
-    a.authors = getPlainTextField(btentry, a.authors, BibTeXEntry.KEY_AUTHOR)
-    a.journal = getPlainTextField(btentry, a.journal, BibTeXEntry.KEY_JOURNAL)
-    a.linkurl = getPlainTextField(btentry, a.linkurl, BibTeXEntry.KEY_URL)
-    a.doi = getPlainTextField(btentry, a.doi, BibTeXEntry.KEY_DOI)
-    var year = getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
-    val month = getPlainTextField(btentry, "", BibTeXEntry.KEY_MONTH).toLowerCase
-    val monthi = months.indexOf(month)
-    if (year != "") {
-      if (monthi > -1) year += (monthi + 1).formatted("%02d")
-      a.pubdate = year
+    val (_, btentry) = parseBibtex(a.bibtexentry)
+    if (btentry != null) {
+      // only update these if not present
+      if (a.bibtexid == "") a.bibtexid = btentry.getKey.getValue
+      // update these always!
+      a.entrytype = btentry.getType.getValue
+      a.title = getPlainTextField(btentry, a.title, BibTeXEntry.KEY_TITLE)
+      a.authors = getPlainTextField(btentry, a.authors, BibTeXEntry.KEY_AUTHOR)
+      a.journal = getPlainTextField(btentry, a.journal, BibTeXEntry.KEY_JOURNAL)
+      a.linkurl = getPlainTextField(btentry, a.linkurl, BibTeXEntry.KEY_URL)
+      a.doi = getPlainTextField(btentry, a.doi, BibTeXEntry.KEY_DOI)
+      var year = getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
+      val month = getPlainTextField(btentry, "", BibTeXEntry.KEY_MONTH).toLowerCase
+      val monthi = months.indexOf(month)
+      if (year != "") {
+        if (monthi > -1) year += (monthi + 1).formatted("%02d")
+        a.pubdate = year
+      }
+    } else {
+      error("error parsing bibtex!!!")
     }
     a
   }

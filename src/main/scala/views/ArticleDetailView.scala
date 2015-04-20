@@ -85,8 +85,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     article.pubdate = lPubdate.tf.text.value
     article.bibtexentry = lBibtexentry.tf.text.value
     if (article.bibtexid != lBibtexid.tf.text.value)
-      article.bibtexentry = article.bibtexentry.replaceAllLiterally(s"{${article.bibtexid},", s"{${lBibtexid.tf.text.value},")
-    article.bibtexid = lBibtexid.tf.text.value
+      article.updateBibtexID(lBibtexid.tf.text.value)
     article.journal = lJournal.tf.text.value
     article.review = lReview.tf.text.value
     article.entrytype = lEntryType.tf.text.value

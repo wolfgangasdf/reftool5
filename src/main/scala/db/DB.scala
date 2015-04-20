@@ -63,24 +63,27 @@ class Article(var entrytype: String = "",
 
   override def toString: String = {
     if (bibtexid == "")
-      StringHelper.headString(authors, 10) + ":" + StringHelper.headString(title, 10)
+      StringHelper.headString(authors, 10) + ":" + StringHelper.headString(title, 20)
     else
       bibtexid
   }
 
   def getDocuments: ArrayBuffer[Document] = {
     debug("getdocs: " + pdflink)
-    val res = if (pdflink.contains("\n")) {
-      pdflink.split("\n").map(s => {
-        val docinfo = s.split("\t")
-        new Document(docinfo(0), docinfo(1))
-      })
-    }.toList else
-      List(new Document("0-main", pdflink))
-    new ArrayBuffer[Document]() ++= res
+    val abres = new ArrayBuffer[Document]()
+    if (pdflink != "") {
+      if (pdflink.contains("\n")) {
+        pdflink.split("\n").map(s => {
+          val docinfo = s.split("\t")
+          abres += new Document(docinfo(0), docinfo(1))
+        })
+      } else
+        abres += new Document("0-main", pdflink)
+    }
+    abres
   }
   def setDocuments(dl: List[Document]) = {
-    pdflink = dl.map(d => s"${d.docName}\t${d.docPath}").mkString("\n")
+    pdflink = dl.map(d => s"${d.docName}\t${d.docPath}\n").mkString("")
     debug("setdocs: " + pdflink)
   }
 
@@ -90,8 +93,17 @@ class Article(var entrytype: String = "",
     if (docs.nonEmpty) docs.head.docPath else ""
   }
 
+  def updateBibtexID(newBibtexID: String) = {
+    bibtexentry = Article.updateBibtexIDinBibtexString(bibtexentry, bibtexid, newBibtexID)
+    bibtexid = newBibtexID
+  }
   @Transient var testthing = "" // not in DB!
 
+}
+object Article {
+  def updateBibtexIDinBibtexString(bibtexString: String, oldBibtexID: String, newBibtexID: String) = {
+    bibtexString.replaceAllLiterally(s"{$oldBibtexID,", s"{$newBibtexID,")
+  }
 }
 
 class Topic(var title: String = "", var parent: Long = 0, var expanded: Boolean = false, var exportfn: String = "") extends BaseEntity {
