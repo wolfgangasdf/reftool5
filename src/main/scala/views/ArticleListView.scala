@@ -9,6 +9,7 @@ import util.{DnDHelper, FileHelper, StringHelper}
 import scalafx.Includes._
 import scalafx.beans.property.StringProperty
 import scalafx.collections.ObservableBuffer
+import scalafx.collections.transformation.SortedBuffer
 import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
 import scalafx.scene.control.Alert.AlertType
@@ -85,7 +86,7 @@ class ArticleListView extends GenericView("articlelistview") {
 
   val articles = new ObservableBuffer[Article]()
 
-  val alv: TableView[Article] = new TableView[Article](articles) {
+  val alv: TableView[Article] = new TableView[Article](new SortedBuffer[Article](articles)) {
     columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview)
 
     sortOrder += (cPubdate, cTitle)
