@@ -36,14 +36,12 @@ object FileHelper {
     deleteFile(file)
   }
   def splitName(f: String) = {
-    val extension = f.substring(f.lastIndexOf('.'))
+    val extension = f.substring(f.lastIndexOf('.') + 1)
     val name = f.substring(0, f.lastIndexOf('.'))
     (name, extension)
   }
-  def cleanFileName(fn: String) = {
-    val (name, ext) = splitName(fn)
-    val newn = StringHelper.headString(name.replaceAll("[^a-zA-Z0-9]", ""), 30)
-    newn + ext
+  def cleanFileNameString(fn: String) = {
+    StringHelper.headString(fn.replaceAll("[^a-zA-Z0-9]", ""), 30)
   }
 
   def getDocumentFileAbs(relPath: String) = new File(AppStorage.config.pdfpath + "/" + relPath)

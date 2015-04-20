@@ -51,6 +51,7 @@ object PdfHelper extends Logging {
         }
       }
     }
+    pdf.close()
     debug("getDOI = [" + doi + "]")
     doi
   }
