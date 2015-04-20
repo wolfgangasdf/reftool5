@@ -38,10 +38,10 @@ class ArticleListView extends GenericView("articlelistview") {
       setBackground(Background.EMPTY)
       super.updateItem(item, empty)
       setText(item)
-      if (getIndex > -1 && getIndex < alv.getItems.length) {
+      if (getIndex > -1 && getIndex < alv.getItems.length && getTableColumn == cTitle.delegate) {
         val a = alv.getItems.get(getIndex)
         val col = inTransaction { a.color(currentTopic) }
-        if (col != 0) setBackground(new javafx.scene.layout.Background(new javafx.scene.layout.BackgroundFill(colorsn(col), CornerRadii.Empty, Insets.Empty)))
+        if (col != 0) setBackground(new javafx.scene.layout.Background(new javafx.scene.layout.BackgroundFill(colorsn(col), new CornerRadii(12.0), Insets(2.0, 0.0, 2.0, 0.0))))
       }
     }
   }
@@ -86,12 +86,14 @@ class ArticleListView extends GenericView("articlelistview") {
 
   val articles = new ObservableBuffer[Article]()
 
-  val alv: TableView[Article] = new TableView[Article](new SortedBuffer[Article](articles)) {
+  val sortedArticles = new SortedBuffer[Article](articles)
+  val alv: TableView[Article] = new TableView[Article](sortedArticles) {
     columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview)
+
+    sortedArticles.comparator <== comparator
 
     sortOrder += (cPubdate, cTitle)
     selectionModel.value.selectionMode = SelectionMode.MULTIPLE
-
   }
 
   text = "Article list"
