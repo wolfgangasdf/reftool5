@@ -2,3 +2,6 @@ target/
 .idea
 glob:*.iml
 .DS_Store
+derby.log
+src/main/scala/snippets
+

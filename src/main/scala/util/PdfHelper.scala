@@ -45,7 +45,7 @@ object PdfHelper extends Logging {
           debug("  parsing...")
           val re = """.*(?:DOI:\ ?|DOI\ |\.DOI\.ORG/)(.*)(?:\ .*)?""".r
           v match {
-            case re(sd) => { debug("   match!!!") ; doi = sd }
+            case re(sd) => debug("   match!!!"); doi = sd
             case _ => debug(" error parsing " + v)
           }
         }
