@@ -51,11 +51,13 @@ class MainScene(stage: Stage) extends Scene with Logging {
   val articleDocumentsView = tryit { new ArticleDocumentsView }
   var searchView = tryit { new SearchView }
   var logView = tryit { new LogView }
+  var infoView = tryit { new InfoView }
 
   val bottomtabs = new ViewContainer {
     addView(articleDetailView)
     addView(searchView)
     addView(logView)
+    addView(infoView)
   }
 
   val brtoptabs = new ViewContainer {
@@ -133,7 +135,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
     val parms = s.split(";")
     if (parms.length == getMainUIsettings.split(";").length) {
       val it = parms.iterator
-      val xxx = it.next().toDouble
+      val xxx: Double = it.next().toDouble
       debug("stage = " + stage + "  xpos=" + xxx)
       stage.setX(xxx)
       stage.setY(it.next().toDouble)
@@ -173,7 +175,13 @@ object Main extends JFXApp with Logging {
   var mainScene: MainScene = null
 
   def loadMainScene(createNewStorage: Boolean) = {
-    tryit { ReftoolDB.initialize(startwithempty = createNewStorage) }
+    try {
+      ReftoolDB.initialize(startwithempty = createNewStorage)
+    } catch {
+      case e: Exception =>
+        error("Error opening database! Is another instance of reftool running on the same data location?")
+        stopApp()
+    }
     stage = new PrimaryStage {
       title = "Reftool 5"
       width = 800
