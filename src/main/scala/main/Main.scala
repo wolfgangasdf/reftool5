@@ -58,8 +58,11 @@ class MainScene(stage: Stage) extends Scene with Logging {
     addView(logView)
   }
 
-  val bottomrighttabs = new ViewContainer {
+  val brtoptabs = new ViewContainer {
     addView(articleTopicsView)
+  }
+
+  val brbottomtabs = new ViewContainer {
     addView(articleDocumentsView)
   }
 
@@ -75,9 +78,13 @@ class MainScene(stage: Stage) extends Scene with Logging {
     addView(topicTreeView)
   }
 
+  val spbottomright = new SplitPane {
+    orientation = Orientation.VERTICAL
+    items += (brtoptabs, brbottomtabs)
+  }
   val spbottom = new SplitPane {
     orientation = Orientation.HORIZONTAL
-    items += (bottomtabs, bottomrighttabs)
+    items += (bottomtabs, spbottomright)
   }
   val spv = new SplitPane {
     orientation = Orientation.VERTICAL
@@ -116,7 +123,8 @@ class MainScene(stage: Stage) extends Scene with Logging {
       stage.height.getValue,
       sph.dividerPositions.head,
       spv.dividerPositions.head,
-      spbottom.dividerPositions.head
+      spbottom.dividerPositions.head,
+      spbottomright.dividerPositions.head
     )
     vals.mkString(";")
   }
@@ -134,6 +142,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
       sph.dividerPositions = it.next().toDouble
       spv.dividerPositions = it.next().toDouble
       spbottom.dividerPositions = it.next().toDouble
+      spbottomright.dividerPositions = it.next().toDouble
     }
   }
 
