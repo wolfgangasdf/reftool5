@@ -241,8 +241,6 @@ object Main extends JFXApp with Logging {
     }
   }
 
-  println("logging to file " + logfile.getPath)
-
   override def stopApp()
   {
     info("*************** stop app")
