@@ -69,7 +69,6 @@ class Article(var entrytype: String = "",
   }
 
   def getDocuments: ArrayBuffer[Document] = {
-    debug("getdocs: " + pdflink)
     val abres = new ArrayBuffer[Document]()
     if (pdflink != "") {
       if (pdflink.contains("\n")) {

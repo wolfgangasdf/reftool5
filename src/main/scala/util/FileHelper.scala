@@ -11,9 +11,9 @@ package util
 import java.io._
 import java.net.URI
 
-import framework.{Helpers, ApplicationController}
+import framework.{Logging, Helpers}
 
-object FileHelper {
+object FileHelper extends Logging {
 
   def write(file: File, text : String) : Unit = {
     val fw = new FileWriter(file)
@@ -28,7 +28,7 @@ object FileHelper {
   def deleteAll(file: File) : Unit = {
     def deleteFile(dfile : File) : Unit = {
       if(dfile.isDirectory) {
-        println("deleting " + dfile + " recursively")
+        info("deleting " + dfile + " recursively")
         dfile.listFiles.foreach{ f => deleteFile(f) }
       }
       dfile.delete
@@ -46,7 +46,12 @@ object FileHelper {
 
   def getDocumentFileAbs(relPath: String) = new File(AppStorage.config.pdfpath + "/" + relPath)
 
-  def getDocumentPathRelative(file: File) = file.getAbsolutePath.substring( (AppStorage.config.pdfpath + "/").length )
+  def getDocumentPathRelative(file: File) = {
+    if (!file.getAbsolutePath.startsWith(AppStorage.config.pdfpath + "/")) {
+      throw new IOException("file " + file + " is not below reftool store!")
+    }
+    file.getAbsolutePath.substring( (AppStorage.config.pdfpath + "/").length )
+  }
 
   def openDocument(relPath: String) = {
     import java.awt.Desktop
@@ -71,14 +76,19 @@ object FileHelper {
   def revealDocument(relPath: String) {
     val file = getDocumentFileAbs(relPath)
     if (Helpers.isMac) {
-      Runtime.getRuntime.exec("open -R " + file.getAbsolutePath)
+      Runtime.getRuntime.exec(Array("open", "-R", file.getAbsolutePath))
     } else if (Helpers.isWin) {
       Runtime.getRuntime.exec("explorer.exe /select,"+file.getCanonicalPath)
     } else if (Helpers.isLinux) {
-      ApplicationController.showNotification("not supported OS, tell me how to do it!")
+      error("not supported OS, tell me how to do it!")
     } else {
-      ApplicationController.showNotification("not supported OS, tell me how to do it!")
+      error("not supported OS, tell me how to do it!")
     }
+  }
+
+  def listFilesRec(f: File): Array[File] = {
+    val these = f.listFiles
+    these ++ these.filter(_.isDirectory).flatMap(listFilesRec)
   }
 
 }

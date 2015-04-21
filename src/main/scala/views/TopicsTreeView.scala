@@ -342,26 +342,6 @@ class TopicsTreeView extends GenericView("topicsview") {
       }
     }
   }
-  val aDBstats: MyAction = new MyAction("Topic", "Generate DB statistics") {
-    image = new Image(getClass.getResource("/images/dbstats.png").toExternalForm)
-    tooltipString = "Generate DB statistics in " + ReftoolDB.TDBSTATS
-    action = () => {
-      val stats = ReftoolDB.getDBstats
-      inTransaction {
-        val st = ReftoolDB.topics.where(t => t.title === ReftoolDB.TDBSTATS).head
-        val a = new Article(title = "DB statistics",
-          pubdate = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()),
-          review = stats
-        )
-        ReftoolDB.articles.insert(a)
-        a.topics.associate(st)
-        ApplicationController.submitRevealTopic(st)
-        ApplicationController.submitShowArticlesFromTopic(st)
-        ApplicationController.submitRevealArticleInList(a)
-      }
-    }
-    enabled = true
-  }
   val aAddTopic: MyAction = new MyAction("Topic", "Add new topic") {
     image = new Image(getClass.getResource("/images/addtsk_tsk.gif").toExternalForm)
     tooltipString = "Add topic below selected topic, shift+click to add root topic"

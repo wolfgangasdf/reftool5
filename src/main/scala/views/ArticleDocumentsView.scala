@@ -25,6 +25,8 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
   var article: Article = null
 
   class MyListCell extends TextFieldListCell[Document] {
+    if (item != null) if (item.value != null)
+      tooltip = new Tooltip { text = item.value.docPath }
     val myConverter = new StringConverter[Document] {
       override def fromString(string: String): Document = {
         val d = item.value
@@ -110,6 +112,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     image = new Image(getClass.getResource("/images/Finder_icon.png").toExternalForm)
     action = () => {
       val a = lv.selectionModel.value.getSelectedItem
+      debug("reveal doc " + a.docPath)
       revealDocument(a.docPath)
     }
   }
@@ -119,6 +122,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     image = new Image(getClass.getResource("/images/pdf.png").toExternalForm)
     action = () => {
       val a = lv.selectionModel.value.getSelectedItem
+      debug("open doc " + a.docPath)
       openDocument(a.docPath)
     }
   }
