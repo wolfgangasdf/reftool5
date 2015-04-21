@@ -163,6 +163,7 @@ object ApplicationController extends Logging {
 
   def afterShown(): Unit = {
     debug("aftershown!")
+    info("Reftool log file: " + main.Main.logfile.getPath)
 
     Main.mainScene.window.value.onCloseRequest = (we: WindowEvent) => {
       if (!ApplicationController.canClose)

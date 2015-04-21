@@ -208,7 +208,18 @@ object ImportHelper extends Logging {
     ApplicationController.showNotification("import successful of " + a)
     a
   }
-  
+
+  def getUniqueBibtexID(bibtexid: String): String = {
+    var bid2 = bibtexid
+    var iii = 1
+    inTransaction { // add numbers if bibtexid exist...
+      while (ReftoolDB.articles.where(a => a.bibtexid === bid2).nonEmpty) {
+        bid2 = bibtexid + iii
+        iii += 1
+      }
+    }
+    bid2
+  }
   def updateBibtexFromDoi(a: Article): Article = {
     // http://labs.crossref.org/citation-formatting-service/
     import scalaj.http._ // or probably use better http://www.bigbeeconsultants.co.uk/content/bee-client ? but has deps
@@ -223,14 +234,7 @@ object ImportHelper extends Logging {
       if (a.bibtexid == "") { // article has no bibtexid, generate one...
         // get & update good & unique bibtexid (for crossref at least!)
         val bid = bidorig.toLowerCase.replaceAll("_", "")
-        var bid2 = bid
-        var iii = 1
-        inTransaction { // add numbers if bibtexid exist...
-          while (ReftoolDB.articles.where(a => a.bibtexid === bid2).nonEmpty) {
-            bid2 = bid + iii
-            iii += 1
-          }
-        }
+        var bid2 = getUniqueBibtexID(bid)
         a.bibtexid = bid2
         a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, bid2)
       } else { // if bibtexid was set before, just update bibtexentry with this
