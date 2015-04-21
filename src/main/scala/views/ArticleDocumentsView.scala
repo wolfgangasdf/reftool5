@@ -6,12 +6,14 @@ import org.squeryl.PrimitiveTypeMode._
 import util.FileHelper._
 import util.ImportHelper
 
+import scala.collection.JavaConversions._
+
 import scalafx.Includes._
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control._
 import scalafx.scene.control.cell.TextFieldListCell
 import scalafx.scene.image.Image
-import scalafx.scene.input.MouseEvent
+import scalafx.scene.input.{TransferMode, DataFormat, DragEvent, MouseEvent}
 import scalafx.stage.FileChooser
 import scalafx.util.StringConverter
 
@@ -49,7 +51,27 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
         }
       }
     }
-    // TODO drop here additional documents!
+
+    onDragOver = (de: DragEvent) => {
+      debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}  tm = " + de.transferMode)
+      if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
+        de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK)
+      }
+    }
+    onDragDropped = (de: DragEvent) => {
+      if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
+        val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
+        for (f <- files) {
+          debug(s" adding file $f")
+          val a = ImportHelper.importDocument(f, null, article, Some(de.transferMode == TransferMode.COPY))
+          ApplicationController.submitArticleChanged(a)
+          ApplicationController.submitRevealArticleInList(a)
+        }
+      }
+
+      de.dropCompleted = true
+      de.consume()
+    }
   }
 
   val aDeletePDF = new MyAction("Documents", "Delete document") {
@@ -151,5 +173,5 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
 
   override def setUIsettings(s: String): Unit = {}
 
-  override val uisettingsID: String = "atv"
+  override val uisettingsID: String = "adocv"
 }
