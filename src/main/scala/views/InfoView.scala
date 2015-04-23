@@ -107,8 +107,7 @@ class InfoView extends GenericView("infoview") {
         formatter.format(Runtime.getRuntime.totalMemory) + "\t" +
         formatter.format(Runtime.getRuntime.freeMemory) + "\t" +
         formatter.format(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory) + "\t" +
-        formatter.format(new java.lang.management.MemoryUsage().getUsed)
-      + "\n")
+      "\n")
     }
     enabled = true
   }
