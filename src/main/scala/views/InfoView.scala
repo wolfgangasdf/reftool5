@@ -96,8 +96,33 @@ class InfoView extends GenericView("infoview") {
     enabled = true
   }
 
+  val aMemory: MyAction = new MyAction("Info", "Memory info") {
+    image = new Image(getClass.getResource("/images/meminfo.png").toExternalForm)
+    tooltipString = "Memory cleanup and statistics"
+    action = () => {
+      System.gc()
+      val formatter = java.text.NumberFormat.getIntegerInstance
+      taInfo.appendText("max, total, free, total-free memory (bytes) : " +
+        formatter.format(Runtime.getRuntime.maxMemory) + "\t" +
+        formatter.format(Runtime.getRuntime.totalMemory) + "\t" +
+        formatter.format(Runtime.getRuntime.freeMemory) + "\t" +
+        formatter.format(Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory) + "\t" +
+        formatter.format(new java.lang.management.MemoryUsage().getUsed)
+      + "\n")
+    }
+    enabled = true
+  }
 
-  toolbar ++= Seq(aDBstats.toolbarButton, aCheckArticleDocs.toolbarButton, aFindOrphanedPDFs.toolbarButton)
+  val aClear: MyAction = new MyAction("Info", "Clear output") {
+    image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
+    tooltipString = "Clear info output"
+    action = () => {
+      taInfo.clear()
+    }
+    enabled = true
+  }
+
+  toolbar ++= Seq(aDBstats.toolbarButton, aCheckArticleDocs.toolbarButton, aFindOrphanedPDFs.toolbarButton, aMemory.toolbarButton, aClear.toolbarButton)
 
   content = new BorderPane {
     margin = Insets(5.0)
