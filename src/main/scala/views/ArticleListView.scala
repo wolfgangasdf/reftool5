@@ -311,18 +311,9 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   }
 
-  val btTest = new Button("test") {
-
-    onAction = (ae: ActionEvent) => {
-      alv.delegate.setColumnResizePolicy(javafx.scene.control.TableView.UNCONSTRAINED_RESIZE_POLICY)
-      cTitle.setPrefWidth(400.0)
-      alv.delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY)
-    }
-  }
-
   toolbar ++= Seq( lbCurrentTitle, aSetColor.toolbarButton, aShowStack.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
     aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveFromTopic.toolbarButton, aRemoveArticle.toolbarButton, aRevealPDF.toolbarButton,
-    aCopyURLs.toolbarButton, aCopyPDFs.toolbarButton, aOpenURL.toolbarButton, btTest)
+    aCopyURLs.toolbarButton, aCopyPDFs.toolbarButton, aOpenURL.toolbarButton)
 
   content = new BorderPane {
     center = alv
