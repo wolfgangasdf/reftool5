@@ -1,20 +1,24 @@
 package framework
 
+import javafx.concurrent.Task
+
 import db.{Topic, Article}
 import main.Main
 import util.AppStorage
 
 import scala.collection.mutable.ArrayBuffer
 import scalafx.beans.property.BooleanProperty
+import scalafx.concurrent.{WorkerStateEvent, Service}
 import scalafx.event.ActionEvent
+import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.image.{ImageView, Image}
 import scalafx.scene.input.KeyCombination
 import scalafx.scene.{Node, Group}
 import scalafx.scene.control._
 import scalafx.scene.control.Tab._
 import scalafx.Includes._
-import scalafx.scene.layout.{HBox, Pane}
-import scalafx.stage.WindowEvent
+import scalafx.scene.layout.{VBox, Background, HBox, Pane}
+import scalafx.stage.{Stage, WindowEvent}
 
 
 trait HasUISettings {
@@ -222,4 +226,98 @@ object ApplicationController extends Logging {
       }, 3000
     )
   }
+/*
+  def doWithAlert(title: String, f: => Unit) = {
+    val al = new Alert(AlertType.Information, title) {
+      buttonTypes = new ArrayBuffer[ButtonType]()
+    }
+    al.show()
+    try {
+      debug("before...")
+      f
+      debug("after.")
+    } catch {
+      case t: Throwable =>
+        error("doWithAlter: throwing " + t.getMessage)
+        throw t
+    } finally {
+      debug("close!")
+//      al.getDialogPane.hide()
+      al.hide()
+//      al.close()
+      debug("closed!")
+    }
+  }
+*/
+
+  // https://github.com/scalafx/ProScalaFX/blob/master/src/proscalafx/ch06/ServiceExample.scala
+  def doWithAlert[T](astage: Stage, atitle: String, f: => T) = {
+    object worker extends Service[T](new javafx.concurrent.Service[T]() {
+      override def createTask() = new  javafx.concurrent.Task[T] {
+        override def call(): T = {
+          updateTitle(atitle)
+          updateProgress(10, 100)
+          updateMessage("huhuhuhuh")
+          val res = f
+          updateProgress(100, 100)
+          succeeded()
+          res
+        }
+      }
+    })
+    val lab = new Label("xxxxxxxxxxxxx")
+    val progress = new ProgressBar { minWidth = 250 }
+    val al = new Dialog[Unit] {
+      title = atitle
+      dialogPane.value.content = new VBox { children ++= Seq(lab, progress) }
+      dialogPane.value.getButtonTypes += ButtonType.Cancel
+    }
+    debug("show")
+    al.show()
+    lab.text <== worker.message
+    progress.progress <== worker.progress
+    al.onCloseRequest = (de: DialogEvent) => {
+      debug("oncloserequ!!!")
+      worker.cancel
+    }
+    worker.onSucceeded = (wse: WorkerStateEvent) => {
+      debug("onsucceed")
+      al.hide() ; al.close()
+      debug("onsucceed/")
+    }
+    debug("start")
+    worker.start()
+    debug("before end")
+    this
+  }
+
+
+/*
+  def doWithAlert(title: String, f: => Unit) = {
+    val al = new javafx.stage.Popup {
+      setAutoFix(true)
+      setAutoHide(false)
+      setHideOnEscape(false)
+      getContent += new Label(title)
+    }
+    al.show(main.Main.mainScene.getWindow)
+    al.centerOnScreen()
+    try {
+      debug("before...")
+      f
+      debug("after.")
+    } catch {
+      case t: Throwable =>
+        error("doWithAlter: throwing " + t.getMessage)
+        throw t
+    } finally {
+      debug("close!")
+      //      al.getDialogPane.hide()
+      //      al.hide()
+      //      al.close()
+      debug("closed!")
+    }
+  }
+*/
+
 }

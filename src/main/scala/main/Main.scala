@@ -242,7 +242,17 @@ object Main extends JFXApp with Logging {
                   loadMainScene(createNewStorage = false)
                 }
               }
+            },
+          new Button("test") {
+            onAction = (ae: ActionEvent) => {
+                val res = ApplicationController.doWithAlert(stage, "XXXXXXXXXXXXXXXXXXXXXXXXtesting...", {
+                debug("here1")
+                Thread.sleep(1000)
+                "done!"
+              })
+              debug("res: " + res)
             }
+          }
           )
         }
       }

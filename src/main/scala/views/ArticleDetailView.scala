@@ -2,6 +2,7 @@ package views
 
 import util.{FileHelper, ImportHelper}
 
+import scala.collection.mutable.ArrayBuffer
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.image.Image
 import scalafx.scene.input.KeyCombination
@@ -227,8 +228,16 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     action = () => {
 //      val res = ImportHelper.getDOImanually("Attosecond gamma-ray pulses via nonlinear Compton scattering in the radiation dominated regime")
 //      debug("res = " + res)
-      ApplicationController.showNotification("noti 1")
-      ApplicationController.showNotification("noti 2")
+
+//      ApplicationController.showNotification("noti 1")
+//      ApplicationController.showNotification("noti 2")
+
+//      val res = ApplicationController.doWithAlert("XXXXXXXXXXXXXXXXXXXXXXXXtesting...", {
+//        debug("here1")
+//        Thread.sleep(1000)
+//        "done!"
+//      })
+//      debug("res: " + res)
     }
   }
 
