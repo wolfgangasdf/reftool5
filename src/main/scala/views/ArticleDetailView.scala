@@ -31,9 +31,8 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     text = if (isDirty.value) title + " *" else title
     aSave.enabled = isDirty.value
     aUpdateFromBibtex.enabled = !isDirty.value
-    aUpdateFromDOI.enabled = !isDirty.value
     aCreateBibtex.enabled = !isDirty.value
-    aUpdateDOIfromPDF.enabled = !isDirty.value
+    aUpdateMetadatafromPDF.enabled = !isDirty.value
   })
 
   override def canClose = {
@@ -181,35 +180,11 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
-  val aUpdateDOIfromPDF = new MyAction("Article", "Get DOI from pdf") {
-    tooltipString = "Update DOI by parsing PDF"
+  val aUpdateMetadatafromPDF = new MyAction("Article", "Get metadata from pdf") {
+    tooltipString = "Update article metadata from PDF"
     image = new Image(getClass.getResource("/images/pdf2doi.png").toExternalForm)
     action = () => {
-      var doi = util.PdfHelper.getDOI(FileHelper.getDocumentFileAbs(article.getFirstDocRelative))
-      if (doi == "") {
-        doi = util.ImportHelper.getDOImanually(FileHelper.getDocumentFileAbs(article.getFirstDocRelative).getName)
-      }
-      if (doi != "") {
-        article.doi = doi
-        inTransaction {
-          ReftoolDB.articles.update(article)
-        }
-        ApplicationController.submitArticleChanged(article)
-        setArticle(article)
-      }
-    }
-  }
-
-  val aUpdateFromDOI = new MyAction("Article", "Get bibtex from DOI") {
-    tooltipString = "Update bibtex from DOI via crossref.org"
-    image = new Image(getClass.getResource("/images/doi2bib.png").toExternalForm)
-    action = () => {
-      val newa = ImportHelper.updateBibtexFromDoi(article)
-      inTransaction {
-        ReftoolDB.articles.update(newa)
-      }
-      ApplicationController.submitArticleChanged(newa)
-      setArticle(newa)
+      ImportHelper.updateMetadataFromDoc(article, FileHelper.getDocumentFileAbs(article.getFirstDocRelative))
     }
   }
 
@@ -253,7 +228,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
-  toolbaritems ++= Seq(lbCurrentArticle, aSave.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateDOIfromPDF.toolbarButton, aUpdateFromDOI.toolbarButton, aCreateBibtex.toolbarButton, aTest.toolbarButton)
+  toolbaritems ++= Seq(lbCurrentArticle, aSave.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateMetadatafromPDF.toolbarButton, aCreateBibtex.toolbarButton, aTest.toolbarButton)
 
   ApplicationController.showArticleListeners += ( (a: Article) => {
     setArticle(a)

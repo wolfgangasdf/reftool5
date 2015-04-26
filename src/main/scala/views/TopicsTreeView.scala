@@ -1,8 +1,6 @@
 package views
 
 import java.io.{FileOutputStream, PrintWriter}
-import java.text.SimpleDateFormat
-import java.util.Date
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
@@ -211,7 +209,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
       val f = files.head
       debug(s" importing file $f treeItem=$treeItem")
-      ImportHelper.importDocument(f, treeItem.value.getValue, null, Some(de.transferMode == TransferMode.COPY))
+      ImportHelper.importDocument(f, treeItem.value.getValue, null, Some(de.transferMode == TransferMode.COPY), isAdditionalDoc = false)
       dropOk = true
     }
 

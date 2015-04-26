@@ -66,6 +66,14 @@ object ImportHelper extends Logging {
       }
     }
 
+    val tfArxiv = new TextField {
+      hgrow = Priority.Always
+      onAction = (ae: ActionEvent) => {
+        doi = "arxiv:" + text.value
+        scene.value.getWindow.asInstanceOf[javafx.stage.Stage].close()
+      }
+    }
+
     val myContent = new VBox {
       children ++= Seq(
         new Label("Cannot extract the DOI from the pdf. Please either search for title or so, you can also enter the DOI manually here, or see below."),
@@ -73,6 +81,8 @@ object ImportHelper extends Logging {
         webView,
         new Separator(),
         new HBox { children ++= Seq( new Label("Or enter DOI here:"), tfDOI ) },
+        new Separator(),
+        new HBox { children ++= Seq( new Label("Or enter arxiv ID here:"), tfArxiv ) },
         new Separator(),
         new Label("Or paste the bibtex later manually.")
       )
@@ -105,58 +115,12 @@ object ImportHelper extends Logging {
     doi
   }
 
-  // topic OR article can be NULL, but both should not be set!
-  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article, copyFile: Option[Boolean]) = {
+  private def importDocument2(updateMetadata: Boolean, article: Article, sourceFile: File, doFileAction: Boolean, lastfolder: File, copyIt: Boolean, topic: Topic): Unit = {
     new MyWorker("Import document", new javafx.concurrent.Task[Unit] {
       override def call(): Unit = {
-        updateMessage("find new document location...")
-        updateProgress(0, 100)
-        debug(s"importDocument: topic=$topic article=$article sourceFile=$sourceFile")
-        assert(!((article == null) == (topic == null))) // xor for now
-
-        val pdfpath = new File(AppStorage.config.pdfpath)
-        val ifolders = pdfpath.listFiles(new FileFilter {
-          override def accept(pathname: File): Boolean = pathname.getName.startsWith(AppStorage.config.importfolderprefix)
-        }).sorted
-        debug("import folders:\n" + ifolders.mkString("\n"))
-        var lastfolder = if (ifolders.length == 0)
-          new File(getImportFolder(1))
-        else
-          ifolders.last
-        if (lastfolder.exists()) {
-          if (lastfolder.list().length > 99) {
-            val rex = """.*-([0-9]+)""".r
-            val lastno = lastfolder.getName match {
-              case rex(s) => s.toInt
-            }
-            lastfolder = new File(getImportFolder(lastno + 1))
-            info("new import folder: " + lastfolder)
-          }
-        }
-        if (!lastfolder.exists()) lastfolder.mkdir()
-
-        // check if move or copy file
-        val copyIt = if (copyFile.isEmpty) Helpers.runUIwait {
-          val BtCopy = new ButtonType("Copy")
-          val BtMove = new ButtonType("Move")
-          val ale = new Alert(AlertType.Confirmation) {
-            headerText = "Import file into reftool database"
-            contentText = "Should i copy or move the file?"
-            buttonTypes = Seq(BtMove, BtCopy, ButtonType.Cancel)
-          }
-          val res = ale.showAndWait()
-          res match {
-            case Some(BtCopy) => true
-            case Some(BtMove) => false
-            case _ => return
-          }
-        } else copyFile.get
-
-        // before doing something (copy/move), first get nice filename: import article (user might cancel!)
-        updateProgress(30, 100)
-        var a = article
-        if (a == null) { // no article given, create new and get bibtex etc.
-          a = new Article(title = sourceFile.getName)
+        var a = if (article == null) new Article(title = sourceFile.getName) else article
+        if (updateMetadata) {
+          updateProgress(0, 100)
           updateMessage("find document metadata...")
           var doi = ""
           if (sourceFile.getName.endsWith(".pdf")) {
@@ -165,59 +129,115 @@ object ImportHelper extends Logging {
             if (doi == "") Helpers.runUIwait {
               doi = getDOImanually(sourceFile.getName)
             }
-            debug("doi = " + a.doi)
             if (doi != "") {
-              a.doi = doi
-              updateMessage("retrieve bibtex...")
-              a = updateBibtexFromDoi(a)
+              updateProgress(30, 100)
+              if (doi.startsWith("arxiv:")) {
+                updateMessage("retrieve bibtex from arxiv ID...")
+                a = updateBibtexFromArxiv(a, doi.replaceAllLiterally("arxiv:", ""))
+              } else {
+                a.doi = doi
+                updateMessage("retrieve bibtex from DOI...")
+                a = updateBibtexFromDoi(a)
+              }
               updateMessage("update document data from bibtex...")
               a = updateArticleFromBibtex(a)
             }
           }
         }
-
         updateProgress(60, 100)
-        // choose nice filename if possible
-        val (sourceName, sourceExt) = FileHelper.splitName(sourceFile.getName)
-        val newFileName = if (a.title != "" && a.bibtexid != "") {
-          a.bibtexid + "-" + FileHelper.cleanFileNameString(a.title) + "." + sourceExt
-        } else {
-          FileHelper.cleanFileNameString(sourceName) + "." + sourceExt
+        if (doFileAction) {
+          // choose nice filename if possible
+          val (sourceName, sourceExt) = FileHelper.splitName(sourceFile.getName)
+          val newFileName = if (a.title != "" && a.bibtexid != "") {
+            a.bibtexid + "-" + FileHelper.cleanFileNameString(a.title) + "." + sourceExt
+          } else {
+            FileHelper.cleanFileNameString(sourceName) + "." + sourceExt
+          }
+
+          // get unique file
+          val newFile0 = new File(lastfolder.getAbsolutePath + "/" + newFileName)
+          var newFile1 = newFile0
+          while (newFile1.exists()) {
+            val (name, extension) = FileHelper.splitName(newFile1.getName)
+            newFile1 = new File(lastfolder.getAbsolutePath + "/" + name + "-" + Random.nextInt(1000) + "." + extension)
+          }
+          val newFile1rel = FileHelper.getDocumentPathRelative(newFile1)
+
+          // add pdf to documents
+          val docs = a.getDocuments
+          docs += new Document(if (article == null) "0main" else "1additional", newFile1rel)
+          a.setDocuments(docs.toList)
+
+          // actually copy/move file
+          if (copyIt)
+            java.nio.file.Files.copy(sourceFile.toPath, newFile1.toPath)
+          else
+            java.nio.file.Files.move(sourceFile.toPath, newFile1.toPath)
         }
 
-        // get unique file
-        val newFile0 = new File(lastfolder.getAbsolutePath + "/" + newFileName)
-        var newFile1 = newFile0
-        while (newFile1.exists()) {
-          val (name, extension) = FileHelper.splitName(newFile1.getName)
-          newFile1 = new File(lastfolder.getAbsolutePath + "/" + name + "-" + Random.nextInt(1000) + "." + extension)
-        }
-        val newFile1rel = FileHelper.getDocumentPathRelative(newFile1)
-
-        // add pdf to documents
-        val docs = a.getDocuments
-        docs += new Document(if (article == null) "0main" else "1additional", newFile1rel)
-        a.setDocuments(docs.toList)
-
+        updateProgress(90, 100)
         updateMessage("save article...")
-        Helpers.runUIwait { inTransaction {
-          ReftoolDB.articles.insertOrUpdate(a)
-          debug("new pdflink = " + a.pdflink)
-          if (topic != null) a.topics.associate(topic)
-        } }
-
-        // actually copy/move file
-        if (copyIt)
-          java.nio.file.Files.copy(sourceFile.toPath, newFile1.toPath)
-        else
-          java.nio.file.Files.move(sourceFile.toPath, newFile1.toPath)
-
         Helpers.runUIwait {
+          inTransaction {
+            ReftoolDB.articles.insertOrUpdate(a)
+            if (topic != null) a.topics.associate(topic)
+          }
           ApplicationController.submitArticleChanged(a)
+          ApplicationController.showNotification("import successful of " + a)
         }
-        Helpers.runUIwait { ApplicationController.showNotification("import successful of " + a) }
       }
     }).runInBackground()
+  }
+
+  def updateMetadataFromDoc(article: Article, sourceFile: File): Unit = {
+    importDocument2(updateMetadata = true, article, sourceFile, doFileAction = false, null, copyIt = false, null)
+  }
+
+    // topic OR article can be NULL, but both should not be set!
+  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article, copyFile: Option[Boolean], isAdditionalDoc: Boolean): Unit = {
+    debug("find new document location...")
+    debug(s"importDocument: topic=$topic article=$article sourceFile=$sourceFile")
+    assert(!((article == null) == (topic == null))) // xor for now
+
+    val pdfpath = new File(AppStorage.config.pdfpath)
+    val ifolders = pdfpath.listFiles(new FileFilter {
+      override def accept(pathname: File): Boolean = pathname.getName.startsWith(AppStorage.config.importfolderprefix)
+    }).sorted
+    debug("import folders:\n" + ifolders.mkString("\n"))
+    var lastfolder = if (ifolders.length == 0)
+      new File(getImportFolder(1))
+    else
+      ifolders.last
+    if (lastfolder.exists()) {
+      if (lastfolder.list().length > 99) {
+        val rex = """.*-([0-9]+)""".r
+        val lastno = lastfolder.getName match {
+          case rex(s) => s.toInt
+        }
+        lastfolder = new File(getImportFolder(lastno + 1))
+        info("new import folder: " + lastfolder)
+      }
+    }
+    if (!lastfolder.exists()) lastfolder.mkdir()
+
+    // check if move or copy file
+    val copyIt = if (copyFile.isEmpty) Helpers.runUIwait {
+      val BtCopy = new ButtonType("Copy")
+      val BtMove = new ButtonType("Move")
+      val ale = new Alert(AlertType.Confirmation) {
+        headerText = "Import file into reftool database"
+        contentText = "Should i copy or move the file?"
+        buttonTypes = Seq(BtMove, BtCopy, ButtonType.Cancel)
+      }
+      val res = ale.showAndWait()
+      res match {
+        case Some(BtCopy) => true
+        case Some(BtMove) => false
+        case _ => return
+      }
+    } else copyFile.get
+
+    importDocument2(!isAdditionalDoc, article, sourceFile, doFileAction = true, lastfolder, copyIt = copyIt, topic)
   }
 
   def getUniqueBibtexID(bibtexid: String): String = {
@@ -231,6 +251,29 @@ object ImportHelper extends Logging {
     }
     bid2
   }
+
+  def updateBibtexFromArxiv(a: Article, aid: String): Article = {
+    import scalaj.http._
+    val resp1 = Http("http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:" + aid).asString
+    debug("resp1=" + resp1.code + "   ")
+    if (resp1.code == 200) {
+      val re1 = """(?s).*<a href="(.*)">Bibtex entry for this abstract</a>.*""".r
+      resp1.body match {
+        case re1(biblink) =>
+          debug("found biblink: " + biblink)
+          val resp2 = Http(biblink).asString
+          if (resp2.code == 200) {
+            debug("resp2: " + resp2.code)
+            if (resp2.body.contains("@")) {
+              val be = resp2.body.substring(resp2.body.indexOf("@"))
+              a.bibtexentry = be.replaceAllLiterally("~", " ") // tilde in author name gives trouble
+            }
+          }
+      }
+    }
+    a
+  }
+
   def updateBibtexFromDoi(a: Article): Article = {
     // http://labs.crossref.org/citation-formatting-service/
     import scalaj.http._ // or probably use better http://www.bigbeeconsultants.co.uk/content/bee-client ? but has deps
