@@ -1,24 +1,21 @@
 package framework
 
-import javafx.concurrent.Task
-
-import db.{Topic, Article}
+import db.{Article, Topic}
 import main.Main
 import util.AppStorage
 
 import scala.collection.mutable.ArrayBuffer
-import scalafx.beans.property.BooleanProperty
-import scalafx.concurrent.{WorkerStateEvent, Service}
-import scalafx.event.ActionEvent
-import scalafx.scene.control.Alert.AlertType
-import scalafx.scene.image.{ImageView, Image}
-import scalafx.scene.input.KeyCombination
-import scalafx.scene.{Node, Group}
-import scalafx.scene.control._
-import scalafx.scene.control.Tab._
 import scalafx.Includes._
-import scalafx.scene.layout.{VBox, Background, HBox, Pane}
-import scalafx.stage.{Stage, WindowEvent}
+import scalafx.beans.property.BooleanProperty
+import scalafx.concurrent.{Service, WorkerStateEvent}
+import scalafx.event.ActionEvent
+import scalafx.scene.control.Tab._
+import scalafx.scene.control._
+import scalafx.scene.image.{Image, ImageView}
+import scalafx.scene.input.KeyCombination
+import scalafx.scene.layout.{HBox, Pane, VBox}
+import scalafx.scene.{Group, Node}
+import scalafx.stage.{DirectoryChooser, WindowEvent}
 
 
 trait HasUISettings {
@@ -226,98 +223,62 @@ object ApplicationController extends Logging {
       }, 3000
     )
   }
-/*
-  def doWithAlert(title: String, f: => Unit) = {
-    val al = new Alert(AlertType.Information, title) {
-      buttonTypes = new ArrayBuffer[ButtonType]()
-    }
-    al.show()
-    try {
-      debug("before...")
-      f
-      debug("after.")
-    } catch {
-      case t: Throwable =>
-        error("doWithAlter: throwing " + t.getMessage)
-        throw t
-    } finally {
-      debug("close!")
-//      al.getDialogPane.hide()
-      al.hide()
-//      al.close()
-      debug("closed!")
-    }
-  }
-*/
 
   // https://github.com/scalafx/ProScalaFX/blob/master/src/proscalafx/ch06/ServiceExample.scala
-  def doWithAlert[T](astage: Stage, atitle: String, f: => T) = {
-    object worker extends Service[T](new javafx.concurrent.Service[T]() {
-      override def createTask() = new  javafx.concurrent.Task[T] {
-        override def call(): T = {
-          updateTitle(atitle)
-          updateProgress(10, 100)
-          updateMessage("huhuhuhuh")
-          val res = f
-          updateProgress(100, 100)
-          succeeded()
-          res
-        }
-      }
+  class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit]) {
+    object worker extends Service[Unit](new javafx.concurrent.Service[Unit]() {
+      override def createTask() = atask
     })
-    val lab = new Label("xxxxxxxxxxxxx")
+    val lab = new Label("")
     val progress = new ProgressBar { minWidth = 250 }
     val al = new Dialog[Unit] {
-      title = atitle
+      initOwner(main.Main.stage)
+      title = "Progressing..."
       dialogPane.value.content = new VBox { children ++= Seq(lab, progress) }
       dialogPane.value.getButtonTypes += ButtonType.Cancel
     }
-    debug("show")
-    al.show()
-    lab.text <== worker.message
-    progress.progress <== worker.progress
-    al.onCloseRequest = (de: DialogEvent) => {
-      debug("oncloserequ!!!")
-      worker.cancel
-    }
-    worker.onSucceeded = (wse: WorkerStateEvent) => {
-      debug("onsucceed")
-      al.hide() ; al.close()
-      debug("onsucceed/")
-    }
-    debug("start")
-    worker.start()
-    debug("before end")
-    this
-  }
-
-
-/*
-  def doWithAlert(title: String, f: => Unit) = {
-    val al = new javafx.stage.Popup {
-      setAutoFix(true)
-      setAutoHide(false)
-      setHideOnEscape(false)
-      getContent += new Label(title)
-    }
-    al.show(main.Main.mainScene.getWindow)
-    al.centerOnScreen()
-    try {
-      debug("before...")
-      f
-      debug("after.")
-    } catch {
-      case t: Throwable =>
-        error("doWithAlter: throwing " + t.getMessage)
-        throw t
-    } finally {
-      debug("close!")
-      //      al.getDialogPane.hide()
-      //      al.hide()
-      //      al.close()
-      debug("closed!")
+    def runInBackground() = {
+      debug("show")
+      al.show()
+      lab.text <== worker.message
+      progress.progress <== worker.progress
+      al.onCloseRequest = (de: DialogEvent) => {
+        debug("oncloserequ!!!")
+        worker.cancel
+      }
+      worker.onSucceeded = (wse: WorkerStateEvent) => {
+        debug("onsucceed")
+        al.close()
+        debug("onsucceed/")
+      }
+      worker.onFailed = (wse: WorkerStateEvent) => {
+        error("onfailed: " + atask.getException.getMessage)
+        atask.getException.printStackTrace()
+        al.close()
+        Helpers.runUI {
+          Helpers.showExceptionAlert(atitle, atask.getException)
+        }
+      }
+      debug("start")
+      worker.start()
     }
   }
-*/
+
+  def testLongAction() = {
+    new MyWorker("titlechen", new javafx.concurrent.Task[Unit] {
+      override def call() = {
+        updateMessage("huhuhuhuhu")
+        updateProgress(10, 100)
+        // throw new Exception("aaaaatestexception")
+        Thread.sleep(2000)
+        updateProgress(30, 100)
+        val res = Helpers.runUIwait { new DirectoryChooser { title = "Select directory" }.showDialog(main.Main.stage) }
+        updateMessage("huhuhuhuhu2" + res)
+        Thread.sleep(2000)
+        updateProgress(100, 100)
+        succeeded()
+      }
+    }).runInBackground()
+  }
 
 }

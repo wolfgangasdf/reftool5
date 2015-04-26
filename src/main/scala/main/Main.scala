@@ -5,7 +5,7 @@ import java.io.{File, FileOutputStream, PrintStream}
 
 import db.ReftoolDB
 import framework.Helpers._
-import framework.{ApplicationController, Logging, ViewContainer}
+import framework.{Helpers, ApplicationController, Logging, ViewContainer}
 import util._
 import views._
 
@@ -162,6 +162,14 @@ object Main extends JFXApp with Logging {
   val logfile = File.createTempFile("reftool5log",".txt")
   logps = new FileOutputStream(logfile)
 
+  Thread.currentThread().setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler {
+    override def uncaughtException(t: Thread, e: Throwable): Unit = {
+      error("Exception: " + e.getMessage)
+      e.printStackTrace()
+      if (stage.isShowing) Helpers.showExceptionAlert("", e)
+    }
+  })
+
   class MyConsole(errchan: Boolean) extends java.io.OutputStream {
     override def write(b: Int): Unit = {
       runUI { if (mainScene != null) if (mainScene.logView != null) if (mainScene.logView.taLog != null) mainScene.logView.taLog.appendText(b.toChar.toString) }
@@ -179,7 +187,7 @@ object Main extends JFXApp with Logging {
       ReftoolDB.initialize(startwithempty = createNewStorage)
     } catch {
       case e: Exception =>
-        error("Error opening database! Is another instance of reftool running on the same data location?")
+        showExceptionAlert("Error opening database: Is another instance of reftool running on the same data location?", e)
         stopApp()
     }
     stage = new PrimaryStage {
@@ -242,17 +250,12 @@ object Main extends JFXApp with Logging {
                   loadMainScene(createNewStorage = false)
                 }
               }
-            },
-          new Button("test") {
-            onAction = (ae: ActionEvent) => {
-                val res = ApplicationController.doWithAlert(stage, "XXXXXXXXXXXXXXXXXXXXXXXXtesting...", {
-                debug("here1")
-                Thread.sleep(1000)
-                "done!"
-              })
-              debug("res: " + res)
             }
-          }
+//          new Button("test") {
+//            onAction = (ae: ActionEvent) => {
+//              ApplicationController.testLongAction()
+//            }
+//          }
           )
         }
       }

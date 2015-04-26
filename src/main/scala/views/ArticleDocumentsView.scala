@@ -57,18 +57,16 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     onDragOver = (de: DragEvent) => {
       debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}  tm = " + de.transferMode)
       if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
-        de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK)
+        if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].length == 1) // only one file at a time!
+          de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK)
       }
     }
     onDragDropped = (de: DragEvent) => {
       if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
         val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
-        for (f <- files) {
-          debug(s" adding file $f")
-          val a = ImportHelper.importDocument(f, null, article, Some(de.transferMode == TransferMode.COPY))
-          ApplicationController.submitArticleChanged(a)
-          ApplicationController.submitRevealArticleInList(a)
-        }
+        val f = files.head
+        debug(s" adding file $f")
+        ImportHelper.importDocument(f, null, article, Some(de.transferMode == TransferMode.COPY))
       }
 
       de.dropCompleted = true
@@ -102,7 +100,6 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
       }.showOpenDialog(toolbarButton.getParent.getScene.getWindow)
       if (fn != null) {
         ImportHelper.importDocument(fn, null, article, None)
-        setArticle(article)
       }
     }
   }
