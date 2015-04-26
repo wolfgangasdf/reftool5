@@ -441,7 +441,7 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   ApplicationController.revealTopicListener += ( (t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t) )
 
-  toolbar ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton,
+  toolbaritems ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton,
     aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton
   )
 

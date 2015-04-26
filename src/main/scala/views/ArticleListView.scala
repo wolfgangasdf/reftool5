@@ -310,7 +310,7 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   }
 
-  toolbar ++= Seq( lbCurrentTitle, aSetColor.toolbarButton, aShowStack.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
+  toolbaritems ++= Seq( lbCurrentTitle, aSetColor.toolbarButton, aShowStack.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
     aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveFromTopic.toolbarButton, aRemoveArticle.toolbarButton, aRevealPDF.toolbarButton,
     aCopyURLs.toolbarButton, aCopyPDFs.toolbarButton, aOpenURL.toolbarButton)
 

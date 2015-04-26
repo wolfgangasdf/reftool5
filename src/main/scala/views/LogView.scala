@@ -13,7 +13,7 @@ class LogView extends GenericView("logview") {
 
   text = "Log"
 
-  toolbar += new Button("clear") {
+  toolbaritems += new Button("clear") {
 
     onAction = (ae: ActionEvent) => taLog.text = ""
   }
