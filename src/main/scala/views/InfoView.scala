@@ -8,6 +8,7 @@ import framework.{ApplicationController, MyAction, GenericView}
 import org.squeryl.PrimitiveTypeMode._
 import util.{AppStorage, FileHelper}
 
+import scala.collection.mutable.ArrayBuffer
 import scalafx.geometry.Insets
 import scalafx.scene.control._
 import scalafx.scene.image.Image
@@ -82,15 +83,17 @@ class InfoView extends GenericView("infoview") {
         ReftoolDB.articles.foreach(a => {
           tocheck -= 1
           if (tocheck % 100 == 0) debug(s"still $tocheck articles to check!")
+          val ares = new ArrayBuffer[Article]()
           a.getDocuments.foreach(d => {
             if (!FileHelper.getDocumentFileAbs(d.docPath).exists()) {
               val s = s"[${a.bibtexid}] $a : missing ${d.docName} (${d.docPath})"
               taInfo.appendText(s + "\n")
               info(s)
+              ares.append(a)
             }
           })
+          ApplicationController.submitShowArticlesList(ares.toList, "Articles with missing documents")
         })
-
       }
     }
     enabled = true
@@ -121,7 +124,7 @@ class InfoView extends GenericView("infoview") {
     enabled = true
   }
 
-  toolbar ++= Seq(aDBstats.toolbarButton, aCheckArticleDocs.toolbarButton, aFindOrphanedPDFs.toolbarButton, aMemory.toolbarButton, aClear.toolbarButton)
+  toolbaritems ++= Seq(aDBstats.toolbarButton, aCheckArticleDocs.toolbarButton, aFindOrphanedPDFs.toolbarButton, aMemory.toolbarButton, aClear.toolbarButton)
 
   content = new BorderPane {
     margin = Insets(5.0)

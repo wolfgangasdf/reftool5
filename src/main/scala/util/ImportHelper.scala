@@ -50,6 +50,7 @@ object ImportHelper extends Logging {
     val webEngine = webView.engine
 
     val tfSearch = new TextField {
+      hgrow = Priority.Always
       text = iniSearch
     }
     val btSearch = new Button("Search!") {

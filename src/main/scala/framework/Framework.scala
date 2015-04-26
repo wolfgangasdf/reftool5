@@ -9,6 +9,7 @@ import scalafx.Includes._
 import scalafx.beans.property.BooleanProperty
 import scalafx.concurrent.{Service, WorkerStateEvent}
 import scalafx.event.ActionEvent
+import scalafx.geometry.Pos
 import scalafx.scene.control.Tab._
 import scalafx.scene.control._
 import scalafx.scene.image.{Image, ImageView}
@@ -31,7 +32,7 @@ abstract class GenericView(id: String) extends Tab with HasUISettings with Loggi
 
   var isDirty = BooleanProperty(value = false)
 
-  val toolbar = new ArrayBuffer[Node]
+  val toolbaritems = new ArrayBuffer[Node]
 
   def canClose: Boolean
 
@@ -48,13 +49,14 @@ class ViewContainer extends Pane with Logging {
 
   val views = new ArrayBuffer[GenericView]()
 
-  val toolbar = new HBox() // ToolBar doesn't work
-
+  val toolbar = new HBox() { // ToolBar doesn't work
+    alignment = Pos.Center
+  }
   def updateToolbar(viewno: Int): Unit = {
     if (views.length > viewno) {
       debug(" update toolbar")
       toolbar.children.clear()
-      views(viewno).toolbar.foreach(v => toolbar.children += v)
+      views(viewno).toolbaritems.foreach(v => toolbar.children += v)
     }
   }
 

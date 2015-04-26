@@ -124,7 +124,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     }
   }
 
-  toolbar ++= Seq(aOpenPDF.toolbarButton, aRevealPDF.toolbarButton, aDeletePDF.toolbarButton, aAddDocument.toolbarButton)
+  toolbaritems ++= Seq(aOpenPDF.toolbarButton, aRevealPDF.toolbarButton, aDeletePDF.toolbarButton, aAddDocument.toolbarButton)
 
   lv.selectionModel.value.getSelectedItems.onChange {
     aDeletePDF.enabled = lv.selectionModel.value.getSelectedItems.length > 0

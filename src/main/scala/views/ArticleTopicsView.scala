@@ -37,7 +37,7 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
     }
   }
 
-  toolbar += aRemoveFromTopic.toolbarButton
+  toolbaritems += aRemoveFromTopic.toolbarButton
 
   lv.selectionModel.value.getSelectedItems.onChange {
     aRemoveFromTopic.enabled = lv.selectionModel.value.getSelectedItems.length > 0

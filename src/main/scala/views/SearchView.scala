@@ -16,7 +16,7 @@ class SearchView extends GenericView("searchview") {
 
   text = "Search"
 
-  toolbar += new Button("bbb") {
+  toolbaritems += new Button("bbb") {
     onAction = (ae: ActionEvent) => tfSearch.requestFocus()
   }
 
