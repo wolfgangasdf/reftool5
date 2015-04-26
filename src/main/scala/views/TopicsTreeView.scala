@@ -168,7 +168,8 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       MyTreeCell.lastDragoverCell = this
       de.acceptTransferModes(TransferMode.COPY, TransferMode.LINK)
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
-      de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK)
+      if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].length == 1) // only one file at a time!
+        de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK)
     }
   }
 
@@ -208,13 +209,9 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       }
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
-      debug("  dropped files: " + files)
-      for (f <- files) {
-        debug(s" importing file $f treeItem=$treeItem")
-        val a = ImportHelper.importDocument(f, treeItem.value.getValue, null, Some(de.transferMode == TransferMode.COPY))
-        ApplicationController.submitShowArticlesFromTopic(treeItem.value.getValue)
-        ApplicationController.submitRevealArticleInList(a)
-      }
+      val f = files.head
+      debug(s" importing file $f treeItem=$treeItem")
+      ImportHelper.importDocument(f, treeItem.value.getValue, null, Some(de.transferMode == TransferMode.COPY))
       dropOk = true
     }
 

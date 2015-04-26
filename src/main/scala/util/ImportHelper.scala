@@ -1,10 +1,11 @@
 package util
 
+import framework.ApplicationController.MyWorker
 import org.jbibtex._
 import org.squeryl.PrimitiveTypeMode._
 
 import db.{Document, ReftoolDB, Article, Topic}
-import framework.{ApplicationController, Logging}
+import framework.{Helpers, ApplicationController, Logging}
 
 import java.io.{StringWriter, StringReader, FileFilter, File}
 
@@ -97,116 +98,125 @@ object ImportHelper extends Logging {
       }
     } )
 
+    debug(" before dialogstage.showandwait!")
     dialogStage.showAndWait()
-
+    debug(" returning doi=" + doi)
     doi
   }
 
   // topic OR article can be NULL, but both should not be set!
-  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article, copyFile: Option[Boolean]): Article = {
-    debug(s"importDocument: topic=$topic article=$article sourceFile=$sourceFile")
-    assert(!( (article == null) == (topic == null) )) // xor for now
+  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article, copyFile: Option[Boolean]) = {
+    new MyWorker("Import document", new javafx.concurrent.Task[Unit] {
+      override def call(): Unit = {
+        updateMessage("find new document location...")
+        updateProgress(0, 100)
+        debug(s"importDocument: topic=$topic article=$article sourceFile=$sourceFile")
+        assert(!((article == null) == (topic == null))) // xor for now
 
-    debug("import document to reftool database...")
-    val pdfpath = new File(AppStorage.config.pdfpath)
-    val ifolders = pdfpath.listFiles(new FileFilter {
-      override def accept(pathname: File): Boolean = pathname.getName.startsWith(AppStorage.config.importfolderprefix)
-    }).sorted
-    debug("import folders:\n" + ifolders.mkString("\n"))
-    var lastfolder = if (ifolders.length == 0)
-      new File(getImportFolder(1))
-    else
-      ifolders.last
-    if (lastfolder.exists()) {
-      if (lastfolder.list().length > 99) {
-        val rex = """.*-([0-9]+)""".r
-        val lastno = lastfolder.getName match {
-          case rex(s) => s.toInt
+        val pdfpath = new File(AppStorage.config.pdfpath)
+        val ifolders = pdfpath.listFiles(new FileFilter {
+          override def accept(pathname: File): Boolean = pathname.getName.startsWith(AppStorage.config.importfolderprefix)
+        }).sorted
+        debug("import folders:\n" + ifolders.mkString("\n"))
+        var lastfolder = if (ifolders.length == 0)
+          new File(getImportFolder(1))
+        else
+          ifolders.last
+        if (lastfolder.exists()) {
+          if (lastfolder.list().length > 99) {
+            val rex = """.*-([0-9]+)""".r
+            val lastno = lastfolder.getName match {
+              case rex(s) => s.toInt
+            }
+            lastfolder = new File(getImportFolder(lastno + 1))
+            info("new import folder: " + lastfolder)
+          }
         }
-        lastfolder = new File(getImportFolder(lastno + 1))
-        info("new import folder: " + lastfolder)
-      }
-    }
-    if (!lastfolder.exists()) lastfolder.mkdir()
+        if (!lastfolder.exists()) lastfolder.mkdir()
 
-    // check if move or copy file
-    val copyIt = if (copyFile.isEmpty) {
-      val BtCopy = new ButtonType("Copy")
-      val BtMove = new ButtonType("Move")
-      val ale = new Alert(AlertType.Confirmation) {
-        headerText = "Import file into reftool database"
-        contentText = "Should i copy or move the file?"
-        buttonTypes = Seq(BtMove, BtCopy, ButtonType.Cancel)
-      }
-      val res = ale.showAndWait()
-      res match {
-        case Some(BtCopy) => true
-        case Some(BtMove) => false
-        case _ => return null
-      }
-    } else copyFile.get
+        // check if move or copy file
+        val copyIt = if (copyFile.isEmpty) Helpers.runUIwait {
+          val BtCopy = new ButtonType("Copy")
+          val BtMove = new ButtonType("Move")
+          val ale = new Alert(AlertType.Confirmation) {
+            headerText = "Import file into reftool database"
+            contentText = "Should i copy or move the file?"
+            buttonTypes = Seq(BtMove, BtCopy, ButtonType.Cancel)
+          }
+          val res = ale.showAndWait()
+          res match {
+            case Some(BtCopy) => true
+            case Some(BtMove) => false
+            case _ => return
+          }
+        } else copyFile.get
 
-    // before doing something (copy/move), first get nice filename: import article (user might cancel!)
-    var a = article
-    if (a == null) { // no article given, create new and get bibtex etc.
-      // create new article
-      debug("create article...")
-      a = new Article(title = sourceFile.getName)
-      debug("parse for DOI...")
-      var doi = ""
-      if (sourceFile.getName.endsWith(".pdf")) {
-        doi = PdfHelper.getDOI(sourceFile)
-        if (doi == "") {
-          doi = getDOImanually(sourceFile.getName)
+        // before doing something (copy/move), first get nice filename: import article (user might cancel!)
+        updateProgress(30, 100)
+        var a = article
+        if (a == null) { // no article given, create new and get bibtex etc.
+          a = new Article(title = sourceFile.getName)
+          updateMessage("find document metadata...")
+          var doi = ""
+          if (sourceFile.getName.endsWith(".pdf")) {
+            doi = PdfHelper.getDOI(sourceFile)
+            debug(" pdf doi=" + doi)
+            if (doi == "") Helpers.runUIwait {
+              doi = getDOImanually(sourceFile.getName)
+            }
+            debug("doi = " + a.doi)
+            if (doi != "") {
+              a.doi = doi
+              updateMessage("retrieve bibtex...")
+              a = updateBibtexFromDoi(a)
+              updateMessage("update document data from bibtex...")
+              a = updateArticleFromBibtex(a)
+            }
+          }
         }
-        debug("doi = " + a.doi)
-        if (doi != "") {
-          a.doi = doi
-          debug("retrieve bibtex...")
-          a = updateBibtexFromDoi(a)
-          debug("update document data from bibtex...")
-          a = updateArticleFromBibtex(a)
+
+        updateProgress(60, 100)
+        // choose nice filename if possible
+        val (sourceName, sourceExt) = FileHelper.splitName(sourceFile.getName)
+        val newFileName = if (a.title != "" && a.bibtexid != "") {
+          a.bibtexid + "-" + FileHelper.cleanFileNameString(a.title) + "." + sourceExt
+        } else {
+          FileHelper.cleanFileNameString(sourceName) + "." + sourceExt
         }
+
+        // get unique file
+        val newFile0 = new File(lastfolder.getAbsolutePath + "/" + newFileName)
+        var newFile1 = newFile0
+        while (newFile1.exists()) {
+          val (name, extension) = FileHelper.splitName(newFile1.getName)
+          newFile1 = new File(lastfolder.getAbsolutePath + "/" + name + "-" + Random.nextInt(1000) + "." + extension)
+        }
+        val newFile1rel = FileHelper.getDocumentPathRelative(newFile1)
+
+        // add pdf to documents
+        val docs = a.getDocuments
+        docs += new Document(if (article == null) "0main" else "1additional", newFile1rel)
+        a.setDocuments(docs.toList)
+
+        updateMessage("save article...")
+        Helpers.runUIwait { inTransaction {
+          ReftoolDB.articles.insertOrUpdate(a)
+          debug("new pdflink = " + a.pdflink)
+          if (topic != null) a.topics.associate(topic)
+        } }
+
+        // actually copy/move file
+        if (copyIt)
+          java.nio.file.Files.copy(sourceFile.toPath, newFile1.toPath)
+        else
+          java.nio.file.Files.move(sourceFile.toPath, newFile1.toPath)
+
+        Helpers.runUIwait {
+          ApplicationController.submitArticleChanged(a)
+        }
+        Helpers.runUIwait { ApplicationController.showNotification("import successful of " + a) }
       }
-    }
-
-    // choose nice filename if possible
-    val (sourceName, sourceExt) = FileHelper.splitName(sourceFile.getName)
-    val newFileName = if (a.title != "" && a.bibtexid != "") {
-      a.bibtexid + "-" + FileHelper.cleanFileNameString(a.title) + "." + sourceExt
-    } else {
-      FileHelper.cleanFileNameString(sourceName) + "." + sourceExt
-    }
-
-    // get unique file
-    val newFile0 = new File(lastfolder.getAbsolutePath + "/" + newFileName)
-    var newFile1 = newFile0
-    while (newFile1.exists()) {
-      val (name, extension) = FileHelper.splitName(newFile1.getName)
-      newFile1 = new File(lastfolder.getAbsolutePath + "/" + name + "-" + Random.nextInt(1000) + "." + extension)
-    }
-    val newFile1rel = FileHelper.getDocumentPathRelative(newFile1)
-
-    // add pdf to documents
-    val docs = a.getDocuments
-    docs += new Document(if (article == null) "0main" else "1additional", newFile1rel)
-    a.setDocuments(docs.toList)
-
-    debug("save article...")
-    inTransaction {
-      ReftoolDB.articles.insertOrUpdate(a)
-      debug("new pdflink = " + a.pdflink)
-      if (topic != null) a.topics.associate(topic)
-    }
-
-    // actually copy/move file
-    if (copyIt)
-      java.nio.file.Files.copy(sourceFile.toPath, newFile1.toPath)
-    else
-      java.nio.file.Files.move(sourceFile.toPath, newFile1.toPath)
-
-    ApplicationController.showNotification("import successful of " + a)
-    a
+    }).runInBackground()
   }
 
   def getUniqueBibtexID(bibtexid: String): String = {
@@ -234,7 +244,7 @@ object ImportHelper extends Logging {
       if (a.bibtexid == "") { // article has no bibtexid, generate one...
         // get & update good & unique bibtexid (for crossref at least!)
         val bid = bidorig.toLowerCase.replaceAll("_", "")
-        var bid2 = getUniqueBibtexID(bid)
+        val bid2 = getUniqueBibtexID(bid)
         a.bibtexid = bid2
         a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, bid2)
       } else { // if bibtexid was set before, just update bibtexentry with this

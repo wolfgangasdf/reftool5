@@ -1,8 +1,9 @@
 package views
 
+import framework.ApplicationController.MyWorker
+import main.Main._
 import util.{FileHelper, ImportHelper}
 
-import scala.collection.mutable.ArrayBuffer
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.image.Image
 import scalafx.scene.input.KeyCombination
@@ -15,8 +16,10 @@ import scalafx.scene.layout._
 
 import org.squeryl.PrimitiveTypeMode._
 
-import framework.{MyAction, ApplicationController, Logging, GenericView}
+import framework._
 import db.{ReftoolDB, Article}
+
+import scalafx.stage.DirectoryChooser
 
 
 class ArticleDetailView extends GenericView("articledetailview") with Logging {
@@ -231,13 +234,22 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
 //      ApplicationController.showNotification("noti 1")
 //      ApplicationController.showNotification("noti 2")
+      // throw new Exception("aaaaatestexception")
 
-//      val res = ApplicationController.doWithAlert("XXXXXXXXXXXXXXXXXXXXXXXXtesting...", {
-//        debug("here1")
-//        Thread.sleep(1000)
-//        "done!"
-//      })
-//      debug("res: " + res)
+      new MyWorker("titlechen", new javafx.concurrent.Task[Unit] {
+        override def call() = {
+          updateMessage("huhuhuhuhu")
+          updateProgress(10, 100)
+          // throw new Exception("aaaaatestexception")
+          Thread.sleep(2000)
+          updateProgress(30, 100)
+          val res = Helpers.runUIwait { new DirectoryChooser { title = "Select directory" }.showDialog(stage) }
+          updateMessage("huhuhuhuhu2" + res)
+          Thread.sleep(2000)
+          updateProgress(100, 100)
+          succeeded()
+        }
+      }).runInBackground()
     }
   }
 

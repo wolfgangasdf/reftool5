@@ -1,7 +1,12 @@
 package framework
 
+import java.io.{PrintWriter, StringWriter}
 import java.nio.charset.Charset
 import java.util.concurrent.FutureTask
+
+import scalafx.scene.control.Alert.AlertType
+import scalafx.scene.control.{Alert, TextArea, Label}
+import scalafx.scene.layout.{GridPane, Priority}
 
 object Helpers extends Logging {
 
@@ -17,6 +22,7 @@ object Helpers extends Logging {
       case t: Throwable =>
         debug("tryit: exception " + t.getMessage)
         t.printStackTrace()
+        if (main.Main.stage.isShowing) Helpers.showExceptionAlert("", t)
         null.asInstanceOf[T]
     }
   }
@@ -49,9 +55,9 @@ object Helpers extends Logging {
     }
   }
 
-  def runUIwait( f: => Any) : Any = {
+  def runUIwait[T]( f: => T) : T = {
     if (!scalafx.application.Platform.isFxApplicationThread) {
-      @volatile var stat: Any = null
+      @volatile var stat: T = null.asInstanceOf[T]
       val runnable = new Runnable() {
         def run() {
           stat = f
@@ -64,6 +70,39 @@ object Helpers extends Logging {
     } else {
       f
     }
+  }
+
+  def showExceptionAlert(where: String, t: Throwable) = {
+    val exceptionText = {
+      val sw = new StringWriter()
+      val pw = new PrintWriter(sw)
+      t.printStackTrace(pw)
+      sw.toString
+    }
+    val label = new Label("The exception stacktrace was:")
+    val textArea = new TextArea {
+      text = exceptionText
+      editable = false
+      wrapText = true
+      maxWidth = Double.MaxValue
+      maxHeight = Double.MaxValue
+      vgrow = Priority.Always
+      hgrow = Priority.Always
+    }
+    val expContent = new GridPane {
+      maxWidth = Double.MaxValue
+      add(label, 0, 0)
+      add(textArea, 0, 1)
+    }
+
+    new Alert(AlertType.Error) {
+//      initOwner(stage)
+      title = "Error"
+      headerText = "Error in " + where
+      contentText = t.getMessage
+      dialogPane().setExpandableContent(expContent)
+      dialogPane().setExpanded(true)
+    }.showAndWait()
   }
 
 //  import scalafx.beans.property._
