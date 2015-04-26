@@ -66,7 +66,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
         val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
         val f = files.head
         debug(s" adding file $f")
-        ImportHelper.importDocument(f, null, article, Some(de.transferMode == TransferMode.COPY))
+        ImportHelper.importDocument(f, null, article, Some(de.transferMode == TransferMode.COPY), isAdditionalDoc = true)
       }
 
       de.dropCompleted = true
@@ -99,7 +99,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
         title = "Select new document"
       }.showOpenDialog(toolbarButton.getParent.getScene.getWindow)
       if (fn != null) {
-        ImportHelper.importDocument(fn, null, article, None)
+        ImportHelper.importDocument(fn, null, article, None, isAdditionalDoc = true)
       }
     }
   }
