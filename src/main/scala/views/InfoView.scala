@@ -80,10 +80,10 @@ class InfoView extends GenericView("infoview") {
       taInfo.text = "Articles with missing documents:\n"
       inTransaction {
         var tocheck = ReftoolDB.articles.Count.toLong
+        val ares = new ArrayBuffer[Article]()
         ReftoolDB.articles.foreach(a => {
           tocheck -= 1
           if (tocheck % 100 == 0) debug(s"still $tocheck articles to check!")
-          val ares = new ArrayBuffer[Article]()
           a.getDocuments.foreach(d => {
             if (!FileHelper.getDocumentFileAbs(d.docPath).exists()) {
               val s = s"[${a.bibtexid}] $a : missing ${d.docName} (${d.docPath})"
@@ -92,8 +92,8 @@ class InfoView extends GenericView("infoview") {
               ares.append(a)
             }
           })
-          ApplicationController.submitShowArticlesList(ares.toList, "Articles with missing documents")
         })
+        ApplicationController.submitShowArticlesList(ares.toList, "Articles with missing documents")
       }
     }
     enabled = true

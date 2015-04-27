@@ -247,6 +247,8 @@ object ImportHelper extends Logging {
     var bid2 = bibtexid.toLowerCase
     replist.foreach { case (s1, s2) => bid2 = bid2.replaceAllLiterally(s1, s2) }
     bid2 = java.text.Normalizer.normalize(bid2, java.text.Normalizer.Form.NFD)
+    bid2 = bid2.replaceAll("[^\\p{ASCII}]", "")
+    debug("bid2 = " + bid2)
     var iii = 1
     inTransaction { // add numbers if bibtexid exist...
       while (ReftoolDB.articles.where(a => a.bibtexid === bid2).nonEmpty) {
@@ -266,6 +268,22 @@ object ImportHelper extends Logging {
     }
   }
 
+  def generateUpdateBibtexID(be: String, a: Article) = {
+    a.bibtexentry = be.replaceAllLiterally("~", " ") // tilde in author name gives trouble
+    val (_, btentry) = parseBibtex(a.bibtexentry)
+    a.bibtexentry = bibtexFromBtentry(btentry) // update to nice format
+    val bidorig = btentry.getKey.getValue
+    if (a.bibtexid == "") { // article has no bibtexid, generate one...
+      val bid = getFirstAuthorLastName(getPlainTextField(btentry, "", BibTeXEntry.KEY_AUTHOR)) +
+        getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
+      val bid2 = getUniqueBibtexID(bid)
+      a.bibtexid = bid2
+      a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, bid2)
+    } else { // if bibtexid was set before, just update bibtexentry with this
+      a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, a.bibtexid)
+    }
+  }
+
   def updateBibtexFromArxiv(a: Article, aid: String): Article = {
     import scalaj.http._
     val resp1 = Http("http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:" + aid).asString
@@ -280,18 +298,7 @@ object ImportHelper extends Logging {
             debug("resp2: " + resp2.code)
             if (resp2.body.contains("@")) {
               val be = resp2.body.substring(resp2.body.indexOf("@"))
-              a.bibtexentry = be.replaceAllLiterally("~", " ") // tilde in author name gives trouble
-              val (_, btentry) = parseBibtex(a.bibtexentry)
-              val bidorig = btentry.getKey.getValue
-              if (a.bibtexid == "") { // article has no bibtexid, generate one...
-                val bid = getFirstAuthorLastName(getPlainTextField(btentry, "", BibTeXEntry.KEY_AUTHOR)) +
-                  getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
-                val bid2 = getUniqueBibtexID(bid)
-                a.bibtexid = bid2
-                a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, bid2)
-              } else { // if bibtexid was set before, just update bibtexentry with this
-                a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, a.bibtexid)
-              }
+              generateUpdateBibtexID(be, a)
             }
           }
       }
@@ -306,19 +313,7 @@ object ImportHelper extends Logging {
         header("Accept", "text/bibliography; style=bibtex").option(HttpOptions.followRedirects(shouldFollow = true)).asString
     debug(s"""curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
     if (response.code == 200) {
-      a.bibtexentry = response.body
-      val (_, btentry) = parseBibtex(a.bibtexentry)
-      a.bibtexentry = bibtexFromBtentry(btentry) // update to nice format
-      val bidorig = btentry.getKey.getValue
-      if (a.bibtexid == "") { // article has no bibtexid, generate one...
-        // get & update good & unique bibtexid (for crossref at least!)
-        val bid = bidorig.toLowerCase.replaceAll("_", "")
-        val bid2 = getUniqueBibtexID(bid)
-        a.bibtexid = bid2
-        a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, bid2)
-      } else { // if bibtexid was set before, just update bibtexentry with this
-        a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, a.bibtexid)
-      }
+      generateUpdateBibtexID(response.body, a)
     }
     a
   }

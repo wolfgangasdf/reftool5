@@ -26,9 +26,16 @@ class SearchView extends GenericView("searchview") {
     onAction = (ae: ActionEvent) => {
       val sstr = text.value.toUpperCase
       inTransaction {
-        val res = ReftoolDB.articles.where(a => (upper(a.title) like s"%$sstr%".inhibitWhen(!cbTitle.selected.value))
+        val res = ReftoolDB.articles.where(a =>
+          (upper(a.title) like s"%$sstr%".inhibitWhen(!cbTitle.selected.value))
           or (upper(a.authors) like s"%$sstr%".inhibitWhen(!cbAuthors.selected.value))
           or (upper(a.review) like s"%$sstr%".inhibitWhen(!cbReview.selected.value))
+          or (upper(a.bibtexid) like s"%$sstr%".inhibitWhen(!cbBibtexID.selected.value))
+          or (upper(a.bibtexentry) like s"%$sstr%".inhibitWhen(!cbBibtex.selected.value))
+          or (upper(a.pubdate) like s"%$sstr%".inhibitWhen(!cbPubdate.selected.value))
+          or (upper(a.journal) like s"%$sstr%".inhibitWhen(!cbJournal.selected.value))
+          or (upper(a.doi) like s"%$sstr%".inhibitWhen(!cbDOI.selected.value))
+          or (upper(a.pdflink) like s"%$sstr%".inhibitWhen(!cbDocuments.selected.value))
         )
         if (res.isEmpty)
           ApplicationController.showNotification("Search returned no results!")
@@ -48,6 +55,7 @@ class SearchView extends GenericView("searchview") {
   val cbPubdate = new CheckBox("Publication date") { selected = true }
   val cbJournal = new CheckBox("Journal") { selected = true }
   val cbDOI = new CheckBox("DOI") { selected = true }
+  val cbDocuments = new CheckBox("Document filenames") { selected = false }
 
   content = new BorderPane {
     margin = Insets(5.0)
@@ -57,7 +65,7 @@ class SearchView extends GenericView("searchview") {
     )}
     center = new VBox {
       spacing = 5.0
-      children = List(cbTitle, cbAuthors, cbReview, cbBibtexID, cbBibtex, cbPubdate, cbJournal, cbDOI)
+      children = List(cbTitle, cbAuthors, cbReview, cbBibtexID, cbBibtex, cbPubdate, cbJournal, cbDOI, cbDocuments)
     }
   }
 

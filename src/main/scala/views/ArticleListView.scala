@@ -127,6 +127,7 @@ class ArticleListView extends GenericView("articlelistview") {
       alv.selectionModel.value.getSelectedItems.foreach( a => {
         a.topics.dissociate(currentTopic)
         a.topics.associate(stack)
+        ApplicationController.submitArticleChanged(a)
       })
       setArticlesTopic(currentTopic)
     }
@@ -138,6 +139,7 @@ class ArticleListView extends GenericView("articlelistview") {
       val stack = ReftoolDB.topics.where(t => t.title === ReftoolDB.TSTACK).head
       alv.selectionModel.value.getSelectedItems.foreach( a => {
         a.topics.associate(stack)
+        ApplicationController.submitArticleChanged(a)
       })
     }
   }
@@ -146,9 +148,10 @@ class ArticleListView extends GenericView("articlelistview") {
     image = new Image(getClass.getResource("/images/stackmovetohere.gif").toExternalForm)
     action = () => inTransaction {
       val stack = ReftoolDB.topics.where(t => t.title === ReftoolDB.TSTACK).head
-      stack.articles.map( a => {
+      stack.articles.foreach( a => {
         a.topics.dissociate(stack)
         a.topics.associate(currentTopic)
+        ApplicationController.submitArticleChanged(a)
       })
       setArticlesTopic(currentTopic)
     }
@@ -158,7 +161,10 @@ class ArticleListView extends GenericView("articlelistview") {
     image = new Image(getClass.getResource("/images/stackcopytohere.gif").toExternalForm)
     action = () => inTransaction {
       val stack = ReftoolDB.topics.where(t => t.title === ReftoolDB.TSTACK).head
-      stack.articles.map( a => a.topics.associate(currentTopic) )
+      stack.articles.foreach( a => {
+        a.topics.associate(currentTopic)
+        ApplicationController.submitArticleChanged(a)
+      } )
       setArticlesTopic(currentTopic)
     }
   }
@@ -201,6 +207,7 @@ class ArticleListView extends GenericView("articlelistview") {
     action = () => inTransaction {
       alv.selectionModel.value.getSelectedItems.foreach( a => {
         a.topics.dissociate(currentTopic)
+        ApplicationController.submitArticleChanged(a)
       })
       setArticlesTopic(currentTopic)
     }
@@ -338,6 +345,7 @@ class ArticleListView extends GenericView("articlelistview") {
   })
 
   def setArticles(al: List[Article], title: String, topic: Topic): Unit = {
+    debug("setarticles num=" + al.length)
     currentTopic = topic
     articles.clear()
     articles ++= al
