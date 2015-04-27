@@ -55,6 +55,14 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
     setArticle(a)
   } )
 
+  ApplicationController.articleRemovedListeners += ( (a: Article) => {
+    if (a == article) setArticle(null)
+  } )
+
+  ApplicationController.articleChangedListeners += ( (a: Article) => {
+    if (a == article) setArticle(a)
+  } )
+
   content = lv
 
   override def canClose: Boolean = true

@@ -87,10 +87,12 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     article.authors = lAuthors.tf.text.value
     article.pubdate = lPubdate.tf.text.value
     article.bibtexentry = lBibtexentry.tf.text.value
-    if (article.bibtexid != lBibtexid.tf.text.value) {
-      val newbid = ImportHelper.getUniqueBibtexID(lBibtexid.tf.text.value)
-      article.updateBibtexID(newbid)
-    }
+    if (lBibtexid.tf.text.value.trim != "") {
+      if (article.bibtexid != lBibtexid.tf.text.value) {
+        val newbid = ImportHelper.getUniqueBibtexID(lBibtexid.tf.text.value)
+        article.updateBibtexID(newbid)
+      }
+    } else article.bibtexid = ""
     article.journal = lJournal.tf.text.value
     article.review = lReview.tf.text.value
     article.entrytype = lEntryType.tf.text.value
