@@ -133,11 +133,13 @@ object ImportHelper extends Logging {
               updateProgress(30, 100)
               if (doi.startsWith("arxiv:")) {
                 updateMessage("retrieve bibtex from arxiv ID...")
-                a = updateBibtexFromArxiv(a, doi.replaceAllLiterally("arxiv:", ""))
+                val arxivid = doi.replaceAllLiterally("arxiv:", "")
+                a.linkurl = "http://arxiv.org/abs/" + arxivid
+                a = updateBibtexFromArxiv(a, arxivid)
               } else {
                 a.doi = doi
                 updateMessage("retrieve bibtex from DOI...")
-                a = updateBibtexFromDoi(a)
+                a = updateBibtexFromDoi(a, doi)
               }
               updateMessage("update document data from bibtex...")
               a = updateArticleFromBibtex(a)
@@ -241,7 +243,10 @@ object ImportHelper extends Logging {
   }
 
   def getUniqueBibtexID(bibtexid: String): String = {
-    var bid2 = bibtexid
+    val replist = List(("ä", "a"), ("ü", "u"), ("ö", "o"), ("ß", "ss"))
+    var bid2 = bibtexid.toLowerCase
+    replist.foreach { case (s1, s2) => bid2 = bid2.replaceAllLiterally(s1, s2) }
+    bid2 = java.text.Normalizer.normalize(bid2, java.text.Normalizer.Form.NFD)
     var iii = 1
     inTransaction { // add numbers if bibtexid exist...
       while (ReftoolDB.articles.where(a => a.bibtexid === bid2).nonEmpty) {
@@ -250,6 +255,15 @@ object ImportHelper extends Logging {
       }
     }
     bid2
+  }
+
+  def getFirstAuthorLastName(s: String): String = {
+    if (s.contains(","))
+      s.substring(0, s.indexOf(","))
+    else {
+      debug("error parsing first author last name!")
+      "unknown"
+    }
   }
 
   def updateBibtexFromArxiv(a: Article, aid: String): Article = {
@@ -267,6 +281,17 @@ object ImportHelper extends Logging {
             if (resp2.body.contains("@")) {
               val be = resp2.body.substring(resp2.body.indexOf("@"))
               a.bibtexentry = be.replaceAllLiterally("~", " ") // tilde in author name gives trouble
+              val (_, btentry) = parseBibtex(a.bibtexentry)
+              val bidorig = btentry.getKey.getValue
+              if (a.bibtexid == "") { // article has no bibtexid, generate one...
+                val bid = getFirstAuthorLastName(getPlainTextField(btentry, "", BibTeXEntry.KEY_AUTHOR)) +
+                  getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
+                val bid2 = getUniqueBibtexID(bid)
+                a.bibtexid = bid2
+                a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, bid2)
+              } else { // if bibtexid was set before, just update bibtexentry with this
+                a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, a.bibtexid)
+              }
             }
           }
       }
@@ -274,10 +299,10 @@ object ImportHelper extends Logging {
     a
   }
 
-  def updateBibtexFromDoi(a: Article): Article = {
+  def updateBibtexFromDoi(a: Article, doi: String): Article = {
     // http://labs.crossref.org/citation-formatting-service/
     import scalaj.http._ // or probably use better http://www.bigbeeconsultants.co.uk/content/bee-client ? but has deps
-    val response = Http("http://dx.doi.org/" + a.doi).
+    val response = Http("http://dx.doi.org/" + doi).
         header("Accept", "text/bibliography; style=bibtex").option(HttpOptions.followRedirects(shouldFollow = true)).asString
     debug(s"""curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
     if (response.code == 200) {
@@ -333,7 +358,7 @@ object ImportHelper extends Logging {
       // only update these if not present
       if (a.bibtexid == "") a.bibtexid = btentry.getKey.getValue
       // update these always!
-      a.entrytype = btentry.getType.getValue
+      a.entrytype = btentry.getType.getValue.toLowerCase
       a.title = getPlainTextField(btentry, a.title, BibTeXEntry.KEY_TITLE)
       a.authors = getPlainTextField(btentry, a.authors, BibTeXEntry.KEY_AUTHOR)
       a.journal = getPlainTextField(btentry, a.journal, BibTeXEntry.KEY_JOURNAL)
