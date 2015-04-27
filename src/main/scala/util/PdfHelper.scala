@@ -1,5 +1,7 @@
 package util
 
+import org.apache.pdfbox.util.PDFTextStripper
+
 import scala.collection.JavaConversions._
 
 import java.io.File
@@ -36,7 +38,7 @@ object PdfHelper extends Logging {
     debug(info.getMetadataKeys)
     if (info.getMetadataKeys.contains("doi")) {
       doi = info.getCustomMetadataValue("doi")
-    } else { // parse for DOI everywhere...
+    } else { // parse for DOI in all keys...
       for (k <- info.getMetadataKeys) {
         debug("  k = " + k)
         val v = Option(info.getCustomMetadataValue(k)).getOrElse("").toUpperCase
@@ -49,6 +51,22 @@ object PdfHelper extends Logging {
             case _ => debug(" error parsing " + v)
           }
         }
+      }
+    }
+    if (doi == "") { // parse for doi in first pdf page
+      debug("parse first pdf page for doi link...")
+      val doc = pdf.getDocument
+      val pdoc = new PDDocument(doc)
+      val pstrip = new PDFTextStripper()
+      pstrip.setStartPage(1)
+      pstrip.setEndPage(1)
+      val text = pstrip.getText(pdoc)
+      val re = """(?s).*http://dx.doi.org/(\S+)\s.*""".r
+      text match {
+        case re(ddd) =>
+          debug("found doi link: " + ddd)
+          doi = ddd
+        case _ => debug("could not find doi on first pdf page!")
       }
     }
     pdf.close()

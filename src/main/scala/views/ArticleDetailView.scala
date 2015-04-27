@@ -182,7 +182,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   val aUpdateMetadatafromPDF = new MyAction("Article", "Get metadata from pdf") {
     tooltipString = "Update article metadata from PDF"
-    image = new Image(getClass.getResource("/images/pdf2doi.png").toExternalForm)
+    image = new Image(getClass.getResource("/images/pdf2meta.png").toExternalForm)
     action = () => {
       ImportHelper.updateMetadataFromDoc(article, FileHelper.getDocumentFileAbs(article.getFirstDocRelative))
     }
