@@ -168,6 +168,10 @@ object ApplicationController extends Logging {
     debug("aftershown!")
     info("Reftool log file: " + main.Main.logfile.getPath)
 
+    import java.lang.management.ManagementFactory
+    import scala.collection.JavaConversions._
+    ManagementFactory.getRuntimeMXBean.getInputArguments.foreach( s => info("jvm runtime parm: " + s))
+
     Main.mainScene.window.value.onCloseRequest = (we: WindowEvent) => {
       if (!ApplicationController.canClose)
         we.consume()

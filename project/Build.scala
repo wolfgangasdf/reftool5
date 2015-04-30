@@ -22,6 +22,7 @@ object Build extends Build {
       name := "reftool5",
       organization := "com.reftool5",
       version := "0.1-SNAPSHOT",
+      javaOptions ++= Seq("-Xms100m", "-Xmx300m"), // TODO sbt-idea bug: set also in idea
       scalaVersion := "2.11.6",
       scalacOptions ++= Seq("-feature", "-unchecked", "-deprecation", "-encoding", "UTF-8"),
       // javaOptions in run += "-XX:MaxPermSize=256m",
