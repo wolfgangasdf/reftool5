@@ -36,7 +36,7 @@ class ArticleListView extends GenericView("articlelistview") {
     override def updateItem(item: String, empty: Boolean): Unit = {
       setBackground(Background.EMPTY)
       super.updateItem(item, empty)
-      if (item != null) setText(item.replaceAll("(\\r|\\n)", " ")) else setText(item)
+      if (item != null) setText(item.replaceAll("(\\r|\\n)", " ")) else setText(item) // display single line only!
       if (getIndex > -1 && getIndex < alv.getItems.length && getTableColumn == cTitle.delegate) {
         val a = alv.getItems.get(getIndex)
         val col = inTransaction { a.color(currentTopic) }

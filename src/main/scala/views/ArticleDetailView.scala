@@ -4,9 +4,11 @@ import framework.ApplicationController.MyWorker
 import main.Main._
 import util.{FileHelper, ImportHelper}
 
+import scala.collection.mutable.ArrayBuffer
+import scalafx.event.EventHandler
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.image.Image
-import scalafx.scene.input.KeyCombination
+import scalafx.scene.input.{KeyCode, KeyEvent, KeyCombination}
 import scalafx.scene.layout.ColumnConstraints._
 import scalafx.scene.control._
 import scalafx.Includes._
@@ -25,6 +27,8 @@ import scalafx.stage.DirectoryChooser
 class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   debug(" initializing adv...")
+
+  val lines = new ArrayBuffer[MyLine]()
 
   val title = "Article details"
   isDirty.onChange({
@@ -107,22 +111,40 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   }
 
   class MyLine(gpRow: Int, labelText: String, rows: Int = 1) {
+
+    val lineidx = lines.size
+
     val label = new Label(labelText) {
       style = "-fx-font-weight:bold"
       alignmentInParent = Pos.BaselineRight
     }
     GridPane.setConstraints(label, 0, gpRow, 1, 1)
 
-    val tf = new TextArea() {
+    val tf: TextArea = new TextArea() {
       text = "<text>"
       prefRowCount = rows - 1
       alignmentInParent = Pos.BaselineLeft
       editable = true
       text.onChange({ isDirty.value = true ; {} })
+      // dont need this as ctrl-tab already advances.....
+//      onKeyPressed = { e: KeyEvent => {
+//        debug(s"sh=${e.shiftDown} ct=${e.controlDown}")
+//        e.code match {
+//          case KeyCode.TAB if !e.controlDown && !e.shiftDown => // ctrl-tab to insert tab
+//            debug(" advance!")
+//            if (lineidx < lines.size - 1) {
+//              lines(lineidx + 1).tf.requestFocus()
+//            }
+//            e.consume()
+//          case _ =>
+//        }
+//      } }
     }
     GridPane.setConstraints(tf, 1, gpRow, 2, 1)
 
     def content: Seq[javafx.scene.Node] = Seq(label, tf)
+
+    lines += this
   }
 
   class MyGridPane extends GridPane {
