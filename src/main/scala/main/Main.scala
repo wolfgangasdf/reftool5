@@ -113,6 +113,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
   debug("window = " + window)
 
   stylesheets = List(AppStorage.config.csspath)
+
   content = maincontent
   maincontent.prefHeight <== this.height
   maincontent.prefWidth <== this.width
