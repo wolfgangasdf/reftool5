@@ -1,6 +1,6 @@
 package util
 
-import framework.ApplicationController.MyWorker
+import framework.MyWorker
 import org.jbibtex._
 import org.squeryl.PrimitiveTypeMode._
 
@@ -26,6 +26,9 @@ import scalafx.Includes._
 
 object ImportHelper extends Logging {
 
+  // this variable is reset if import finished (success)
+  val backgroundImportRunning = new java.util.concurrent.atomic.AtomicBoolean(false)
+
 //  def main(args: Array[String]): Unit = {
 //    // test doi extraction from pdf
 //    if (1 == 0) {
@@ -40,9 +43,9 @@ object ImportHelper extends Logging {
 //
 //  }
 
-  def getImportFolder(num: Int) = AppStorage.config.pdfpath + "/" + AppStorage.config.importfolderprefix + num
+  private def getImportFolder(num: Int) = AppStorage.config.pdfpath + "/" + AppStorage.config.importfolderprefix + num
 
-  def getDOImanually(iniSearch: String): String = {
+  private def getDOImanually(iniSearch: String): String = {
     var doi = ""
     val webView = new WebView {
       prefHeight = 200
@@ -187,19 +190,31 @@ object ImportHelper extends Logging {
           ApplicationController.submitArticleChanged(a)
           ApplicationController.showNotification("import successful of " + a)
         }
+        if (!backgroundImportRunning.compareAndSet(true, false)) {
+          throw new Exception("illegal state: backgroundImportRunning was false!")
+        }
       }
     }).runInBackground()
   }
 
-  def updateMetadataFromDoc(article: Article, sourceFile: File): Unit = {
+  def updateMetadataFromDoc(article: Article, sourceFile: File): Boolean = {
+    if (!backgroundImportRunning.compareAndSet(false, true)) {
+      info("import document NOT executed because already running...")
+      return false
+    }
     importDocument2(updateMetadata = true, article, sourceFile, doFileAction = false, null, copyIt = false, null)
+    true
   }
 
-    // topic OR article can be NULL, but both should not be set!
-  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article, copyFile: Option[Boolean], isAdditionalDoc: Boolean): Unit = {
+  // topic OR article can be NULL, but both should not be set!
+  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article, copyFile: Option[Boolean], isAdditionalDoc: Boolean): Boolean = {
+    if (!backgroundImportRunning.compareAndSet(false, true)) {
+      info("import document NOT executed because already running...")
+      return false
+    }
     debug("find new document location...")
     debug(s"importDocument: topic=$topic article=$article sourceFile=$sourceFile")
-    assert(!((article == null) == (topic == null))) // xor for now
+    assert(!((article != null) && (topic != null))) // both must not be given!
 
     val pdfpath = new File(AppStorage.config.pdfpath)
     val ifolders = pdfpath.listFiles(new FileFilter {
@@ -235,11 +250,12 @@ object ImportHelper extends Logging {
       res match {
         case Some(BtCopy) => true
         case Some(BtMove) => false
-        case _ => return
+        case _ => return false
       }
     } else copyFile.get
 
     importDocument2(!isAdditionalDoc, article, sourceFile, doFileAction = true, lastfolder, copyIt = copyIt, topic)
+    true
   }
 
   def getUniqueBibtexID(bibtexid: String): String = {
@@ -259,7 +275,7 @@ object ImportHelper extends Logging {
     bid2
   }
 
-  def getFirstAuthorLastName(s: String): String = {
+  private def getFirstAuthorLastName(s: String): String = {
     if (s.contains(","))
       s.substring(0, s.indexOf(","))
     else {
@@ -284,7 +300,7 @@ object ImportHelper extends Logging {
     }
   }
 
-  def updateBibtexFromArxiv(a: Article, aid: String): Article = {
+  private def updateBibtexFromArxiv(a: Article, aid: String): Article = {
     import scalaj.http._
     val resp1 = Http("http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:" + aid).asString
     debug("resp1=" + resp1.code + "   ")
@@ -306,7 +322,7 @@ object ImportHelper extends Logging {
     a
   }
 
-  def updateBibtexFromDoi(a: Article, doi: String): Article = {
+  private def updateBibtexFromDoi(a: Article, doi: String): Article = {
     // http://labs.crossref.org/citation-formatting-service/
     import scalaj.http._ // or probably use better http://www.bigbeeconsultants.co.uk/content/bee-client ? but has deps
     val response = Http("http://dx.doi.org/" + doi).
@@ -318,7 +334,7 @@ object ImportHelper extends Logging {
     a
   }
 
-  def getPlainTextField(btentry: BibTeXEntry, oldString: String, field: Key): String = {
+  private def getPlainTextField(btentry: BibTeXEntry, oldString: String, field: Key): String = {
     val btfield = btentry.getField(field)
     var s = oldString
     if (btfield != null) {
@@ -333,7 +349,7 @@ object ImportHelper extends Logging {
     s
   }
 
-  def parseBibtex(bibtexentry: String): (Key, BibTeXEntry) = {
+  private def parseBibtex(bibtexentry: String): (Key, BibTeXEntry) = {
     val btparser = new org.jbibtex.BibTeXParser
     val btdb = btparser.parse(new StringReader(bibtexentry))
     val btentries = btdb.getEntries
@@ -372,7 +388,7 @@ object ImportHelper extends Logging {
     a
   }
 
-  def bibtexFromBtentry(be: BibTeXEntry): String = {
+  private def bibtexFromBtentry(be: BibTeXEntry): String = {
     val bdb = new BibTeXDatabase()
     bdb.addObject(be)
     val bf = new BibTeXFormatter()
