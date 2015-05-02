@@ -1,29 +1,25 @@
 package views
 
 import java.io.{File, FileOutputStream, PrintWriter}
-
-import scala.collection.mutable
-import scala.collection.JavaConversions._
-import scalafx.event.ActionEvent
-import scalafx.scene.control.Alert.AlertType
-
-import scalafx.scene.control._
-import scalafx.scene.control.cell.TextFieldTreeCell
-import scalafx.scene.effect.{DropShadow, InnerShadow}
-import scalafx.scene.image.{ImageView, Image}
-import scalafx.scene.input._
-import scalafx.Includes._
-import scalafx.scene.layout.{HBox, Priority, BorderPane}
-import scalafx.scene.paint.Color
-
 import javafx.scene.{control => jfxsc}
-
-import org.squeryl.PrimitiveTypeMode._
 
 import db.{Article, ReftoolDB, Topic}
 import framework._
+import org.squeryl.PrimitiveTypeMode._
 import util.{AppStorage, DnDHelper, ImportHelper}
 
+import scala.collection.JavaConversions._
+import scala.collection.mutable
+import scalafx.Includes._
+import scalafx.event.ActionEvent
+import scalafx.scene.control.Alert.AlertType
+import scalafx.scene.control._
+import scalafx.scene.control.cell.TextFieldTreeCell
+import scalafx.scene.effect.{DropShadow, InnerShadow}
+import scalafx.scene.image.{Image, ImageView}
+import scalafx.scene.input._
+import scalafx.scene.layout.{BorderPane, HBox, Priority}
+import scalafx.scene.paint.Color
 import scalafx.stage.FileChooser
 import scalafx.stage.FileChooser.ExtensionFilter
 import scalafx.util.StringConverter

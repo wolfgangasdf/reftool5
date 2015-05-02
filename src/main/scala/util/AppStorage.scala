@@ -1,9 +1,10 @@
 package util
 
-import java.nio.file.{StandardOpenOption, Files, Paths}
 import java.nio.charset.Charset
-import framework.{Logging, Helpers}
-import Helpers._
+import java.nio.file.{Files, Paths, StandardOpenOption}
+
+import framework.Helpers._
+import framework.Logging
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

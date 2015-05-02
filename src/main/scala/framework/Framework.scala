@@ -128,6 +128,7 @@ class MyAction(val category: String, val title: String) extends Logging {
 
   def accelerator = _accelerator
   def accelerator_= (keyCombination: KeyCombination): Unit = {
+    _accelerator = keyCombination
     menuEntry.accelerator = keyCombination
   }
 
