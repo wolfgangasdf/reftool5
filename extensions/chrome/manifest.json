@@ -6,7 +6,8 @@
   "version": "1.0",
 
   "browser_action": {
-    "default_icon": "icon.png"
+    "default_icon": "icon.png",
+    "default_title": "Downloads currently viewed PDF for import into reftool5.\nThis happens via a background task.\nSet auto import directory in preferences!\nArticle ends up orphaned if no topic selected!"
   },
   "background": {
     "scripts": ["background.js"],

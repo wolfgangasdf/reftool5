@@ -1,27 +1,24 @@
 package util
 
-import framework.MyWorker
+import java.io.{File, FileFilter, StringReader, StringWriter}
+
+import db.{Article, Document, ReftoolDB, Topic}
+import framework.{ApplicationController, Helpers, Logging, MyWorker}
 import org.jbibtex._
 import org.squeryl.PrimitiveTypeMode._
 
-import db.{Document, ReftoolDB, Article, Topic}
-import framework.{Helpers, ApplicationController, Logging}
-
-import java.io.{StringWriter, StringReader, FileFilter, File}
-
-import scala.util.Random
-
 import scala.collection.JavaConversions._
+import scala.util.Random
+import scalafx.Includes._
 import scalafx.event.ActionEvent
 import scalafx.scene.Scene
 import scalafx.scene.control.Alert.AlertType
-import scalafx.scene.control._
 import scalafx.scene.control.Button._
-import scalafx.scene.layout.{Priority, HBox, VBox}
+import scalafx.scene.control._
 import scalafx.scene.layout.HBox._
+import scalafx.scene.layout.{HBox, Priority, VBox}
 import scalafx.scene.web.WebView
 import scalafx.stage.{Modality, Stage}
-import scalafx.Includes._
 
 
 object ImportHelper extends Logging {
