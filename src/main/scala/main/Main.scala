@@ -52,12 +52,14 @@ class MainScene(stage: Stage) extends Scene with Logging {
   var searchView = tryit { new SearchView }
   var logView = tryit { new LogView }
   var infoView = tryit { new InfoView }
+  var prefsView = tryit { new PreferencesView }
 
   val bottomtabs = new ViewContainer {
     addView(articleDetailView)
     addView(searchView)
     addView(logView)
     addView(infoView)
+    addView(prefsView)
   }
 
   val brtoptabs = new ViewContainer {

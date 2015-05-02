@@ -6,12 +6,14 @@ import framework.{Logging, Helpers}
 import Helpers._
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 class Config extends Logging {
 
   val uiSettings = new mutable.HashMap[String, String]()
 
   var datadir = ""
+  var autoimportdir = ""
   def dbpath = datadir + "/db5"
   def olddbpath = datadir + "/db" // reftool4
   def pdfpath = datadir + "/files"
@@ -69,7 +71,8 @@ object AppStorage extends Logging {
     } else {
       lines.foreach(lll => {
         val reUIsett = """ui-(.*)""".r
-        val sett = splitsetting(lll.toString)
+        val sett = new ArrayBuffer[String]() ++ splitsetting(lll.toString).toArray
+        if (sett.length == 1) sett += ""
         sett.head match {
           case "reftoolsettingsversion" =>
             if (!sett(1).equals("1")) {
@@ -77,6 +80,7 @@ object AppStorage extends Logging {
               return
             }
           case "lastdatadir" => config.datadir = sett(1)
+          case "autoimportdir" => config.autoimportdir = sett(1)
           case reUIsett(key) => config.uiSettings.put(key, sett(1))
           case _ => warn("unknown tag in config file: <" + sett.head + ">")
         }
@@ -95,7 +99,8 @@ object AppStorage extends Logging {
     }
 
     saveSett("reftoolsettingsversion", 1)
-    if (config.datadir != "") saveSett("lastdatadir", config.datadir)
+    saveSett("lastdatadir", config.datadir)
+    saveSett("autoimportdir", config.autoimportdir)
 
     config.uiSettings.foreach { case (key, value) => saveSett("ui-" + key, value) }
 

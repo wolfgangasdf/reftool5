@@ -1,26 +1,21 @@
 package views
 
-import framework.ApplicationController.MyWorker
+import db.{Article, ReftoolDB}
+import framework.MyWorker
+import framework._
 import main.Main._
+import org.squeryl.PrimitiveTypeMode._
 import util.{FileHelper, ImportHelper}
 
 import scala.collection.mutable.ArrayBuffer
-import scalafx.event.EventHandler
-import scalafx.scene.control.Alert.AlertType
-import scalafx.scene.image.Image
-import scalafx.scene.input.{KeyCode, KeyEvent, KeyCombination}
-import scalafx.scene.layout.ColumnConstraints._
-import scalafx.scene.control._
 import scalafx.Includes._
-import scalafx.geometry.{Insets, Pos}
-import scalafx.scene.control.{Label, TextArea}
+import scalafx.geometry.Insets
+import scalafx.scene.control.Alert.AlertType
+import scalafx.scene.control.{Label, _}
+import scalafx.scene.image.Image
+import scalafx.scene.input.KeyCombination
+import scalafx.scene.layout.ColumnConstraints._
 import scalafx.scene.layout._
-
-import org.squeryl.PrimitiveTypeMode._
-
-import framework._
-import db.{ReftoolDB, Article}
-
 import scalafx.stage.DirectoryChooser
 
 
@@ -31,6 +26,9 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   val lines = new ArrayBuffer[MyLine]()
 
   val title = "Article details"
+
+  text = title
+
   isDirty.onChange({
     text = if (isDirty.value) title + " *" else title
     aSave.enabled = isDirty.value
@@ -69,39 +67,44 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
       }
     } else true
     if (doit) {
-      val a = if (aa == null) new Article() else aa
-      article = a
-      lbCurrentArticle.text = a.toString
-      lTitle.tf.text = a.title
-      lAuthors.tf.text = a.authors
-      lPubdate.tf.text = a.pubdate
-      lBibtexid.tf.text = a.bibtexid
-      lJournal.tf.text = a.journal
-      lReview.tf.text = a.review
-      lEntryType.tf.text = a.entrytype
-      lLinkURL.tf.text = a.linkurl
-      lDOI.tf.text = a.doi
-      lBibtexentry.tf.text = a.bibtexentry
+      if (aa == null) {
+        lines.foreach( ll => ll.tf.disable = true )
+      } else {
+        lines.foreach( ll => ll.tf.disable = false )
+        val a = aa
+        article = a
+        lbCurrentArticle.text = a.toString
+        lTitle.tf.text = a.title
+        lAuthors.tf.text = a.authors
+        lPubdate.tf.text = a.pubdate
+        lBibtexid.tf.text = a.bibtexid
+        lJournal.tf.text = a.journal
+        lReview.tf.text = a.review
+        lEntryType.tf.text = a.entrytype
+        lLinkURL.tf.text = a.linkurl
+        lDOI.tf.text = a.doi
+        lBibtexentry.tf.text = a.bibtexentry
+      }
       isDirty.value = false
     }
   }
 
   def saveArticle(): Unit = {
-    article.title = lTitle.tf.text.value
-    article.authors = lAuthors.tf.text.value
-    article.pubdate = lPubdate.tf.text.value
-    article.bibtexentry = lBibtexentry.tf.text.value
-    if (lBibtexid.tf.text.value.trim != "") {
-      if (article.bibtexid != lBibtexid.tf.text.value) {
-        val newbid = ImportHelper.getUniqueBibtexID(lBibtexid.tf.text.value)
+    article.title = lTitle.tf.getText
+    article.authors = lAuthors.tf.getText
+    article.pubdate = lPubdate.tf.getText
+    article.bibtexentry = lBibtexentry.tf.getText
+    if (lBibtexid.tf.getText.trim != "") {
+      if (article.bibtexid != lBibtexid.tf.getText) {
+        val newbid = ImportHelper.getUniqueBibtexID(lBibtexid.tf.getText)
         article.updateBibtexID(newbid)
       }
     } else article.bibtexid = ""
-    article.journal = lJournal.tf.text.value
-    article.review = lReview.tf.text.value
-    article.entrytype = lEntryType.tf.text.value
-    article.linkurl = lLinkURL.tf.text.value
-    article.doi = lDOI.tf.text.value
+    article.journal = lJournal.tf.getText
+    article.review = lReview.tf.getText
+    article.entrytype = lEntryType.tf.getText
+    article.linkurl = lLinkURL.tf.getText
+    article.doi = lDOI.tf.getText
     inTransaction {
       ReftoolDB.articles.update(article)
     }
@@ -110,39 +113,10 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     setArticle(article)
   }
 
-  class MyLine(gpRow: Int, labelText: String, rows: Int = 1) {
-
+  class MyLine(gpRow: Int, labelText: String, rows: Int = 1) extends MyTextInput(gpRow, labelText, rows, 0) {
     val lineidx = lines.size
 
-    val label = new Label(labelText) {
-      style = "-fx-font-weight:bold"
-      alignmentInParent = Pos.BaselineRight
-    }
-    GridPane.setConstraints(label, 0, gpRow, 1, 1)
-
-    val tf: TextArea = new TextArea() {
-      text = "<text>"
-      prefRowCount = rows - 1
-      alignmentInParent = Pos.BaselineLeft
-      editable = true
-      text.onChange({ isDirty.value = true ; {} })
-      // dont need this as ctrl-tab already advances.....
-//      onKeyPressed = { e: KeyEvent => {
-//        debug(s"sh=${e.shiftDown} ct=${e.controlDown}")
-//        e.code match {
-//          case KeyCode.TAB if !e.controlDown && !e.shiftDown => // ctrl-tab to insert tab
-//            debug(" advance!")
-//            if (lineidx < lines.size - 1) {
-//              lines(lineidx + 1).tf.requestFocus()
-//            }
-//            e.consume()
-//          case _ =>
-//        }
-//      } }
-    }
-    GridPane.setConstraints(tf, 1, gpRow, 2, 1)
-
-    def content: Seq[javafx.scene.Node] = Seq(label, tf)
+    tf.text.onChange({ isDirty.value = true ; {} })
 
     lines += this
   }
@@ -179,8 +153,6 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   val grid3 = new MyGridPane {
     children ++= lEntryType.content ++ lLinkURL.content ++ lDOI.content ++ lBibtexentry.content
   }
-
-  text = "Article details"
 
   val lbCurrentArticle = new Label("<article>")
 
@@ -278,6 +250,8 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
       children = List(grid1, new Separator(), grid2, new Separator(), grid3)
     }
   }
+
+  setArticle(null)
 
   override def getUIsettings: String = ""
 

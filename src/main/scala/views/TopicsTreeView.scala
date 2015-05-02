@@ -1,6 +1,6 @@
 package views
 
-import java.io.{FileOutputStream, PrintWriter}
+import java.io.{File, FileOutputStream, PrintWriter}
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
@@ -21,8 +21,8 @@ import javafx.scene.{control => jfxsc}
 import org.squeryl.PrimitiveTypeMode._
 
 import db.{Article, ReftoolDB, Topic}
-import framework.{MyAction, ApplicationController, Logging, GenericView}
-import util.{DnDHelper, ImportHelper}
+import framework._
+import util.{AppStorage, DnDHelper, ImportHelper}
 
 import scalafx.stage.FileChooser
 import scalafx.stage.FileChooser.ExtensionFilter
@@ -493,6 +493,28 @@ class TopicsTreeView extends GenericView("topicsview") {
   }
 
   loadTopics()
+
+  val backgroundTimer = new java.util.Timer()
+  backgroundTimer.schedule( // remove Notification later
+    new java.util.TimerTask {
+      override def run(): Unit = {
+        val aid = AppStorage.config.autoimportdir
+        if (aid != "") {
+          val aidf = new File(aid)
+          val res = aidf.listFiles(new java.io.FilenameFilter() {
+            override def accept(dir: File, name: String): Boolean = name.startsWith("reftool5import") && name.endsWith(".pdf")
+          })
+          if (res.nonEmpty) {
+            debug("background: found files: " + res.mkString(","))
+            Helpers.runUI( {
+              val sel = tv.getSelectionModel.getSelectedItem
+              ImportHelper.importDocument(res.head, if (sel != null) sel.getValue else null, null, copyFile = Some(false), isAdditionalDoc = false)
+            } )
+            }
+          }
+      }
+    }, 0, 1000
+  )
 
   override def canClose: Boolean = true
 
