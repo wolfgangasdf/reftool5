@@ -17,8 +17,7 @@ class Config extends Logging {
   def pdfpath = datadir + "/files"
   val importfolderprefix = "folder-" // after this a number to limit #files in folder
 
-//  val csspath = getClass.getResource("/reftool.css").toExternalForm
-  val csspath = "file:" + new java.io.File("src/main/resources/reftool.css").getAbsolutePath
+  val csspath = getClass.getResource("/reftool.css").toExternalForm
   debug("csspath: " + csspath)
 }
 
