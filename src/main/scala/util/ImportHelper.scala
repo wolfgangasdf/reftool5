@@ -11,6 +11,7 @@ import scala.collection.JavaConversions._
 import scala.util.Random
 import scalafx.Includes._
 import scalafx.event.ActionEvent
+import scalafx.geometry.Insets
 import scalafx.scene.Scene
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control.Button._
@@ -32,6 +33,7 @@ object ImportHelper extends Logging {
     var doi = ""
     val webView = new WebView {
       prefHeight = 200
+      vgrow = Priority.Always
     }
     val webEngine = webView.engine
 
@@ -66,6 +68,8 @@ object ImportHelper extends Logging {
     }
 
     val myContent = new VBox {
+      padding = Insets(10)
+      spacing = 10
       children ++= Seq(
         new Label("Cannot extract the DOI from the pdf. Please either search for title or so, you can also enter the DOI manually here, or see below."),
         new HBox { children ++= Seq(tfSearch, btSearch) },
@@ -75,7 +79,11 @@ object ImportHelper extends Logging {
         new Separator(),
         new HBox { children ++= Seq( new Label("Or enter arxiv ID here:"), tfArxiv ) },
         new Separator(),
-        new Label("Or paste the bibtex later manually.")
+        new Button("Do it later manually") {
+          onAction = (ae: ActionEvent) => {
+            scene.value.getWindow.asInstanceOf[javafx.stage.Stage].close()
+          }
+        }
       )
     }
     val dialogStage = new Stage {

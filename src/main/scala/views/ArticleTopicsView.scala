@@ -19,8 +19,10 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
   val lv = new ListView[Topic] {
     onMouseClicked = (me: MouseEvent) => {
       if (me.clickCount == 2) {
-        if (selectionModel.value.getSelectedItems.length > 0)
+        if (selectionModel.value.getSelectedItems.length > 0) {
           ApplicationController.submitRevealTopic(selectionModel.value.getSelectedItems.head)
+          ApplicationController.submitRevealArticleInList(article)
+        }
       }
     }
   }
