@@ -61,13 +61,22 @@ object PdfHelper extends Logging {
       pstrip.setStartPage(1)
       pstrip.setEndPage(1)
       val text = pstrip.getText(pdoc)
-//      debug("first page:\n" + text)
+      // debug("first page:\n" + text)
       val re = """(?s).*(?:http://dx.doi.org/|DOI:\ ?)(\S+)\s.*""".r
       text match {
         case re(ddd) =>
           debug("found doi link: " + ddd)
           doi = ddd
-        case _ => debug("could not find doi on first pdf page!")
+        case _ =>
+          val text2 = text.replaceAll("""[\r\n]""", "")
+          //debug("first page without line ends:\n" + text2)
+          val re2 = """.*arXiv:(\d+\.\d+)(?:v\d+)*\s.*""".r
+          text2 match {
+            case re2(aaa) =>
+              debug("found arxiv id: " + aaa)
+              doi = "arxiv:" + aaa
+            case _ => debug("could not find doi on first pdf page!")
+          }
       }
     }
     pdf.close()

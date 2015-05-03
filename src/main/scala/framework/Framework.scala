@@ -148,13 +148,12 @@ class MyAction(val category: String, val title: String) extends Logging {
 }
 
 
-
 // imode: 0-textarea 1-textfield 2-tf with dir sel
 class MyTextInput(gpRow: Int, labelText: String, rows: Int = 1, imode: Int = 0) {
 
   val label = new Label(labelText) {
     style = "-fx-font-weight:bold"
-    alignmentInParent = Pos.BaselineRight
+    alignmentInParent = Pos.CenterRight
   }
   GridPane.setConstraints(label, 0, gpRow, 1, 1)
 
@@ -194,10 +193,9 @@ class MyTextInput(gpRow: Int, labelText: String, rows: Int = 1, imode: Int = 0) 
 }
 
 
-
 // used for import
 // https://github.com/scalafx/ProScalaFX/blob/master/src/proscalafx/ch06/ServiceExample.scala
-class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit]) extends Logging {
+class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () => Unit ) extends Logging {
   object worker extends Service[Unit](new javafx.concurrent.Service[Unit]() {
     override def createTask() = atask
   })
@@ -217,16 +215,19 @@ class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit]) extends Logg
     al.onCloseRequest = (de: DialogEvent) => {
       debug("oncloserequ!!!")
       worker.cancel
+      cleanup()
     }
     worker.onSucceeded = (wse: WorkerStateEvent) => {
       debug("onsucceed")
       al.close()
+      cleanup()
       debug("onsucceed/")
     }
     worker.onFailed = (wse: WorkerStateEvent) => {
       error("onfailed: " + atask.getException.getMessage)
       atask.getException.printStackTrace()
       al.close()
+      cleanup()
       Helpers.runUI {
         Helpers.showExceptionAlert(atitle, atask.getException)
       }
@@ -235,6 +236,7 @@ class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit]) extends Logg
     worker.start()
   }
 }
+
 
 object ApplicationController extends Logging {
   val views = new ArrayBuffer[GenericView]
@@ -337,7 +339,7 @@ object ApplicationController extends Logging {
         updateProgress(100, 100)
         succeeded()
       }
-    }).runInBackground()
+    }, () => {}).runInBackground()
   }
 
 }

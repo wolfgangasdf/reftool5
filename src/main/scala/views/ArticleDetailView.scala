@@ -1,9 +1,7 @@
 package views
 
 import db.{Article, ReftoolDB}
-import framework.MyWorker
 import framework._
-import main.Main._
 import org.squeryl.PrimitiveTypeMode._
 import util.{FileHelper, ImportHelper}
 
@@ -16,7 +14,6 @@ import scalafx.scene.image.Image
 import scalafx.scene.input.KeyCombination
 import scalafx.scene.layout.ColumnConstraints._
 import scalafx.scene.layout._
-import scalafx.stage.DirectoryChooser
 
 
 class ArticleDetailView extends GenericView("articledetailview") with Logging {
@@ -70,7 +67,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
       if (aa == null) {
         lines.foreach( ll => ll.tf.disable = true )
       } else {
-        lines.foreach( ll => ll.tf.disable = false )
+        lines.foreach( ll => { ll.tf.disable = false ; ll.tf.editable = true } )
         val a = aa
         article = a
         lbCurrentArticle.text = a.toString
@@ -200,6 +197,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   val aTest = new MyAction("Test", "test") {
     enabled = true
     action = () => {
+      debug("lreview editable: " + lReview.tf.isEditable)
 //      val res = ImportHelper.getDOImanually("Attosecond gamma-ray pulses via nonlinear Compton scattering in the radiation dominated regime")
 //      debug("res = " + res)
 
@@ -207,20 +205,6 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
 //      ApplicationController.showNotification("noti 2")
       // throw new Exception("aaaaatestexception")
 
-      new MyWorker("titlechen", new javafx.concurrent.Task[Unit] {
-        override def call() = {
-          updateMessage("huhuhuhuhu")
-          updateProgress(10, 100)
-          // throw new Exception("aaaaatestexception")
-          Thread.sleep(2000)
-          updateProgress(30, 100)
-          val res = Helpers.runUIwait { new DirectoryChooser { title = "Select directory" }.showDialog(stage) }
-          updateMessage("huhuhuhuhu2" + res)
-          Thread.sleep(2000)
-          updateProgress(100, 100)
-          succeeded()
-        }
-      }).runInBackground()
     }
   }
 

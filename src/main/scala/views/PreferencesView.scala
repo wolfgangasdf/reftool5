@@ -23,12 +23,10 @@ class PreferencesView extends GenericView("prefsview") {
     aSave.enabled = isDirty.value
   })
 
-  class MyLine(gpRow: Int, labelText: String, rows: Int = 1, imode: Int = 0, iniText: String) extends MyTextInput(gpRow, labelText, rows, imode) {
-
+  class MyLine(gpRow: Int, labelText: String, rows: Int = 1, imode: Int = 0, iniText: String, helpstr: String) extends MyTextInput(gpRow, labelText, rows, imode) {
     tf.text = iniText
-
+    tf.tooltip = helpstr
     tf.text.onChange({ isDirty.value = true ; {} })
-
   }
 
   class MyGridPane extends GridPane {
@@ -39,7 +37,9 @@ class PreferencesView extends GenericView("prefsview") {
     columnConstraints += new ColumnConstraints { hgrow = Priority.Always }
   }
 
-  val lAutoimport = new MyLine(0, "Auto import dir", 1, 2, AppStorage.config.autoimportdir)
+  val lAutoimport = new MyLine(0, "Auto import dir", 1, 2, AppStorage.config.autoimportdir,
+    """This folder is watched for files like 'reftool5import*.pdf', and automatic import initiated.
+      |Designed to work with the browser extension.""".stripMargin)
 
   val grid1 = new MyGridPane {
     children ++= lAutoimport.content

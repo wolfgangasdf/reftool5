@@ -23,22 +23,8 @@ import scalafx.stage.{Modality, Stage}
 
 object ImportHelper extends Logging {
 
-  // this variable is reset if import finished (success)
+  // this variable is reset if import finished (successful or not)
   val backgroundImportRunning = new java.util.concurrent.atomic.AtomicBoolean(false)
-
-//  def main(args: Array[String]): Unit = {
-//    // test doi extraction from pdf
-//    if (1 == 0) {
-//      val f = new File("/Unencrypted_Data/incoming/firefox/A differentiated plane wave as an electromagnetic vortex8110565808763115773.pdf")
-//      importDocument(f, null, null)
-//    } else {
-//      // test bibtex retrieval from doi
-//      val a = new Article()
-//      a.doi = "10.1364/OME.4.002355"
-//      updateBibtexFromDoi(a)
-//    }
-//
-//  }
 
   private def getImportFolder(num: Int) = AppStorage.config.pdfpath + "/" + AppStorage.config.importfolderprefix + num
 
@@ -69,8 +55,13 @@ object ImportHelper extends Logging {
     val tfArxiv = new TextField {
       hgrow = Priority.Always
       onAction = (ae: ActionEvent) => {
-        doi = "arxiv:" + text.value
-        scene.value.getWindow.asInstanceOf[javafx.stage.Stage].close()
+        val re2 = """(\d+\.\d+)(?:v\d+)""".r
+        text.value match {
+          case re2(aid) =>
+            doi = "arxiv:" + aid
+            scene.value.getWindow.asInstanceOf[javafx.stage.Stage].close()
+          case _ =>
+        }
       }
     }
 
@@ -191,7 +182,7 @@ object ImportHelper extends Logging {
           throw new Exception("illegal state: backgroundImportRunning was false!")
         }
       }
-    }).runInBackground()
+    }, () => { backgroundImportRunning.set(false) } ).runInBackground()
   }
 
   def updateMetadataFromDoc(article: Article, sourceFile: File): Boolean = {
@@ -299,7 +290,7 @@ object ImportHelper extends Logging {
 
   private def updateBibtexFromArxiv(a: Article, aid: String): Article = {
     import scalaj.http._
-    val resp1 = Http("http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:" + aid).asString
+    val resp1 = Http("http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:" + aid).timeout(3000, 5000).asString
     debug("resp1=" + resp1.code + "   ")
     if (resp1.code == 200) {
       val re1 = """(?s).*<a href="(.*)">Bibtex entry for this abstract</a>.*""".r
