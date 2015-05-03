@@ -32,9 +32,10 @@ class MyTreeItem(vv: Topic, ttv: TopicsTreeView) extends TreeItem[Topic](vv) wit
   inTransaction {
     if (vv.expanded) {
       for (c <- vv.orderedChilds) {
-        val doit = if (ttv.searchActive) { if (c.expanded) true else false } else true
+        val doit = if (ttv.searchActive) c.expanded else true
         if (doit) children += new MyTreeItem(c, ttv)
       }
+      hasloadedchilds = true
       expanded = true
     } else {
       // only check for children here!
@@ -272,7 +273,7 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   def loadTopics(revealLastTopic: Boolean = true, revealTopic: Topic = null): Unit = {
     assert(!( revealLastTopic && (revealTopic != null) ))
-    debug("ttv: loadtopics!")
+    debug(s"ttv: loadtopics! revlast=$revealLastTopic revealtopic=$revealTopic")
     var tlast: Topic = null
     if (revealLastTopic)
       tv.selectionModel.value.getSelectedItems.headOption.foreach(t => tlast = t.getValue)
@@ -294,7 +295,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     inTransaction {
       if (tlast != null) expandAllParents(tlast) // expand topic to be revealed
       troot = ReftoolDB.topics.where(t => t.parent === 0).single // root item must have parent == 0
-      debug("ttv: root topic=" + troot)
+      debug(s"ttv: root topic=$troot where expanded=${troot.expanded}")
       tiroot = new MyTreeItem(troot, this)
       tv.root = tiroot
       tiroot.setExpanded(true)
@@ -439,8 +440,9 @@ class TopicsTreeView extends GenericView("topicsview") {
     aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton
   )
 
-  tv.selectionModel().selectedItem.onChange { (_, _, newVal) => {
+  tv.selectionModel().selectedItem.onChange { (_, oldVal, newVal) => {
     if (newVal != null) {
+      debug(s"tv sel onchange old=$oldVal new=$newVal: ")
       ApplicationController.submitShowArticlesFromTopic(newVal.getValue)
       aAddArticle.enabled = true
       aAddTopic.enabled = true
