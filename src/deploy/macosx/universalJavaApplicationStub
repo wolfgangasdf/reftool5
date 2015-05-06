@@ -1,4 +1,5 @@
 #!/bin/sh
+# modified by wolle!
 ##################################################################################
 #                                                                                #
 # universalJavaApplicationStub                                                   #
@@ -119,7 +120,7 @@ exitcode=$?
 
 # read Info.plist in Apple style if exit code returns 0 (true, :Java key is present)
 if [ $exitcode -eq 0 ]; then
-
+	echo "here1!!!"
 	# set Java and Resources folder
 	JavaFolder="${AppleJavaFolder}"
 	ResourcesFolder="${AppleResourcesFolder}"
@@ -168,7 +169,8 @@ if [ $exitcode -eq 0 ]; then
 	JVMClassPath=`eval "echo ${JVMClassPath}"`
 
 	# read the JVM Default Options
-	JVMDefaultOptions=`/usr/libexec/PlistBuddy -c "print :Java:VMOptions" "${InfoPlistFile}" 2> /dev/null | xargs`
+	#w remove "Array { }" JVMDefaultOptions=`/usr/libexec/PlistBuddy -c "print :Java:VMOptions" "${InfoPlistFile}" 2> /dev/null | xargs`
+	JVMDefaultOptions=`/usr/libexec/PlistBuddy -c "print :Java:VMOptions" "${InfoPlistFile}" 2> /dev/null | xargs | sed 's/.*{\(.*\)}.*/\1/'`
 
 	# read the JVM Arguments
 	JVMArguments=`/usr/libexec/PlistBuddy -c "print :Java:Arguments" "${InfoPlistFile}" 2> /dev/null | xargs`
@@ -178,7 +180,6 @@ if [ $exitcode -eq 0 ]; then
 
 # read Info.plist in Oracle style
 else
-
 	# set Working Directory and Java and Resources folder
 	JavaFolder="${OracleJavaFolder}"
 	ResourcesFolder="${OracleResourcesFolder}"
@@ -278,9 +279,10 @@ elif [ -f "$JAVACMD" ] && [ -x "$JAVACMD" ] ; then
 	#	- JVM arguments
 	
 	#wolle
-	echo "wolle: removed JVMDefaultOptions which were:"
+	echo "jvmdo:"
 	echo $JVMDefaultOptions
-	JVMDefaultOptions=""
+	echo "jvmo:"
+	echo $JVMOptions
 	
 	exec "$JAVACMD" \
 			-cp "${JVMClassPath}" \

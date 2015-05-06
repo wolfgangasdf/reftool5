@@ -1,6 +1,7 @@
 import sbt._
 import sbt.Keys._
 import sbtbuildinfo.Plugin._
+//import de.sciss.sbt.appbundle.AppBundlePlugin._
 
 //import no.vedaadata.sbtjavafx.JavaFXPlugin
 //import no.vedaadata.sbtjavafx.JavaFXPlugin.JFX
@@ -16,7 +17,7 @@ object Build extends Build {
     base = file("."),
     /* should work but doesn't (sbt run can't find main class), use build.sbt for now:
       settings = Defaults.coreDefaultSettings ++ JavaFXPlugin.jfxSettings ++ Seq(
-        JFX.mainClass := Some("sgar.Sgar"),
+        JFX.mainClass := Some("main.Main"),
      */
     settings = Defaults.coreDefaultSettings ++ Seq(
       name := "reftool5",
