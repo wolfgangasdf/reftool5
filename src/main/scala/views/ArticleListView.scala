@@ -74,7 +74,7 @@ class ArticleListView extends GenericView("articlelistview") {
   }
   val cReview = new TableColumn[Article, String] {
     text = "Review"
-    cellValueFactory = (a) => new StringProperty(StringHelper.headString(a.value.review.filter(_ >= ' '), 50))
+    cellValueFactory = (a) => new StringProperty(StringHelper.headString(a.value.review.trim.replaceAll("((\r\n)|\r|\n)+", "|"), 50))
     cellFactory = (tc) => new MyTableCell
   }
   val cBibtexid = new TableColumn[Article, String] {

@@ -112,9 +112,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   class MyLine(gpRow: Int, labelText: String, rows: Int = 1) extends MyTextInput(gpRow, labelText, rows, 0) {
     val lineidx = lines.size
-
     tf.text.onChange({ isDirty.value = true ; {} })
-
     lines += this
   }
 
