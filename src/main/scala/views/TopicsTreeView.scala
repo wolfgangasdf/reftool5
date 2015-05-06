@@ -373,17 +373,13 @@ class TopicsTreeView extends GenericView("topicsview") {
         } else initialFileName = "articles.bib"
       }
       val fn = fc.showSaveDialog(toolbarButton.getParent.getScene.getWindow)
-      if (fn != null) {
-        if (t.exportfn != fn.getPath) inTransaction {
+      if (fn != null) inTransaction {
+        if (t.exportfn != fn.getPath) {
           t.exportfn = fn.getPath
           ReftoolDB.topics.update(t)
         }
         val pw = new PrintWriter(new FileOutputStream(fn, false))
-        inTransaction {
-          t.articles.foreach( a => {
-            pw.write(a.bibtexentry)
-          })
-        }
+        t.articles.foreach( a => pw.write(a.bibtexentry) )
         pw.close()
       }
     }

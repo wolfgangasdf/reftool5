@@ -163,6 +163,7 @@ class MyTextInput(gpRow: Int, labelText: String, rows: Int = 1, imode: Int = 0) 
       prefRowCount = rows - 1
       alignmentInParent = Pos.BaselineLeft
       editable = true
+      wrapText = true
     }
     case 2 | 3 => new TextField() {
       text = "<text>"
