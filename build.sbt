@@ -26,9 +26,3 @@ appbundle.mainClass := JFX.mainClass.value
 
 appbundle.executable := file("src/deploy/macosx/universalJavaApplicationStub")
 
-
-/////////////// mac app bundle via xsbt-osxapp
-//osxappMainClass     := Some("main.Main")
-//
-//osxappBundleIcons   := file("src/deploy/macosx/reftool5.icns")
-
