@@ -271,7 +271,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     }
   }
 
-  def loadTopics(revealLastTopic: Boolean = true, revealTopic: Topic = null): Unit = {
+  def loadTopics(revealLastTopic: Boolean = true, revealTopic: Topic = null, editTopic: Boolean = false): Unit = {
     assert(!( revealLastTopic && (revealTopic != null) ))
     debug(s"ttv: loadtopics! revlast=$revealLastTopic revealtopic=$revealTopic")
     var tlast: Topic = null
@@ -307,9 +307,14 @@ class TopicsTreeView extends GenericView("topicsview") {
       while (!found && it.hasNext) {
         val tin = it.next()
         if (tin.getValue != null) if (tin.getValue.id == tlast.id) {
+          tv.requestFocus()
           tv.selectionModel.value.select(tin)
           val idx = tv.selectionModel.value.getSelectedIndex
           tv.scrollTo(math.max(0, idx - 5))
+          if (editTopic) {
+            tv.layout() // TODO workaround: get focus http://stackoverflow.com/a/29897147
+            tv.edit(tin)
+          }
           found = true
         }
       }
@@ -346,7 +351,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         ReftoolDB.topics.update(pt)
         debug(" add topic " + t2 + "  id=" + t2.id)
       }
-      loadTopics(revealLastTopic = false, revealTopic = t2)
+      loadTopics(revealLastTopic = false, revealTopic = t2, editTopic = true)
     }
     toolbarButton.onMouseClicked = (me: MouseEvent) => {
       // this is always called after action. but with shift-click, action() is not called!
