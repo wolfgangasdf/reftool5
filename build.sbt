@@ -1,5 +1,6 @@
 
 // sbt {run,packageJavaFX} don't work if only Build.scala is used
+// but who cares keep app separate from packaging stuff here
 
 ////////////////// sbt-javafx for packaging
 jfxSettings

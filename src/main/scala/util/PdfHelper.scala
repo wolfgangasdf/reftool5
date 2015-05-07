@@ -62,7 +62,7 @@ object PdfHelper extends Logging {
       pstrip.setEndPage(1)
       val text = pstrip.getText(pdoc)
       // debug("first page:\n" + text)
-      val re = """(?s).*(?:http://dx.doi.org/|DOI:\ ?)(\S+)\s.*""".r
+      val re = """(?s).*(?:http://dx.doi.org/|DOI:\ |DOI\ ?)(\S+)\s.*""".r
       text match {
         case re(ddd) =>
           debug("found doi link: " + ddd)
