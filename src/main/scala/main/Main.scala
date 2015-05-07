@@ -186,6 +186,7 @@ object Main extends JFXApp with Logging {
   var mainScene: MainScene = null
 
   def loadMainScene(createNewStorage: Boolean) = {
+    logCall()
     try {
       ReftoolDB.initialize(startwithempty = createNewStorage)
     } catch {

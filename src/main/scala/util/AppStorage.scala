@@ -64,7 +64,7 @@ object AppStorage extends Logging {
   }
 
   def load() {
-    info("----------load")
+    logCall()
     val lines = AppSettings.getLines
     config = new Config
     if (lines.isEmpty) {
@@ -90,7 +90,7 @@ object AppStorage extends Logging {
   }
 
   def save() {
-    info("-----------save " + config)
+    logCall()
     val fff = Paths.get(AppSettings.getSettingPath)
     Files.delete(fff)
     Files.createFile(fff)

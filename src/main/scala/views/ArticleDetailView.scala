@@ -50,7 +50,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   var article: Article = null
 
   def setArticle(aa: Article) {
-    debug("adv: set article " + aa)
+    logCall("" + aa)
     val doit = if (isDirty.value) {
       val res = new Alert(AlertType.Confirmation) {
         headerText = "Article is modified."

@@ -133,6 +133,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
   }
 
   def setArticle(a: Article): Unit = {
+    logCall(a)
     lv.getItems.clear()
     if (a != null) {
       inTransaction {
