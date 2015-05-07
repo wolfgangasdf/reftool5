@@ -14,6 +14,12 @@ trait Logging {
     println(msg)
   }
 
+  protected def logCall(msg: => Any = ""): Unit = {
+    val stackTrace = Thread.currentThread.getStackTrace
+    // debug(stackTrace.mkString(";"))
+    debug(s"[call ${stackTrace(3).getClassName}.${stackTrace(3).getMethodName}]: " + msg)
+  }
+
   def dolog(msg: Any, exc: Throwable): Unit = {
     println(msg)
     exc.getMessage

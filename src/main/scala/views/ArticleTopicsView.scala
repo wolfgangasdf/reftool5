@@ -46,6 +46,7 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
   }
 
   def setArticle(a: Article) = {
+    logCall(a)
     inTransaction {
       lv.getItems.clear()
       if (a != null) lv.getItems ++= a.topics.toList

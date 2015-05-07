@@ -345,7 +345,7 @@ class ArticleListView extends GenericView("articlelistview") {
   })
 
   def setArticles(al: List[Article], title: String, topic: Topic): Unit = {
-    debug("setarticles num=" + al.length)
+    logCall(s"num=${al.length} topic=$topic")
     currentTopic = topic
     articles.clear()
     articles ++= al
