@@ -20,7 +20,7 @@ object Helpers extends Logging {
       f
     } catch {
       case t: Throwable =>
-        debug("tryit: exception " + t.getMessage)
+        error("tryit: exception " + t.getMessage)
         t.printStackTrace()
         if (main.Main.stage.isShowing) Helpers.showExceptionAlert("", t)
         null.asInstanceOf[T]

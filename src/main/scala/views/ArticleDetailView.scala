@@ -110,9 +110,9 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     setArticle(article)
   }
 
-  class MyLine(gpRow: Int, labelText: String, rows: Int = 1) extends MyTextInput(gpRow, labelText, rows, 0) {
+  class MyLine(gpRow: Int, labelText: String, rows: Int = 1) extends MyInputTextArea(gpRow, labelText, rows, "", "") {
     val lineidx = lines.size
-    tf.text.onChange({ isDirty.value = true ; {} })
+    onchange = () => { isDirty.value = true }
     lines += this
   }
 
@@ -218,7 +218,6 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   } )
 
   ApplicationController.articleChangedListeners += ( (a: Article) => {
-    // TODO prevent own calls?!
     if (a == article) setArticle(a)
   } )
 
