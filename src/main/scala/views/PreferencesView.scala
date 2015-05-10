@@ -1,6 +1,6 @@
 package views
 
-import framework.{MyTextInput, GenericView, MyAction}
+import framework._
 import util.AppStorage
 
 import scalafx.Includes._
@@ -23,11 +23,7 @@ class PreferencesView extends GenericView("prefsview") {
     aSave.enabled = isDirty.value
   })
 
-  class MyLine(gpRow: Int, labelText: String, rows: Int = 1, imode: Int = 0, iniText: String, helpstr: String) extends MyTextInput(gpRow, labelText, rows, imode) {
-    tf.text = iniText
-    tf.tooltip = helpstr
-    tf.text.onChange({ isDirty.value = true ; {} })
-  }
+  def onchange() = { isDirty.value = true }
 
   class MyGridPane extends GridPane {
     // margin = Insets(18)
@@ -37,12 +33,26 @@ class PreferencesView extends GenericView("prefsview") {
     columnConstraints += new ColumnConstraints { hgrow = Priority.Always }
   }
 
-  val lAutoimport = new MyLine(0, "Auto import dir", 1, 2, AppStorage.config.autoimportdir,
+  val lAutoimport = new MyInputDirchooser(0, "Auto import dir", "",
     """This folder is watched for files like 'reftool5import*.pdf', and automatic import initiated.
       |Designed to work with the browser extension.""".stripMargin)
 
+  val lDebug = new MyInputTextField(1, "Debug level", "", "add up: 0-off 1-debug 2-function call log") {
+  }
+
+  val lShowStartupdialog = new MyInputCheckbox(2, "Show startup dialog", true, "If not selected, the last database will be opened automatically.")
+
+  List(lAutoimport, lDebug, lShowStartupdialog).foreach(_.onchange = onchange)
+
   val grid1 = new MyGridPane {
-    children ++= lAutoimport.content
+    children ++= lAutoimport.content ++ lDebug.content ++ lShowStartupdialog.content
+  }
+
+  def load() = {
+    lAutoimport.tf.text = AppStorage.config.autoimportdir
+    lDebug.tf.text = AppStorage.config.debuglevel.toString
+    lShowStartupdialog.cb.selected = AppStorage.config.showstartupdialog
+    isDirty.value = false
   }
 
   val aSave = new MyAction("Preferences", "Save") {
@@ -50,6 +60,9 @@ class PreferencesView extends GenericView("prefsview") {
     image = new Image(getClass.getResource("/images/save_edit.gif").toExternalForm)
     action = () => {
       AppStorage.config.autoimportdir = lAutoimport.tf.getText
+      AppStorage.config.debuglevel = lDebug.tf.getText.toInt
+      AppStorage.config.showstartupdialog = lShowStartupdialog.cb.isSelected
+      load()
       isDirty.value = false
     }
   }
@@ -66,6 +79,8 @@ class PreferencesView extends GenericView("prefsview") {
       children = List(grid1)
     }
   }
+
+  load()
 
   override def canClose: Boolean = true
 

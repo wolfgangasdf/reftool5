@@ -1,5 +1,7 @@
 package framework
 
+import javafx.scene
+
 import db.{Article, Topic}
 import main.Main
 import util.AppStorage
@@ -148,49 +150,77 @@ class MyAction(val category: String, val title: String) extends Logging {
 }
 
 
-// imode: 0-textarea 1-textfield 2-tf with dir sel
-class MyTextInput(gpRow: Int, labelText: String, rows: Int = 1, imode: Int = 0) {
+class MyInputTextField(gpRow: Int, labelText: String, iniText: String, helpString: String) extends MyFlexInput(gpRow, labelText, rows=1, helpString) {
+  val tf = new TextField() {
+    text = iniText
+    editable = true
+  }
+  tf.text.onChange(onchange())
+  GridPane.setConstraints(tf, 1, gpRow, 2, 1)
+
+  override def content: Seq[scene.Node] = Seq(label, tf)
+}
+
+class MyInputDirchooser(gpRow: Int, labelText: String, iniText: String, helpString: String) extends MyFlexInput(gpRow, labelText, rows=1, helpString) {
+  val tf = new TextField() {
+    text = iniText
+    editable = true
+  }
+  tf.text.onChange(onchange())
+
+  val bt = new Button("Browse...") {
+    onAction = (ae: ActionEvent) => {
+      val dc = new DirectoryChooser {
+        title = "Choose directory..."
+      }.showDialog(this.delegate.getScene.getWindow)
+      if (dc != null) {
+        tf.text = dc.getAbsolutePath
+      }
+    }
+  }
+  GridPane.setConstraints(tf, 1, gpRow, 2, 1)
+  GridPane.setConstraints(bt, 2, gpRow, 1, 1)
+
+  override def content: Seq[scene.Node] = Seq(label, tf, bt)
+}
+
+class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String, helpString: String) extends MyFlexInput(gpRow, labelText, rows, helpString) {
+  val tf = new TextArea() {
+    text = iniText
+    prefRowCount = rows - 1
+    alignmentInParent = Pos.BaselineLeft
+    editable = true
+    wrapText = true
+  }
+  tf.text.onChange(onchange())
+  GridPane.setConstraints(tf, 1, gpRow, 2, 1)
+
+  override def content: Seq[scene.Node] = Seq(label, tf)
+}
+
+class MyInputCheckbox(gpRow: Int, labelText: String, iniStatus: Boolean, helpString: String) extends MyFlexInput(gpRow, labelText, rows=1, helpString) {
+  val cb = new CheckBox("")
+  cb.selected = iniStatus
+  cb.selected.onChange(onchange())
+  GridPane.setConstraints(cb, 1, gpRow, 1, 1)
+
+  override def content: Seq[scene.Node] = Seq(label, cb)
+}
+
+
+// imode: 0-textarea 1-textfield 2-tf with dir sel 3-checkbox
+abstract class MyFlexInput(gpRow: Int, labelText: String, rows: Int = 1, helpString: String) {
 
   val label = new Label(labelText) {
     style = "-fx-font-weight:bold"
     alignmentInParent = Pos.CenterRight
+    tooltip = new Tooltip { text = helpString }
   }
   GridPane.setConstraints(label, 0, gpRow, 1, 1)
 
-  val tf: TextInputControl = imode match {
-    case 0 => new TextArea() {
-      text = "<text>"
-      prefRowCount = rows - 1
-      alignmentInParent = Pos.BaselineLeft
-      editable = true
-      wrapText = true
-    }
-    case 2 | 3 => new TextField() {
-      text = "<text>"
-      editable = true
-    }
-  }
+  var onchange: () => Unit = () => {}
 
-  var bt: Button = null
-  if (imode == 2) {
-    bt = new Button("Browse...") {
-      onAction = (ae: ActionEvent) => {
-        val dc = new DirectoryChooser {
-          title = "Choose directory..."
-        }.showDialog(bt.getParent.getScene.getWindow)
-        if (dc != null) {
-          tf.text = dc.getAbsolutePath
-        }
-      }
-    }
-  }
-
-  GridPane.setConstraints(tf, 1, gpRow, if (bt == null) 2 else 1, 1)
-  if (bt != null) {
-    GridPane.setConstraints(bt, 2, gpRow, 1, 1)
-  }
-
-  def content: Seq[javafx.scene.Node] = if (bt == null) Seq(label, tf) else Seq(label, tf, bt)
+  def content: Seq[javafx.scene.Node]
 }
 
 

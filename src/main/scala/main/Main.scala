@@ -20,7 +20,7 @@ import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control._
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout._
-import scalafx.stage.{DirectoryChooser, Stage}
+import scalafx.stage.{WindowEvent, DirectoryChooser, Stage}
 
 
 class MainScene(stage: Stage) extends Scene with Logging {
@@ -183,6 +183,12 @@ object Main extends JFXApp with Logging {
 
   tryit { AppStorage.load() }
 
+  def getAppIcons: List[Image] = List(
+    new Image(getClass.getResource("/icons/Icon-16.png").toExternalForm),
+    new Image(getClass.getResource("/icons/Icon-32.png").toExternalForm),
+    new Image(getClass.getResource("/icons/Icon-128.png").toExternalForm)
+  )
+
   var mainScene: MainScene = null
 
   def loadMainScene(createNewStorage: Boolean) = {
@@ -198,6 +204,7 @@ object Main extends JFXApp with Logging {
       title = "Reftool 5"
       width = 800
       height = 600
+//      tryit { getAppIcons.foreach(i => icons += i) }
       mainScene = tryit {
         new MainScene(this)
       }
@@ -211,60 +218,61 @@ object Main extends JFXApp with Logging {
     }
   }
 
-  def getAppIcons: List[Image] = List(
-    new Image(getClass.getResource("/icons/Icon-16.png").toExternalForm),
-    new Image(getClass.getResource("/icons/Icon-32.png").toExternalForm),
-    new Image(getClass.getResource("/icons/Icon-128.png").toExternalForm)
-  )
-
-  stage = new PrimaryStage {
-    title = "Reftool 5"
-    width = 800
-    height = 600
-    tryit { getAppIcons.foreach(i => icons += i) }
-    tryit {
-      scene = new Scene {
-        content = new VBox(20) {
-          children = List(
-            new ImageView(new Image(getClass.getResource("/images/about.png").toExternalForm)),
-            new Button("Open last reftool data directory \n" + AppStorage.config.datadir) {
-              onAction = (ae: ActionEvent) => {
-                loadMainScene(createNewStorage = false)
-              }
-              disable = !new java.io.File(AppStorage.config.datadir).isDirectory
-            },
-            new Button("Create new reftool data directory...") {
-              onAction = (ae: ActionEvent) => {
-                val res = new DirectoryChooser { title = "Select new reftool data directory" }.showDialog(stage)
-                if (res != null) {
-                  if (res.listFiles.nonEmpty) {
-                    new Alert(AlertType.Error, "Need empty new data directory").showAndWait()
-                  } else {
+  def loadStartupDialog() = {
+    stage = new PrimaryStage {
+      title = "Reftool 5"
+      width = 500
+      height = 400
+      tryit { getAppIcons.foreach(i => icons += i) }
+      tryit {
+        scene = new Scene {
+          content = new VBox(20) {
+            children = List(
+              new ImageView(new Image(getClass.getResource("/images/about.png").toExternalForm)),
+              new Button("Open last reftool data directory \n" + AppStorage.config.datadir) {
+                onAction = (ae: ActionEvent) => {
+                  loadMainScene(createNewStorage = false)
+                }
+                disable = !new java.io.File(AppStorage.config.datadir).isDirectory
+              },
+              new Button("Create new reftool data directory...") {
+                onAction = (ae: ActionEvent) => {
+                  val res = new DirectoryChooser { title = "Select new reftool data directory" }.showDialog(stage)
+                  if (res != null) {
+                    if (res.listFiles.nonEmpty) {
+                      new Alert(AlertType.Error, "Need empty new data directory").showAndWait()
+                    } else {
+                      AppStorage.config.datadir = res.getPath
+                      loadMainScene(createNewStorage = true)
+                    }
+                  }
+                }
+              },
+              new Button("Open other reftool data directory") {
+                onAction = (ae: ActionEvent) => {
+                  val res = new DirectoryChooser { title = "Select reftool data directory" }.showDialog(stage)
+                  if (res != null) {
                     AppStorage.config.datadir = res.getPath
-                    loadMainScene(createNewStorage = true)
+                    loadMainScene(createNewStorage = false)
                   }
                 }
               }
-            },
-            new Button("Open other reftool data directory") {
-              onAction = (ae: ActionEvent) => {
-                val res = new DirectoryChooser { title = "Select reftool data directory" }.showDialog(stage)
-                if (res != null) {
-                  AppStorage.config.datadir = res.getPath
-                  loadMainScene(createNewStorage = false)
-                }
-              }
+            )
+          }
+        }
+        sizeToScene()
+        onShown = (we: WindowEvent) => {
+          if (!AppStorage.config.showstartupdialog) {
+            if (new java.io.File(AppStorage.config.datadir).isDirectory) {
+              loadMainScene(createNewStorage = false)
             }
-//          new Button("test") {
-//            onAction = (ae: ActionEvent) => {
-//              ApplicationController.testLongAction()
-//            }
-//          }
-          )
+          }
         }
       }
     }
   }
+
+  loadStartupDialog()
 
   override def stopApp()
   {
