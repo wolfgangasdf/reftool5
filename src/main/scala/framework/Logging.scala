@@ -21,7 +21,7 @@ trait Logging {
     if ((AppStorage.config.debuglevel & 2) > 0) {
       val stackTrace = Thread.currentThread.getStackTrace
       // debug(stackTrace.mkString(";"))
-      info(s"[call ${stackTrace(3).getClassName}.${stackTrace(3).getMethodName}]: " + msg)
+      info(s"[call ${stackTrace(3).getClassName}.${stackTrace(3).getMethodName}:${stackTrace(3).getLineNumber} <- ${stackTrace(4).getClassName}.${stackTrace(4).getMethodName}: ${stackTrace(4).getLineNumber}]: " + msg)
     }
   }
 

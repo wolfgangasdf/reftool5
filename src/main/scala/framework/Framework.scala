@@ -324,25 +324,46 @@ object ApplicationController extends Logging {
 
 
   val articleChangedListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitArticleChanged(a: Article): Unit = articleChangedListeners.foreach( acl => acl(a) )
+  def submitArticleChanged(a: Article): Unit = {
+    logCall("aChanged " + a)
+    articleChangedListeners.foreach( acl => acl(a) )
+  }
 
   val articleRemovedListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitArticleRemoved(a: Article): Unit = articleRemovedListeners.foreach( acl => acl(a) )
+  def submitArticleRemoved(a: Article): Unit = {
+    logCall("aRemoved " + a)
+    articleRemovedListeners.foreach( acl => acl(a) )
+  }
 
   val showArticleListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitShowArticle(a: Article): Unit = showArticleListeners.foreach( acl => acl(a) )
+  def submitShowArticle(a: Article): Unit = {
+    logCall("aShow " + a)
+    showArticleListeners.foreach( acl => acl(a) )
+  }
 
   val showArticlesListListeners = new ArrayBuffer[(List[Article], String) => Unit]()
-  def submitShowArticlesList(al: List[Article], text: String): Unit = showArticlesListListeners.foreach( acl => acl(al, text) )
+  def submitShowArticlesList(al: List[Article], text: String): Unit = {
+    logCall("aShowAList ")
+    showArticlesListListeners.foreach( acl => acl(al, text) )
+  }
 
   val showArticlesFromTopicListeners = new ArrayBuffer[(Topic) => Unit]()
-  def submitShowArticlesFromTopic(t: Topic): Unit = showArticlesFromTopicListeners.foreach( acl => acl(t) )
+  def submitShowArticlesFromTopic(t: Topic): Unit = {
+    logCall("aShowFromTopic " + t)
+    showArticlesFromTopicListeners.foreach( acl => acl(t) )
+  }
 
   val revealArticleInListListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitRevealArticleInList(a: Article) = revealArticleInListListeners.foreach( acl => acl(a) )
+  def submitRevealArticleInList(a: Article) = {
+    logCall("aRevealInList " + a)
+    revealArticleInListListeners.foreach( acl => acl(a) )
+  }
 
   val revealTopicListener = new ArrayBuffer[(Topic) => Unit]()
-  def submitRevealTopic(t: Topic): Unit = revealTopicListener.foreach( rtl => rtl(t) )
+  def submitRevealTopic(t: Topic): Unit = {
+    logCall("aRevealTopic " + t)
+    revealTopicListener.foreach( rtl => rtl(t) )
+  }
 
   val notificationTimer = new java.util.Timer()
   def showNotification(string: String): Unit = {

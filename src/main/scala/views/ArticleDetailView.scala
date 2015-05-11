@@ -107,7 +107,6 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
     isDirty.value = false
     ApplicationController.submitArticleChanged(article)
-    setArticle(article)
   }
 
   class MyLine(gpRow: Int, labelText: String, rows: Int = 1) extends MyInputTextArea(gpRow, labelText, rows, "", "") {
