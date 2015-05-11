@@ -188,6 +188,7 @@ class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String,
   val tf = new TextArea() {
     text = iniText
     prefRowCount = rows - 1
+    minHeight = 10
     alignmentInParent = Pos.BaselineLeft
     editable = true
     wrapText = true
