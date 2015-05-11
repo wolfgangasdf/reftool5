@@ -9,6 +9,8 @@ import framework.{Helpers, ApplicationController, Logging, ViewContainer}
 import util._
 import views._
 
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.{implicitConversions, postfixOps, reflectiveCalls}
 import scalafx.Includes._
 import scalafx.application.JFXApp
@@ -18,6 +20,7 @@ import scalafx.geometry.Orientation
 import scalafx.scene.Scene
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control._
+import scalafx.scene.control.Button._
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout._
 import scalafx.stage.{WindowEvent, DirectoryChooser, Stage}
@@ -219,6 +222,8 @@ object Main extends JFXApp with Logging {
   }
 
   def loadStartupDialog() = {
+    val doAutostart = !AppStorage.config.showstartupdialog && new java.io.File(AppStorage.config.datadir).isDirectory
+
     stage = new PrimaryStage {
       title = "Reftool 5"
       width = 500
@@ -227,15 +232,15 @@ object Main extends JFXApp with Logging {
       tryit {
         scene = new Scene {
           content = new VBox(20) {
-            children = List(
-              new ImageView(new Image(getClass.getResource("/images/about.png").toExternalForm)),
-              new Button("Open last reftool data directory \n" + AppStorage.config.datadir) {
+            children += new ImageView(new Image(getClass.getResource("/images/about.png").toExternalForm))
+            if (!doAutostart) {
+              children += new Button("Open last reftool data directory \n" + AppStorage.config.datadir) {
+                disable = !new java.io.File(AppStorage.config.datadir).isDirectory
                 onAction = (ae: ActionEvent) => {
                   loadMainScene(createNewStorage = false)
                 }
-                disable = !new java.io.File(AppStorage.config.datadir).isDirectory
-              },
-              new Button("Create new reftool data directory...") {
+              }
+              children += new Button("Create new reftool data directory...") {
                 onAction = (ae: ActionEvent) => {
                   val res = new DirectoryChooser { title = "Select new reftool data directory" }.showDialog(stage)
                   if (res != null) {
@@ -247,8 +252,8 @@ object Main extends JFXApp with Logging {
                     }
                   }
                 }
-              },
-              new Button("Open other reftool data directory") {
+              }
+              children += new Button("Open other reftool data directory") {
                 onAction = (ae: ActionEvent) => {
                   val res = new DirectoryChooser { title = "Select reftool data directory" }.showDialog(stage)
                   if (res != null) {
@@ -257,14 +262,15 @@ object Main extends JFXApp with Logging {
                   }
                 }
               }
-            )
+            }
           }
         }
         sizeToScene()
         onShown = (we: WindowEvent) => {
-          if (!AppStorage.config.showstartupdialog) {
-            if (new java.io.File(AppStorage.config.datadir).isDirectory) {
-              loadMainScene(createNewStorage = false)
+          if (doAutostart) {
+            Future { // otherwise the startup window is not shown...
+              Thread.sleep(500)
+              runUI { loadMainScene(createNewStorage = false) }
             }
           }
         }

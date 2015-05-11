@@ -31,6 +31,8 @@ class ArticleListView extends GenericView("articlelistview") {
   val colors = List("-fx-background-color: white", "-fx-background-color: red", "-fx-background-color: LightSalmon", "-fx-background-color: LightGreen")
   val colorsn = List(Color.White, Color.Salmon, Color.LightSalmon, Color.LightGreen)
 
+  var onSelectionChangedDoAction = true
+
   // for coloring of cells.
   class MyTableCell extends javafx.scene.control.TableCell[Article, String] {
     override def updateItem(item: String, empty: Boolean): Unit = {
@@ -49,13 +51,11 @@ class ArticleListView extends GenericView("articlelistview") {
     text = "Title"
     cellValueFactory = (a) => new StringProperty(a.value.title)
     cellFactory = (tc) => new MyTableCell
-//    prefWidth = 280
   }
   val cPubdate = new TableColumn[Article, String] {
     text = "Date"
     cellValueFactory = (a) => new StringProperty(a.value.pubdate)
     cellFactory = (tc) => new MyTableCell
-//    prefWidth = 80
   }
   val cEntrytype = new TableColumn[Article, String] {
     text = "Type"
@@ -86,6 +86,7 @@ class ArticleListView extends GenericView("articlelistview") {
   val articles = new ObservableBuffer[Article]()
 
   val sortedArticles = new SortedBuffer[Article](articles)
+
   val alv: TableView[Article] = new TableView[Article](sortedArticles) {
     columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview)
 
@@ -129,7 +130,6 @@ class ArticleListView extends GenericView("articlelistview") {
         a.topics.associate(stack)
         ApplicationController.submitArticleChanged(a)
       })
-      setArticlesTopic(currentTopic)
     }
   }
   val aCopyToStack = new MyAction("Article", "Copy to stack") {
@@ -209,7 +209,6 @@ class ArticleListView extends GenericView("articlelistview") {
         a.topics.dissociate(currentTopic)
         ApplicationController.submitArticleChanged(a)
       })
-      setArticlesTopic(currentTopic)
     }
   }
   val aRemoveArticle = new MyAction("Article", "Delete article") {
@@ -262,31 +261,33 @@ class ArticleListView extends GenericView("articlelistview") {
   }
 
   alv.selectionModel().selectedItems.onChange(
-    (ob, _) => {
-      if (ob.isEmpty) {
-        aSetColor.enabled = false
-        aMoveToStack.enabled = false
-        aRemoveFromTopic.enabled = false
-        aRemoveArticle.enabled = false
-        aCopyURLs.enabled = false
-        aCopyPDFs.enabled = false
-        aCopyToStack.enabled = false
-        aOpenPDF.enabled = false
-        aRevealPDF.enabled = false
-        aOpenURL.enabled = false
-      } else {
-        aRemoveArticle.enabled = true
-        aCopyToStack.enabled = true
-        aMoveToStack.enabled = currentTopic != null
-        aRemoveFromTopic.enabled = currentTopic != null
-        aCopyURLs.enabled = true
-        aCopyPDFs.enabled = true
-        if (ob.size == 1) {
-          aSetColor.enabled = currentTopic != null
-          aOpenPDF.enabled = true
-          aRevealPDF.enabled = true
-          aOpenURL.enabled = true
-          ApplicationController.submitShowArticle(ob.head)
+    (ob, change) => {
+      if (onSelectionChangedDoAction) {
+        if (ob.isEmpty) {
+          aSetColor.enabled = false
+          aMoveToStack.enabled = false
+          aRemoveFromTopic.enabled = false
+          aRemoveArticle.enabled = false
+          aCopyURLs.enabled = false
+          aCopyPDFs.enabled = false
+          aCopyToStack.enabled = false
+          aOpenPDF.enabled = false
+          aRevealPDF.enabled = false
+          aOpenURL.enabled = false
+        } else if (change.nonEmpty) { // no idea why it's empty sometimes...
+          aRemoveArticle.enabled = true
+          aCopyToStack.enabled = true
+          aMoveToStack.enabled = currentTopic != null
+          aRemoveFromTopic.enabled = currentTopic != null
+          aCopyURLs.enabled = true
+          aCopyPDFs.enabled = true
+          if (ob.size == 1) {
+            aSetColor.enabled = currentTopic != null
+            aOpenPDF.enabled = true
+            aRevealPDF.enabled = true
+            aOpenURL.enabled = true
+            ApplicationController.submitShowArticle(ob.head)
+          }
         }
       }
     }
@@ -336,7 +337,9 @@ class ArticleListView extends GenericView("articlelistview") {
       val oldsel = alv.getSelectionModel.getSelectedItems.headOption
       setArticlesTopic(currentTopic)
       if (oldsel.nonEmpty) {
+        onSelectionChangedDoAction = false
         if (articles.contains(oldsel.get)) alv.getSelectionModel.select(oldsel.get)
+        onSelectionChangedDoAction = true
       }
     } else {
       val oldart = articles.find(oa => oa.id == a.id)
