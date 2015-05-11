@@ -123,7 +123,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     columnConstraints += new ColumnConstraints { hgrow = Priority.Always }
   }
 
-  val lTitle = new MyLine(0, "Title")
+  val lTitle = new MyLine(0, "Title", 2)
   val lAuthors = new MyLine(1, "Authors", 2)
   val lPubdate = new MyLine(2, "Pubdate")
   val lBibtexid = new MyLine(3, "Bibtex ID")
@@ -191,21 +191,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
-  val aTest = new MyAction("Test", "test") {
-    enabled = true
-    action = () => {
-      debug("lreview editable: " + lReview.tf.isEditable)
-//      val res = ImportHelper.getDOImanually("Attosecond gamma-ray pulses via nonlinear Compton scattering in the radiation dominated regime")
-//      debug("res = " + res)
-
-//      ApplicationController.showNotification("noti 1")
-//      ApplicationController.showNotification("noti 2")
-      // throw new Exception("aaaaatestexception")
-
-    }
-  }
-
-  toolbaritems ++= Seq(lbCurrentArticle, aSave.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateMetadatafromPDF.toolbarButton, aCreateBibtex.toolbarButton, aTest.toolbarButton)
+  toolbaritems ++= Seq(lbCurrentArticle, aSave.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateMetadatafromPDF.toolbarButton, aCreateBibtex.toolbarButton)
 
   ApplicationController.showArticleListeners += ( (a: Article) => {
     setArticle(a)

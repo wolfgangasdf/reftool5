@@ -240,6 +240,15 @@ object Main extends JFXApp with Logging {
                   loadMainScene(createNewStorage = false)
                 }
               }
+              children += new Button("Open other reftool data directory") {
+                onAction = (ae: ActionEvent) => {
+                  val res = new DirectoryChooser { title = "Select reftool data directory" }.showDialog(stage)
+                  if (res != null) {
+                    AppStorage.config.datadir = res.getPath
+                    loadMainScene(createNewStorage = false)
+                  }
+                }
+              }
               children += new Button("Create new reftool data directory...") {
                 onAction = (ae: ActionEvent) => {
                   val res = new DirectoryChooser { title = "Select new reftool data directory" }.showDialog(stage)
@@ -250,15 +259,6 @@ object Main extends JFXApp with Logging {
                       AppStorage.config.datadir = res.getPath
                       loadMainScene(createNewStorage = true)
                     }
-                  }
-                }
-              }
-              children += new Button("Open other reftool data directory") {
-                onAction = (ae: ActionEvent) => {
-                  val res = new DirectoryChooser { title = "Select reftool data directory" }.showDialog(stage)
-                  if (res != null) {
-                    AppStorage.config.datadir = res.getPath
-                    loadMainScene(createNewStorage = false)
                   }
                 }
               }
