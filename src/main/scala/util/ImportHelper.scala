@@ -29,7 +29,7 @@ object ImportHelper extends Logging {
 
   private def getImportFolder(num: Int) = AppStorage.config.pdfpath + "/" + AppStorage.config.importfolderprefix + num
 
-  private def getDOImanually(iniSearch: String): String = {
+  private def getDOImanually(iniSearch: String, filename: String): String = {
     var doi = ""
     val webView = new WebView {
       prefHeight = 200
@@ -71,6 +71,7 @@ object ImportHelper extends Logging {
       padding = Insets(10)
       spacing = 10
       children ++= Seq(
+        new Label("Import file: " + filename),
         new Label("Cannot extract the DOI from the pdf. Please either search for title or so, you can also enter the DOI manually here, or see below."),
         new HBox { children ++= Seq(tfSearch, btSearch) },
         webView,
@@ -126,7 +127,7 @@ object ImportHelper extends Logging {
             doi = PdfHelper.getDOI(sourceFile)
             debug(" pdf doi=" + doi)
             if (doi == "") Helpers.runUIwait {
-              doi = getDOImanually(sourceFile.getName)
+              doi = getDOImanually(sourceFile.getName, sourceFile.getAbsolutePath)
             }
             if (doi != "") {
               updateProgress(30, 100)
