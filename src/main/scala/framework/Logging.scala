@@ -27,7 +27,7 @@ trait Logging {
 
   def dolog(msg: Any, exc: Throwable): Unit = {
     println(msg)
-    exc.getMessage
+    println(exc.getMessage)
     exc.printStackTrace()
   }
 
