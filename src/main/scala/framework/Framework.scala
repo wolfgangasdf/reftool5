@@ -306,9 +306,10 @@ object ApplicationController extends Logging {
     }
 
     containers.foreach(vc => vc.updateToolbar(0))
+
+    // restore settings
     main.Main.mainScene.setMainUIsettings(AppStorage.config.uiSettings.getOrElse("main", ""))
     views.foreach(c => c.setUIsettings(AppStorage.config.uiSettings.getOrElse(c.uisettingsID, "")))
-
     // menus
     val mb = Main.mainScene.menuBar
     actions.foreach( action => {

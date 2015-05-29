@@ -271,6 +271,11 @@ class TopicsTreeView extends GenericView("topicsview") {
     }
   }
 
+  def loadTopicsShowID(id: Long): Unit = {
+    inTransaction {
+      Option(ReftoolDB.topics.get(id)) foreach(t => loadTopics(revealLastTopic = false, t))
+    }
+  }
   def loadTopics(revealLastTopic: Boolean = true, revealTopic: Topic = null, editTopic: Boolean = false): Unit = {
     assert(!( revealLastTopic && (revealTopic != null) ))
     debug(s"ttv: loadtopics! revlast=$revealLastTopic revealtopic=$revealTopic")
@@ -517,9 +522,13 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   override def canClose: Boolean = true
 
-  override def getUIsettings: String = ""
+  override def getUIsettings: String = {
+    Option(tv.getSelectionModel.getSelectedItem).map(t => t.getValue.id).getOrElse(-1).toString
+  }
 
-  override def setUIsettings(s: String): Unit = {}
+  override def setUIsettings(s: String): Unit = {
+    if (s.toLong > -1) loadTopicsShowID(s.toLong)
+  }
 
   override val uisettingsID: String = "ttv"
 }
