@@ -33,6 +33,9 @@ class BaseEntity extends KeyedEntity[Long] {
 class Setting(var name: String = "", var value: String = "") extends BaseEntity
 
 class Document(var docName: String, var docPath: String) extends Ordered[Document] {
+
+  override def toString: String = s"[$docName: $docPath]"
+
   override def compare(that: Document): Int = {
     if (docName == that.docName) 0
     else if (docName > that.docName) 1
@@ -79,7 +82,7 @@ class Article(var entrytype: String = "",
       } else
         abres += new Document("0-main", pdflink)
     }
-    abres
+    abres.sorted
   }
   def setDocuments(dl: List[Document]) = {
     pdflink = dl.map(d => s"${d.docName}\t${d.docPath}\n").mkString("")

@@ -260,11 +260,11 @@ object ImportHelper extends Logging {
   }
 
   def getUniqueBibtexID(bibtexid: String): String = {
-    val replist = List(("ä", "a"), ("ü", "u"), ("ö", "o"), ("ß", "ss"))
+    val replist = List(("ä", "ae"), ("ü", "ue"), ("ö", "oe"), ("ß", "ss"))
     var bid2 = bibtexid.toLowerCase
     replist.foreach { case (s1, s2) => bid2 = bid2.replaceAllLiterally(s1, s2) }
     bid2 = java.text.Normalizer.normalize(bid2, java.text.Normalizer.Form.NFD)
-    bid2 = bid2.replaceAll("[^\\p{ASCII}]", "")
+    bid2 = bid2.replaceAll("[^\\p{ASCII}]", "").toLowerCase
     debug("bid2 = " + bid2)
     var iii = 1
     inTransaction { // add numbers if bibtexid exist...
@@ -285,7 +285,7 @@ object ImportHelper extends Logging {
     }
   }
 
-  def generateUpdateBibtexID(be: String, a: Article) = {
+  def generateUpdateBibtexID(be: String, a: Article): Article = {
     a.bibtexentry = be.replaceAllLiterally("~", " ") // tilde in author name gives trouble
     val (_, btentry) = parseBibtex(a.bibtexentry)
     a.bibtexentry = bibtexFromBtentry(btentry) // update to nice format
@@ -299,10 +299,12 @@ object ImportHelper extends Logging {
     } else { // if bibtexid was set before, just update bibtexentry with this
       a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, a.bibtexid)
     }
+    a
   }
 
-  private def updateBibtexFromArxiv(a: Article, aid: String): Article = {
+  private def updateBibtexFromArxiv(article: Article, aid: String): Article = {
     import scalaj.http._
+    var a = article
     val resp1 = Http("http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:" + aid).timeout(3000, 5000).asString
     debug("resp1=" + resp1.code + "   ")
     if (resp1.code == 200) {
@@ -315,7 +317,7 @@ object ImportHelper extends Logging {
             debug("resp2: " + resp2.code)
             if (resp2.body.contains("@")) {
               val be = resp2.body.substring(resp2.body.indexOf("@"))
-              generateUpdateBibtexID(be, a)
+              a = generateUpdateBibtexID(be, a)
             }
           }
       }
@@ -323,14 +325,15 @@ object ImportHelper extends Logging {
     a
   }
 
-  private def updateBibtexFromDoi(a: Article, doi: String): Article = {
+  private def updateBibtexFromDoi(article: Article, doi: String): Article = {
     // http://labs.crossref.org/citation-formatting-service/
     import scalaj.http._ // or probably use better http://www.bigbeeconsultants.co.uk/content/bee-client ? but has deps
+    var a = article
     val response = Http("http://dx.doi.org/" + doi).
         header("Accept", "text/bibliography; style=bibtex").option(HttpOptions.followRedirects(shouldFollow = true)).asString
     debug(s"""curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
     if (response.code == 200) {
-      generateUpdateBibtexID(response.body, a)
+      a = generateUpdateBibtexID(response.body, a)
     }
     a
   }
