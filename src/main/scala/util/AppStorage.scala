@@ -17,11 +17,11 @@ class Config extends Logging {
   var autoimportdir = ""
   var debuglevel = 0
   var showstartupdialog = false
+
   def dbpath = datadir + "/db5"
   def olddbpath = datadir + "/db" // reftool4
   def pdfpath = datadir + "/files"
   val importfolderprefix = "folder-" // after this a number to limit #files in folder
-
   val csspath = getClass.getResource("/reftool.css").toExternalForm
   info("csspath: " + csspath)
 }

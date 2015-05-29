@@ -262,32 +262,30 @@ class ArticleListView extends GenericView("articlelistview") {
 
   alv.selectionModel().selectedItems.onChange(
     (ob, change) => {
-      if (onSelectionChangedDoAction) {
-        if (ob.isEmpty) {
-          aSetColor.enabled = false
-          aMoveToStack.enabled = false
-          aRemoveFromTopic.enabled = false
-          aRemoveArticle.enabled = false
-          aCopyURLs.enabled = false
-          aCopyPDFs.enabled = false
-          aCopyToStack.enabled = false
-          aOpenPDF.enabled = false
-          aRevealPDF.enabled = false
-          aOpenURL.enabled = false
-        } else if (change.nonEmpty) { // no idea why it's empty sometimes...
-          aRemoveArticle.enabled = true
-          aCopyToStack.enabled = true
-          aMoveToStack.enabled = currentTopic != null
-          aRemoveFromTopic.enabled = currentTopic != null
-          aCopyURLs.enabled = true
-          aCopyPDFs.enabled = true
-          if (ob.size == 1) {
-            aSetColor.enabled = currentTopic != null
-            aOpenPDF.enabled = true
-            aRevealPDF.enabled = true
-            aOpenURL.enabled = true
-            ApplicationController.submitShowArticle(ob.head)
-          }
+      if (ob.isEmpty) {
+        aSetColor.enabled = false
+        aMoveToStack.enabled = false
+        aRemoveFromTopic.enabled = false
+        aRemoveArticle.enabled = false
+        aCopyURLs.enabled = false
+        aCopyPDFs.enabled = false
+        aCopyToStack.enabled = false
+        aOpenPDF.enabled = false
+        aRevealPDF.enabled = false
+        aOpenURL.enabled = false
+      } else if (change.nonEmpty) { // no idea why it's empty sometimes...
+        aRemoveArticle.enabled = true
+        aCopyToStack.enabled = true
+        aMoveToStack.enabled = currentTopic != null
+        aRemoveFromTopic.enabled = currentTopic != null
+        aCopyURLs.enabled = true
+        aCopyPDFs.enabled = true
+        if (ob.size == 1) {
+          aSetColor.enabled = currentTopic != null
+          aOpenPDF.enabled = true
+          aRevealPDF.enabled = true
+          aOpenURL.enabled = true
+          if (onSelectionChangedDoAction) ApplicationController.submitShowArticle(ob.head)
         }
       }
     }
@@ -382,7 +380,7 @@ class ArticleListView extends GenericView("articlelistview") {
   }
 
   override def setUIsettings(s: String): Unit = {
-    if (s != "") s.split(",").zipWithIndex.foreach { case (s: String, i: Int) => alv.columns(i).setPrefWidth(s.toDouble) }
+    if (s != "") s.split(",").zipWithIndex.foreach { case (s: String, i: Int) => if (alv.columns.length > i) alv.columns(i).setPrefWidth(s.toDouble) }
     // alv.delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY) // TODO waitforfix does not work in combi with setPrefWidth
   }
 
