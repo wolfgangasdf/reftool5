@@ -118,7 +118,7 @@ object ImportHelper extends Logging {
     new MyWorker("Import document", new javafx.concurrent.Task[Unit] {
       override def call(): Unit = {
         var a = if (article == null) new Article(title = sourceFile.getName) else article
-        if (updateMetadata) {
+        if (updateMetadata) try {
           updateProgress(0, 100)
           updateMessage("find document metadata...")
           var doi = ""
@@ -144,7 +144,12 @@ object ImportHelper extends Logging {
               a = updateArticleFromBibtex(a)
             }
           }
+        } catch {
+          case e: Exception =>
+            error("error updating metadata but will continue: ", e)
+            error("suspicious bibtexentry:\n" + a.bibtexentry)
         }
+
         updateProgress(60, 100)
         if (doFileAction) {
           // choose nice filename if possible
