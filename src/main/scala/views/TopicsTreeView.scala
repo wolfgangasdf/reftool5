@@ -276,9 +276,15 @@ class TopicsTreeView extends GenericView("topicsview") {
       Option(ReftoolDB.topics.get(id)) foreach(t => loadTopics(revealLastTopic = false, t))
     }
   }
-  def loadTopics(revealLastTopic: Boolean = true, revealTopic: Topic = null, editTopic: Boolean = false): Unit = {
+  def loadTopics(revealLastTopic: Boolean = true, revealTopic: Topic = null, editTopic: Boolean = false, clearSearch: Boolean = false): Unit = {
     assert(!( revealLastTopic && (revealTopic != null) ))
     debug(s"ttv: loadtopics! revlast=$revealLastTopic revealtopic=$revealTopic")
+    if (clearSearch) {
+      tfSearch.text = ""
+      btClearSearch.disable = true
+      searchActive = false
+    }
+
     var tlast: Topic = null
     if (revealLastTopic)
       tv.selectionModel.value.getSelectedItems.headOption.foreach(t => tlast = t.getValue)
@@ -440,7 +446,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     }
   }
 
-  ApplicationController.revealTopicListener += ( (t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t) )
+  ApplicationController.revealTopicListener += ( (t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t, clearSearch = true) )
 
   toolbaritems ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton,
     aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton
@@ -459,16 +465,10 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   text = "Topics"
 
-  def clearSearch(): Unit = {
-    tfSearch.text = ""
-    btClearSearch.disable = true
-    searchActive = false
-    loadTopics(revealLastTopic = true)
-  }
   val btClearSearch = new Button() {
     graphic = new ImageView(new Image(getClass.getResource("/images/delete_obj_grey.gif").toExternalForm))
     disable = true
-    onAction = (ae: ActionEvent) => clearSearch()
+    onAction = (ae: ActionEvent) => loadTopics(clearSearch = true)
   }
   val tfSearch = new TextField {
     hgrow = Priority.Always
@@ -484,7 +484,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         })
         debug("finished initiate search search...")
         btClearSearch.disable = false
-      } else clearSearch()
+      } else loadTopics(clearSearch = true)
 
       searchActive = true
       loadTopics(revealLastTopic = false)

@@ -89,7 +89,7 @@ class ArticleListView extends GenericView("articlelistview") {
 
   val alv: TableView[Article] = new TableView[Article](sortedArticles) {
     columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview)
-
+    columns.foreach(tc => tc.setPrefWidth(120.0)) // TODO waitforfix
     sortedArticles.comparator <== comparator
 
     sortOrder += (cPubdate, cTitle)
