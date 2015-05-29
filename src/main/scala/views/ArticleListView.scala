@@ -324,12 +324,22 @@ class ArticleListView extends GenericView("articlelistview") {
     center = alv
   }
 
+  def revealArticleByID(id: Long) = {
+    inTransaction {
+      Option(ReftoolDB.articles.get(id)) foreach(a => revealArticle(a))
+    }
+  }
+
+  def revealArticle(a: Article) = {
+    if (articles.contains(a)) {
+      alv.getSelectionModel.select(a)
+      alv.scrollTo(alv.getSelectionModel.getSelectedIndex)
+    }
+  }
+
   ApplicationController.showArticlesListListeners += ( (al: List[Article], title: String) => setArticles(al, title, null) )
   ApplicationController.showArticlesFromTopicListeners += ( (t: Topic) => setArticlesTopic(t) )
-  ApplicationController.revealArticleInListListeners += ( (a: Article) => {
-    alv.getSelectionModel.select(a)
-    alv.scrollTo(alv.getSelectionModel.getSelectedIndex)
-  } )
+  ApplicationController.revealArticleInListListeners += revealArticle
   ApplicationController.articleChangedListeners += ( (a: Article) => {
     if (currentTopic != null) {
       val oldsel = alv.getSelectionModel.getSelectedItems.headOption
@@ -376,11 +386,18 @@ class ArticleListView extends GenericView("articlelistview") {
   override def canClose: Boolean = true
 
   override def getUIsettings: String = {
-    alv.columns.map(tc => tc.getWidth).mkString(",")
+    List(
+      alv.columns.map(tc => tc.getWidth).mkString(","),
+      alv.getSelectionModel.getSelectedItems.headOption map(a => a.id) getOrElse(-1).toString
+    ).mkString(";")
   }
 
   override def setUIsettings(s: String): Unit = {
-    if (s != "") s.split(",").zipWithIndex.foreach { case (s: String, i: Int) => if (alv.columns.length > i) alv.columns(i).setPrefWidth(s.toDouble) }
+    val s1 = s.split(";")
+    if (s1.length == 2) {
+      s1(0).split(",").zipWithIndex.foreach { case (s: String, i: Int) => if (alv.columns.length > i) alv.columns(i).setPrefWidth(s.toDouble) }
+      if (s1(1).toLong > -1) revealArticleByID(s1(1).toLong)
+    }
     // alv.delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY) // TODO waitforfix does not work in combi with setPrefWidth
   }
 

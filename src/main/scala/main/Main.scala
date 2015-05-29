@@ -73,16 +73,16 @@ class MainScene(stage: Stage) extends Scene with Logging {
     addView(articleDocumentsView)
   }
 
-  val articleListView = tryit { new ArticleListView }
-
-  val toptabs = new ViewContainer {
-    addView(articleListView)
-  }
-
   val topicTreeView = tryit { new TopicsTreeView }
 
   val lefttabs = new ViewContainer {
     addView(topicTreeView)
+  }
+
+  val articleListView = tryit { new ArticleListView }
+
+  val toptabs = new ViewContainer {
+    addView(articleListView)
   }
 
   val spbottomright = new SplitPane {
