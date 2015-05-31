@@ -527,11 +527,13 @@ class TopicsTreeView extends GenericView("topicsview") {
   override def canClose: Boolean = true
 
   override def getUIsettings: String = {
-    Option(tv.getSelectionModel.getSelectedItem).map(t => t.getValue.id).getOrElse(-1).toString
+    val lt = Option(tv.getSelectionModel.getSelectedItem).map(t => t.getValue.id).getOrElse(-1).toString
+    ReftoolDB.setSetting(ReftoolDB.SLASTTOPICID, lt)
+    ""
   }
 
   override def setUIsettings(s: String): Unit = {
-    if (s != "" && s.toLong > -1) loadTopicsShowID(s.toLong)
+    ReftoolDB.getSetting(ReftoolDB.SLASTTOPICID) foreach(s => loadTopicsShowID(s.value.toLong))
   }
 
   override val uisettingsID: String = "ttv"

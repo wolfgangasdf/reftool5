@@ -19,6 +19,7 @@ class Config extends Logging {
   var showstartupdialog = false
 
   def dbpath = datadir + "/db5"
+  def dbschemaversionpath = dbpath + "/schemaversion.txt"
   def olddbpath = datadir + "/db" // reftool4
   def pdfpath = datadir + "/files"
   val importfolderprefix = "folder-" // after this a number to limit #files in folder

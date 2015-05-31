@@ -31,7 +31,9 @@ class BaseEntity extends KeyedEntity[Long] {
   var id: Long = 0
 }
 
-class Setting(var name: String = "", var value: String = "") extends BaseEntity
+class Setting(var id: String = "", var value: String = "") extends KeyedEntity[String] {
+  override def toString: String = s"[$id = $value]"
+}
 
 class Document(var docName: String, var docPath: String) extends Ordered[Document] {
 
@@ -141,7 +143,7 @@ class Topic2Article(val TOPIC: Long, val ARTICLE: Long, var color: Int) extends 
 
 object ReftoolDB extends Schema with Logging {
 
-  val lastschemaversion = 1
+  val lastschemaversion = 2
 
   debug(" initializing reftooldb...")
 
@@ -152,7 +154,10 @@ object ReftoolDB extends Schema with Logging {
   val TORPHANS = "0000-ORPHANS"
   val TSTACK = "0000-stack"
   val TDBSTATS = "9-DB statistics"
+
   val SSCHEMAVERSION = "schemaversion"
+  val SLASTTOPICID = "lasttopicid"
+  val SLASTARTICLEID = "lastarticleid"
 
 //  throw new Exception("huhu")
   /*
@@ -160,8 +165,7 @@ object ReftoolDB extends Schema with Logging {
    */
 
   on(settings)(t => declare(
-    t.id is named("ID"),
-    t.name.is(dbType("varchar(256)"), named("NAME")), t.name defaultsTo "",
+    t.id.is(dbType("varchar(1024)"), named("ID")),
     t.value.is(dbType("varchar(1024)"), named("VALUE")), t.value defaultsTo ""
   ))
 
@@ -201,20 +205,30 @@ object ReftoolDB extends Schema with Logging {
     beforeInsert(topics) call((x:Topic) => x.id = from(topics)(a => select(a).orderBy(a.id desc)).headOption.getOrElse(new Topic()).id + 1)
   )
 
-  def dbShutdown(dbpath: String): Unit = {
-    try { java.sql.DriverManager.getConnection(s"jdbc:derby:$dbpath;shutdown=true") } catch {
+  // helpers
+  def getSetting(key: String): Option[Setting] = inTransaction {
+    settings.lookup(key)
+  }
+  def setSetting(key: String, value: String) = inTransaction {
+    val sett = settings.lookup(key).getOrElse(new Setting(key, value))
+    sett.value = value
+    settings.insertOrUpdate(sett)
+  }
+
+  def dbShutdown(dbpath: String = null): Unit = {
+    val dbpath2 = if (dbpath == null) AppStorage.config.dbpath else dbpath
+    try { java.sql.DriverManager.getConnection(s"jdbc:derby:$dbpath2;shutdown=true") } catch {
       case se: SQLException => if (!se.getSQLState.equals("08006")) throw se
       case se: SQLNonTransientConnectionException => if (!se.getSQLState.equals("08006")) throw se
     }
   }
-  def dbGetSchemaVersion(dbpath: String): Int = {
-    val dbconnx = java.sql.DriverManager.getConnection(s"jdbc:derby:$dbpath")
-    val s = dbconnx.createStatement()
-    val rs = s.executeQuery(s"select * from SETTING where NAME = '$SSCHEMAVERSION'")
-    val r = if (rs.next()) rs.getString("VALUE").toInt else -1
-    dbconnx.close()
-    dbShutdown(dbpath)
-    r
+  def dbGetSchemaVersion: Int = {
+    val res = FileHelper.readString(new File(AppStorage.config.dbschemaversionpath))
+    assert(res.nonEmpty, "db schema version file not present!")
+    res.get.toInt
+  }
+  def dbSetSchemaVersion(v: Int) {
+    FileHelper.writeString(new File(AppStorage.config.dbschemaversionpath), v.toString)
   }
 
   def getDBstats: String = {
@@ -233,22 +247,24 @@ object ReftoolDB extends Schema with Logging {
   def initialize(startwithempty: Boolean) {
 
     val pp = new File(AppStorage.config.pdfpath)
+    if (!pp.exists()) pp.mkdir()
+
     if (!startwithempty) {
       if (!new java.io.File(AppStorage.config.dbpath).exists() && new java.io.File(AppStorage.config.olddbpath).exists()) {
         DBupgrades.upgrade4to5()
+        dbSetSchemaVersion(1)
       }
       assert(new java.io.File(AppStorage.config.dbpath).exists())
       assert(pp.exists())
-      val sv = dbGetSchemaVersion(AppStorage.config.dbpath)
-      if (sv != 1) throw new Exception("wrong DB schema version " + sv) // in future, handle DB upgrades via SSCHEMAVERSION
+      // upgrade DB schema if needed
+      while (dbGetSchemaVersion != lastschemaversion) dbSetSchemaVersion(DBupgrades.upgradeSchema(dbGetSchemaVersion))
     }
-    if (!pp.exists()) pp.mkdir()
 
     info("Loading database at " + AppStorage.config.dbpath + " ...")
     val dbs = if (!startwithempty)
-      s"jdbc:derby:${AppStorage.config.dbpath}"
+      s"jdbc:derby:${AppStorage.config.dbpath};upgrade=true"
     else
-      s"jdbc:derby:${AppStorage.config.dbpath};create=true"
+      s"jdbc:derby:${AppStorage.config.dbpath};upgrade=true;create=true"
 
     Class.forName("org.apache.derby.jdbc.EmbeddedDriver")
 
@@ -258,6 +274,7 @@ object ReftoolDB extends Schema with Logging {
       ReftoolDB.printDdl
       if (startwithempty) {
         ReftoolDB.create
+        dbSetSchemaVersion(lastschemaversion)
       }
       // ensure essential topics are present
       var troot = topics.where(t => t.parent === 0).headOption.orNull
@@ -269,7 +286,6 @@ object ReftoolDB extends Schema with Logging {
       if (topics.where(t => t.title === TORPHANS).isEmpty) topics.insert(new Topic(TORPHANS, troot.id, false))
       if (topics.where(t => t.title === TSTACK).isEmpty) topics.insert(new Topic(TSTACK, troot.id, false))
       if (topics.where(t => t.title === TDBSTATS).isEmpty) topics.insert(new Topic(TDBSTATS, troot.id, false))
-      if (settings.where(s => s.name === SSCHEMAVERSION).isEmpty) settings.insert(new Setting(SSCHEMAVERSION, "1"))
 
       if (startwithempty) addDemoContent(troot)
     }
