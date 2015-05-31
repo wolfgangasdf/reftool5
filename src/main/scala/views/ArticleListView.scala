@@ -379,7 +379,7 @@ class ArticleListView extends GenericView("articlelistview") {
           )
         setArticles(q.toList, "Orphaned articles", null)
       } else
-        setArticles(topic.articles.toList, s"Articles in [${topic.title}]", topic)
+        setArticles(topic.articles.toList, s"Articles in [${topic.title}]  ", topic)
     }
   }
 

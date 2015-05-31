@@ -70,7 +70,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
         lines.foreach( ll => { ll.tf.disable = false ; ll.tf.editable = true } )
         val a = aa
         article = a
-        lbCurrentArticle.text = a.toString
+        lbCurrentArticle.text = a.toString + "  "
         lTitle.tf.text = a.title
         lAuthors.tf.text = a.authors
         lPubdate.tf.text = a.pubdate
