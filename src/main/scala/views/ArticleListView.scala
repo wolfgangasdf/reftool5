@@ -326,7 +326,7 @@ class ArticleListView extends GenericView("articlelistview") {
 
   def revealArticleByID(id: Long) = {
     inTransaction {
-      Option(ReftoolDB.articles.get(id)) foreach(a => revealArticle(a))
+      ReftoolDB.articles.lookup(id) foreach(a => revealArticle(a))
     }
   }
 

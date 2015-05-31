@@ -277,7 +277,7 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   def loadTopicsShowID(id: Long): Unit = {
     inTransaction {
-      Option(ReftoolDB.topics.get(id)) foreach(t => loadTopics(revealLastTopic = false, t))
+      ReftoolDB.topics.lookup(id) foreach(t => loadTopics(revealLastTopic = false, t))
     }
   }
   def loadTopics(revealLastTopic: Boolean = true, revealTopic: Topic = null, editTopic: Boolean = false, clearSearch: Boolean = false): Unit = {
