@@ -16,6 +16,7 @@ import framework.Logging
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.postfixOps
+
 /*
 
   KEEP it simple! don't add unneeded stuff (keys, indices, constraints)...
@@ -269,8 +270,24 @@ object ReftoolDB extends Schema with Logging {
       if (topics.where(t => t.title === TSTACK).isEmpty) topics.insert(new Topic(TSTACK, troot.id, false))
       if (topics.where(t => t.title === TDBSTATS).isEmpty) topics.insert(new Topic(TDBSTATS, troot.id, false))
       if (settings.where(s => s.name === SSCHEMAVERSION).isEmpty) settings.insert(new Setting(SSCHEMAVERSION, "1"))
+
+      if (startwithempty) addDemoContent(troot)
     }
     info("Database loaded!")
+  }
+
+  def addDemoContent(troot: Topic) = {
+    val ta = topics.insert(new Topic("demo main topic A", troot.id))
+    val tb = topics.insert(new Topic("demo main topic B", troot.id))
+    val ta1 = topics.insert(new Topic("demo subtopic A1", ta.id))
+    val ta2 = topics.insert(new Topic("demo subtopic A2", ta.id))
+    val tb1 = topics.insert(new Topic("demo subtopic B1", tb.id))
+    val a1 = articles.insert(new Article(title = "article 1"))
+    a1.topics.associate(ta1)
+    a1.topics.associate(ta2)
+    val a2 = articles.insert(new Article(title = "article 2"))
+    a2.topics.associate(tb)
+    a2.topics.associate(tb1)
   }
 
 }
