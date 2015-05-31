@@ -3,6 +3,7 @@ package main
 
 import java.io.{File, FileOutputStream, PrintStream}
 
+import buildinfo.BuildInfo
 import db.ReftoolDB
 import framework.Helpers._
 import framework.{Helpers, ApplicationController, Logging, ViewContainer}
@@ -16,11 +17,12 @@ import scalafx.Includes._
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.event.ActionEvent
-import scalafx.geometry.Orientation
+import scalafx.geometry.{Insets, Orientation}
 import scalafx.scene.Scene
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control._
 import scalafx.scene.control.Button._
+import scalafx.scene.control.TextField._
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout._
 import scalafx.stage.{WindowEvent, DirectoryChooser, Stage}
@@ -30,14 +32,35 @@ class MainScene(stage: Stage) extends Scene with Logging {
   private def createMenuBar = new MenuBar {
     useSystemMenuBar = true
     menus = List(
-      new Menu("Reftool5") {
+      new Menu("Help") {
         items = List(
-          new MenuItem("reload CSS") {
+          new MenuItem("About") {
             onAction = (e: ActionEvent) => {
-              info("reload CSS!")
-              stylesheets = List(AppStorage.config.csspath)
+              new Alert(AlertType.Information, "", ButtonType.Close) {
+                title = "About Reftool 5"
+                headerText = "Reftool 5 - a scientific reference manager"
+                val cont = new VBox {
+                  padding = Insets(15)
+                  spacing = 15
+                  children ++= Seq(
+                    new TextField { text = "Reftool version: " + BuildInfo.version ; editable = false },
+                    new TextField { text = "Build time: " + BuildInfo.buildTime ; editable = false },
+                    new Button("Open Reftool homepage") {
+                      onAction = (ae: ActionEvent) =>
+                        FileHelper.openURL("https://bitbucket.org/wolfgang/reftool5test")
+                    }
+                  )
+                }
+                dialogPane.value.content = cont
+              }.showAndWait()
             }
           }
+//          , new MenuItem("reload CSS") {
+//            onAction = (e: ActionEvent) => {
+//              info("reload CSS!")
+//              stylesheets = List(AppStorage.config.csspath)
+//            }
+//          }
         )
       }
     )
