@@ -73,6 +73,9 @@ object Helpers extends Logging {
   }
 
   def showExceptionAlert(where: String, t: Throwable) = {
+    error(where)
+    error(t.getMessage)
+    t.printStackTrace()
     val exceptionText = {
       val sw = new StringWriter()
       val pw = new PrintWriter(sw)

@@ -1,14 +1,29 @@
 package db
 
-import java.io.File
-import java.sql.{SQLNonTransientConnectionException, SQLException}
-
 import framework.Logging
-import util.{FileHelper, AppStorage}
+import util.AppStorage
 import ReftoolDB.dbShutdown
 
 
 object DBupgrades extends Logging {
+
+  def dbGetConnection = java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.dbpath};upgrade=true")
+
+  def upgradeSchema(oldv: Int): Int = {
+    info("upgrade database from schemaversion " + oldv + " ...")
+    val dbc = dbGetConnection
+    val s = dbc.createStatement()
+    val newVersion = oldv match {
+      case 1 =>
+        s.execute("drop table SETTING")
+        s.execute("create table SETTING (ID varchar(1024) not null primary key, VALUE varchar(1024) default '' not null)")
+        2
+    }
+    dbc.close()
+    dbShutdown()
+    info("upgraded database to schemaversion " + newVersion + "!")
+    newVersion
+  }
 
   // upgrades old reftool4 database, from config.olddbpath into config.dbpath
   def upgrade4to5() {
@@ -43,20 +58,16 @@ object DBupgrades extends Logging {
       dbconnx.close()
       dbShutdown(dbpath)
     }
-    // clean
-    val pdir = new File(AppStorage.config.dbpath)
-    //    val w = new java.io.PrintWriter(new java.io.OutputStreamWriter(System.out))
-    //    java.sql.DriverManager.setLogWriter(w)
+
+    // val w = new java.io.PrintWriter(new java.io.OutputStreamWriter(System.out))
+    // java.sql.DriverManager.setLogWriter(w)
     debug("checking old db...")
     dbStats(AppStorage.config.olddbpath, clobx = true)
     debug("importing db...")
     java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.dbpath};createFrom=${AppStorage.config.olddbpath}")
-    dbShutdown(AppStorage.config.dbpath)
-    debug("upgrading db...")
-    java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.dbpath};upgrade=true")
-    dbShutdown(AppStorage.config.dbpath)
-    debug("modify db...")
-    val dbc = java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.dbpath}")
+    dbShutdown()
+    debug("modify db (hard upgrade if needed)...")
+    val dbc = dbGetConnection
     val s = dbc.createStatement()
     def modCol(table: String, col: String, default: String = null) = {
       if (default != null) {
@@ -112,7 +123,7 @@ object DBupgrades extends Logging {
       modCol("ARTICLES", cc, "''")
 
     dbc.close()
-    dbShutdown(AppStorage.config.dbpath)
+    dbShutdown()
     debug("checking new db...")
     dbStats(AppStorage.config.dbpath, clobx = false)
     info("Upgrade4to5 finished!")

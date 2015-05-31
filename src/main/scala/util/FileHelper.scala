@@ -15,11 +15,18 @@ import framework.{Logging, Helpers}
 
 object FileHelper extends Logging {
 
-  def write(file: File, text : String) : Unit = {
+  def writeString(file: File, text : String) : Unit = {
     val fw = new FileWriter(file)
     try{ fw.write(text) }
     finally{ fw.close() }
   }
+  def readString(file: File) : Option[String] = {
+    if (file.exists() && file.canRead)
+      Some(scala.io.Source.fromFile(file).mkString)
+    else
+      None
+  }
+
   def foreachLine(file: File, proc : String=>Unit) : Unit = {
     val br = new BufferedReader(new FileReader(file))
     try{ while(br.ready) proc(br.readLine) }

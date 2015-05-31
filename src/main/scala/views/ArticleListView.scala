@@ -386,18 +386,19 @@ class ArticleListView extends GenericView("articlelistview") {
   override def canClose: Boolean = true
 
   override def getUIsettings: String = {
+    val la = (alv.getSelectionModel.getSelectedItems.headOption map(a => a.id) getOrElse(-1)).toString
+    ReftoolDB.setSetting(ReftoolDB.SLASTARTICLEID, la)
     List(
-      alv.columns.map(tc => tc.getWidth).mkString(","),
-      alv.getSelectionModel.getSelectedItems.headOption map(a => a.id) getOrElse(-1).toString
+      alv.columns.map(tc => tc.getWidth).mkString(",")
     ).mkString(";")
   }
 
   override def setUIsettings(s: String): Unit = {
     val s1 = s.split(";")
-    if (s1.length == 2) {
+    if (s1.length == 1 && s1(0).contains(",")) {
       s1(0).split(",").zipWithIndex.foreach { case (s: String, i: Int) => if (alv.columns.length > i) alv.columns(i).setPrefWidth(s.toDouble) }
-      if (s1(1).toLong > -1) revealArticleByID(s1(1).toLong)
     }
+    ReftoolDB.getSetting(ReftoolDB.SLASTARTICLEID) foreach(s => revealArticleByID(s.value.toLong))
     // alv.delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY) // TODO waitforfix does not work in combi with setPrefWidth
   }
 
