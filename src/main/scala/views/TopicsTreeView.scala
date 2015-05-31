@@ -260,7 +260,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     }
 
     filterEvent(MouseEvent.MouseReleased) { // disable edit by mouse click
-      (me: MouseEvent) => me.consume()
+      (me: MouseEvent) => if (me.clickCount == 1) me.consume() // but enable double click to expand/collapse
     }
 
     cellFactory = (v: TreeView[Topic]) => new MyTreeCell()
