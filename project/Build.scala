@@ -1,3 +1,5 @@
+import java.time.{ZonedDateTime, LocalDateTime}
+
 import sbt._
 import sbt.Keys._
 import sbtbuildinfo.Plugin._
@@ -9,8 +11,11 @@ import sbtbuildinfo.Plugin._
 object Build extends Build {
   lazy val myBuildInfoSettings = Seq(
     sourceGenerators in Compile <+= buildInfo,
-    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion),
-    buildInfoPackage := "reftool5"
+    buildInfoKeys := Seq[BuildInfoKey](
+      name, version, scalaVersion, sbtVersion,
+      BuildInfoKey.action("buildTime") { ZonedDateTime.now.toString } // re-computed each time at compile
+    ),
+    buildInfoPackage := "buildinfo"
   )
   lazy val reftool5 = Project(
     id = "reftool5",
@@ -29,7 +34,6 @@ object Build extends Build {
       libraryDependencies ++= Seq(
         "org.scalafx" %% "scalafx" % "8.0.40-R8",
         "com.typesafe.akka" %% "akka-actor" % "2.3.9",
-        "com.jcraft" % "jsch" % "0.1.52",
         "org.apache.derby" % "derby" % "10.11.1.1",
         "org.squeryl" %% "squeryl" % "0.9.5-7" withSources() withJavadoc(),
         "org.apache.pdfbox" % "pdfbox" % "1.8.9",

@@ -10,11 +10,13 @@ Features (not complete):
 * There are `topics` and `articles`. Articles can belong to any number of topics.
 * Articles can have more than one PDF (or any other file), such as article and supplementary information.
 * PDFs are stores as normal files, an embedded database (apache Derby) is used for the rest.
-* An article has, amongst other, a comment/review field
+* An article has, amongst others, a comment/review field
 * PDFs can be imported easily, it searches for DOI (or arxiv ID) in the PDF and then uses crossref.org to find the citation for you. Works via DnD, a single-click Google Chrome extension, or by watching an auto-import folder.
-* Bibtex export for papers
+* Bibtex export for papers (export filename is cached for each topic)
 * Copy selected articles' URLs to clipboard to email them.
 * Copy selected articles' PDFs to a folder.
+* There is a `stack` to easily move / copy articles around or collect them.
+* There is an `ORPHANED` topic for articles not belonging to any topic. Don't misuse this as an "read later" folder, see below!
 
 Reftool is not:
 
@@ -23,6 +25,7 @@ Reftool is not:
 Key hints:
 
 * Don't use a "read later" folder. You'll never do.
+
 ### How to run it ###
 
 Just run the application, everything should be self-explanatory (watch out for tooltips) and if you create a new "reftool data dir", the database is populated with a few demo topics and articles.
@@ -37,7 +40,7 @@ Just run the application, everything should be self-explanatory (watch out for t
 ### Suggestions, bug reports, pull requests, contact ###
 Please use the bitbucket-provided tools for bug reports and contributed code. Anything is welcome!
 
-http://home.physics.leidenuniv.nl/~loeffler
+contact: http://home.physics.leidenuniv.nl/~loeffler
 
 ### Used technologies ###
 
@@ -47,5 +50,10 @@ http://home.physics.leidenuniv.nl/~loeffler
 * [Apache Pdfbox](https://pdfbox.apache.org) to access PDF files
 * [JBibtex](https://github.com/jbibtex/jbibtex) to parse and write bibtex and latex
 * [scalaj-http](https://github.com/scalaj/scalaj-http) to make http connections
-* because there isn't an application framework for scalafx yet, reftool contains a pretty nice & simple example with, e.g., buttons next to tabs
+* [sbt-appbundle](https://github.com/Sciss/sbt-appbundle) to create mac app bundle
+
+* GUI Application framework: There isn't one for scalafx yet, so reftool contains a pretty nice & simple example with, e.g., buttons next to tabs
 * Reftool is mostly single-threaded except for PDF-import to keep the app responsive. This keeps the code very simple.
+
+### License ###
+[MIT](http://opensource.org/licenses/MIT)
