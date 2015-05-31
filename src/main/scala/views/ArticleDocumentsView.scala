@@ -36,6 +36,10 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
       override def toString(t: Document): String = t.docName
     }
     delegate.setConverter(myConverter)
+
+    filterEvent(MouseEvent.MouseReleased) { // disable edit by mouse click
+      (me: MouseEvent) => me.consume()
+    }
   }
   val lv = new ListView[Document] {
     editable = true
@@ -43,19 +47,15 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     //    val converter = StringConverter.toStringConverter[Document](_.docName)
     cellFactory = (v: ListView[Document]) => new MyListCell()
     onEditCommit = (eev: ListView.EditEvent[Document]) => {
-      debug("edit finished: eev=" + eev)
       updateArticle()
     }
     onMouseClicked = (me: MouseEvent) => {
-      if (me.clickCount == 2) {
-        if (selectionModel.value.getSelectedItems.length == 1) {
-          openDocument(selectionModel.value.getSelectedItem.docPath)
-        }
+      if (me.clickCount == 2 && selectionModel.value.getSelectedItems.length == 1) {
+        openDocument(selectionModel.value.getSelectedItem.docPath)
       }
     }
 
     onDragOver = (de: DragEvent) => {
-      debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}  tm = " + de.transferMode)
       if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
         if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].length == 1) // only one file at a time!
           de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK)
@@ -65,7 +65,6 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
       if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
         val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
         val f = files.head
-        debug(s" adding file $f")
         ImportHelper.importDocument(f, null, article, Some(de.transferMode == TransferMode.COPY), isAdditionalDoc = true)
       }
 
