@@ -87,19 +87,23 @@ class MainScene(stage: Stage) extends Scene with Logging {
 
   val spbottomright = new SplitPane {
     orientation = Orientation.VERTICAL
+    dividerPositions = 0.5
     items += (brtoptabs, brbottomtabs)
   }
   val spbottom = new SplitPane {
     orientation = Orientation.HORIZONTAL
+    dividerPositions = 0.7
     items += (bottomtabs, spbottomright)
   }
   val spv = new SplitPane {
     orientation = Orientation.VERTICAL
+    dividerPositions = 0.3
     items += (toptabs, spbottom)
   }
 
   val sph = new SplitPane {
     orientation = Orientation.HORIZONTAL
+    dividerPositions = 0.15
     items +=(lefttabs, spv)
   }
 
@@ -205,19 +209,17 @@ object Main extends JFXApp with Logging {
     }
     stage = new PrimaryStage {
       title = "Reftool 5"
-      width = 800
-      height = 600
-//      tryit { getAppIcons.foreach(i => icons += i) }
+      width = 1200
+      height = 800
       mainScene = tryit {
         new MainScene(this)
       }
       scene = mainScene
-      //            onShown = (we: WindowEvent) => { // works only if no stage shown before...
-      debug(" onshown!!!!!!!!!!!!!!!!")
+      // onShown = (we: WindowEvent) => { // works only if no stage shown before...
       tryit {
         ApplicationController.afterShown()
       }
-      //            }
+      // }
     }
   }
 
