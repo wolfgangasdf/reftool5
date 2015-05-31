@@ -259,6 +259,10 @@ class TopicsTreeView extends GenericView("topicsview") {
       }
     }
 
+    filterEvent(MouseEvent.MouseReleased) { // disable edit by mouse click
+      (me: MouseEvent) => me.consume()
+    }
+
     cellFactory = (v: TreeView[Topic]) => new MyTreeCell()
   }
 
