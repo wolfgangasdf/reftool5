@@ -531,7 +531,7 @@ class TopicsTreeView extends GenericView("topicsview") {
   }
 
   override def setUIsettings(s: String): Unit = {
-    if (s.toLong > -1) loadTopicsShowID(s.toLong)
+    if (s != "" && s.toLong > -1) loadTopicsShowID(s.toLong)
   }
 
   override val uisettingsID: String = "ttv"
