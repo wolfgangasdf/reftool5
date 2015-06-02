@@ -35,16 +35,17 @@ object PdfHelper extends Logging {
     var doi = ""
     val pdf = PDDocument.load(file)
     val info = pdf.getDocumentInformation
-    debug(info.getMetadataKeys)
+    debug("parse pdf metadata for doi...")
     if (info.getMetadataKeys.contains("doi")) {
       doi = info.getCustomMetadataValue("doi")
+    } else if (info.getMetadataKeys.contains("DOI")) {
+      doi = info.getCustomMetadataValue("DOI")
     } else { // parse for DOI in all keys...
       for (k <- info.getMetadataKeys) {
-        debug("  k = " + k)
         val v = Option(info.getCustomMetadataValue(k)).getOrElse("").toUpperCase
-        debug(s"[$k]: " + v)
+        debug(s"pdf metadata [$k]: " + v)
         if (v.contains("DOI")) {
-          debug("  parsing...")
+          debug("  parsing this...")
           val re = """.*(?:DOI:\ ?|DOI\ |\.DOI\.ORG/)(.*)(?:\ .*)?""".r
           v match {
             case re(sd) => debug("   match!!!"); doi = sd
@@ -53,8 +54,8 @@ object PdfHelper extends Logging {
         }
       }
     }
-    if (doi == "") { // parse for doi in first pdf page
-      debug("parse first pdf page for doi link...")
+    if (doi == "") { // parse for doi in first pdf page (not checking hyperlinks as it may be a reference link!)
+      debug("still no doi, parse first pdf page for doi link...")
       val doc = pdf.getDocument
       val pdoc = new PDDocument(doc)
       val pstrip = new PDFTextStripper()
@@ -62,18 +63,19 @@ object PdfHelper extends Logging {
       pstrip.setEndPage(1)
       val text = pstrip.getText(pdoc)
       // debug("first page:\n" + text)
-      val re = """(?s).*(?:http://dx.doi.org/|DOI:\ |DOI\ ?)(\S+)\s.*""".r
+      val re = """(?s).*(?:http://dx.doi.org/|DOI:\ |DOI\ )(\S{5,100})\s.*""".r
       text match {
-        case re(ddd) =>
-          debug("found doi link: " + ddd)
+        case re(ddd) if ddd.length > 5 =>
+          debug("  found doi link: " + ddd)
           doi = ddd
         case _ =>
           val text2 = text.replaceAll("""[\r\n]""", "")
+          debug("found no doi, check for arxiv id...")
           //debug("first page without line ends:\n" + text2)
           val re2 = """.*arXiv:(\d+\.\d+)(?:v\d+)*\s.*""".r
           text2 match {
             case re2(aaa) =>
-              debug("found arxiv id: " + aaa)
+              debug("  found arxiv id: " + aaa)
               doi = "arxiv:" + aaa
             case _ => debug("could not find doi on first pdf page!")
           }
