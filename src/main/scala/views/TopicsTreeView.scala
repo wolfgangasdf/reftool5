@@ -150,7 +150,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
   }
 
   onDragOver = (de: DragEvent) => {
-    debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}  tm = " + de.transferMode)
+    //debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}  tm = " + de.transferMode)
     clearDnDFormatting()
     getDropPositionScroll(de)
     if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "topic") {
@@ -198,9 +198,9 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
           } else {
             a.topics.dissociate(DnDHelper.articlesTopic)
             a.topics.associate(treeItem.value.getValue)
+            ApplicationController.submitShowArticlesFromTopic(DnDHelper.articlesTopic)
           }
         }
-        ApplicationController.submitShowArticlesFromTopic(treeItem.value.getValue)
       }
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
@@ -214,9 +214,9 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
     de.consume()
   }
 
-  onDragDone = (de: DragEvent) => {
-    debug("dragdone! " + de)
-  }
+  onDragExited = (de: DragEvent) => clearDnDFormatting()
+
+  onDragDone = (de: DragEvent) => clearDnDFormatting()
 
 }
 object MyTreeCell {
