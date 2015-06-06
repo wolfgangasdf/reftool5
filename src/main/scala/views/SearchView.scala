@@ -8,7 +8,8 @@ import org.squeryl.PrimitiveTypeMode._
 import scalafx.Includes._
 import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
-import scalafx.scene.control.{Button, CheckBox, Label, TextField}
+import scalafx.scene.control.Alert.AlertType
+import scalafx.scene.control._
 import scalafx.scene.layout.{BorderPane, HBox, Priority, VBox}
 
 class SearchView extends GenericView("searchview") {
@@ -26,6 +27,7 @@ class SearchView extends GenericView("searchview") {
     onAction = (ae: ActionEvent) => {
       val sstr = text.value.toUpperCase
       inTransaction {
+        val maxSize = 1000
         val res = ReftoolDB.articles.where(a =>
           (upper(a.title) like s"%$sstr%".inhibitWhen(!cbTitle.selected.value))
           or (upper(a.authors) like s"%$sstr%".inhibitWhen(!cbAuthors.selected.value))
@@ -41,7 +43,11 @@ class SearchView extends GenericView("searchview") {
           ApplicationController.showNotification("Search returned no results!")
         else {
           ApplicationController.showNotification(s"Search returned ${res.size} results!")
-          ApplicationController.submitShowArticlesList(res.toList, s"Search [${text.value}]")
+          val res2 = if (res.size > maxSize) {
+            new Alert(AlertType.Warning, s"Showing only the first $maxSize of ${res.size} results!", ButtonType.OK).showAndWait()
+            res.page(0, maxSize)
+          } else res
+          ApplicationController.submitShowArticlesList(res2.toList, s"Search [${text.value}]")
         }
       }
     }

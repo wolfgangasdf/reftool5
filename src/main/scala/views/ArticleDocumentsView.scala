@@ -25,8 +25,11 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
   var article: Article = null
 
   class MyListCell extends TextFieldListCell[Document] {
-    if (item != null) if (item.value != null)
-      tooltip = new Tooltip { text = item.value.docPath }
+
+    item.onChange { // this is how to override updateItem !
+      (_, oldd, newd) => if (newd != null) tooltip = new Tooltip { text = newd.docPath }
+    }
+
     val myConverter = new StringConverter[Document] {
       override def fromString(string: String): Document = {
         val d = item.value
