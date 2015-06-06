@@ -1,8 +1,8 @@
 # Reftool 5
 
-Reftool is a scientific reference manager, similar to [Zotero](https://www.zotero.org) and [Mendeley](https://www.mendeley.com). I use it since 2006, [the old reftool](https://bitbucket.org/wolfgang/reftool) was Eclipse RCP based, Reftool 5 now uses simply JavaFX that is included in Java 8, making it much smaller & faster. Reftool 5 is stable and constantly improved because I use it daily. However, the code is pretty clean and you can easily modify it if you wish. 
+Reftool is a scientific reference manager, similar to [Zotero](https://www.zotero.org) and [Mendeley](https://www.mendeley.com). I use it since 2006, [the old reftool](https://bitbucket.org/wolfgang/reftool) was Eclipse RCP based, Reftool 5 now uses simply JavaFX that is included in Java 8, making it much smaller & faster (reftool 4 data is automatically migrated). Reftool 5 is stable and constantly improved because I use it daily. However, the code is pretty clean and you can easily modify it if you wish. 
 
-Why do I not use Zotero? I would like to but: (i) Too slow for 10,000 articles. (ii) No unique bibtex id. (iii) Daily work needs too many clicks, it doesn't fit my workflow. This appears to be design-based to me and can't be solved easily (also because of XUL codebase, no decent IDE comparable to IntelliJ). Further, scala is a beautiful language and cross-platform thanks to the Java VM!
+Why do I not use Zotero? I would like to but: (i) Too slow for 10,000 articles. (ii) No unique bibtex id. (iii) Daily work needs too many clicks, it doesn't fit my workflow. This appears to be design-based to me and can't be solved easily (also because I am not good in XUL programming and there is no decent IDE comparable to IntelliJ). Further, scala is a beautiful language worth learning and cross-platform thanks to the Java VM!
 
 Features (not complete):
 
