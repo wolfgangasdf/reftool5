@@ -9,9 +9,7 @@ import framework._
 import org.squeryl.PrimitiveTypeMode._
 import util.{ImportHelper, AppStorage, FileHelper}
 
-import scala.collection.immutable.HashMap
 import scala.collection.mutable.ArrayBuffer
-import scalafx.concurrent.Task
 import scalafx.geometry.Insets
 import scalafx.scene.control._
 import scalafx.scene.image.Image
@@ -34,8 +32,6 @@ class InfoView extends GenericView("toolview") {
         new Thread {
           override def run(): Unit = {
             debug("call in Worker import pdf tree")
-            val topicMap = new HashMap[java.io.File, Topic]
-            val articleMap = new HashMap[java.io.File, Article]
             val ds = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())
             debug("here0")
             val tbase = Helpers.runUIwait( inTransaction {
@@ -55,10 +51,9 @@ class InfoView extends GenericView("toolview") {
                 debug("  import file: " + ff.getName)
                 while (!Helpers.runUIwait(ImportHelper.importDocument(ff, thisTopic, null, copyFile = Some(true), isAdditionalDoc = false, interactive = false))) {
                   debug("waiting...")
-                  Thread.sleep(1000) // TODO this whole thing doesn't work
+                  Thread.sleep(100)
                   debug("waiting done, try again...")
                 }
-                Thread.sleep(3000) // TODO without this it doesn't work!!! some locking problem in importhelper!
               })
               these ++ these.filter(_.isDirectory).flatMap(walkThroughAll(_, thisTopic))
             }

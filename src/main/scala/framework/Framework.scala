@@ -235,7 +235,7 @@ class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () 
   val progress = new ProgressBar { minWidth = 250 }
   val al = new Dialog[Unit] {
     initOwner(main.Main.stage)
-    title = "Progressing..."
+    title = atitle
     dialogPane.value.content = new VBox { children ++= Seq(lab, progress) }
     dialogPane.value.getButtonTypes += ButtonType.Cancel
   }
@@ -244,25 +244,19 @@ class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () 
     al.show()
     lab.text <== worker.message
     progress.progress <== worker.progress
-    al.onCloseRequest = (de: DialogEvent) => {
-      debug("oncloserequ!!!")
-      worker.cancel
-      cleanup()
-    }
     worker.onSucceeded = (wse: WorkerStateEvent) => {
       debug("onsucceed")
       al.close()
-      cleanup()
       debug("onsucceed/")
     }
     worker.onFailed = (wse: WorkerStateEvent) => {
       error("onfailed: " + atask.getException.getMessage)
       atask.getException.printStackTrace()
       al.close()
-      cleanup()
-      Helpers.runUI {
+      Helpers.runUIwait {
         Helpers.showExceptionAlert(atitle, atask.getException)
       }
+      cleanup()
     }
     debug("start")
     worker.start()
