@@ -260,21 +260,32 @@ object ImportHelper extends Logging {
     true
   }
 
+  // 0->a , 25->z, 26->ba etc
+  def numberToAlphabetSequence(num: Int): String = {
+    val s = java.lang.Long.toString(num, 26)
+    val oldds = "0123456789abcdefghijklmnop"
+    val newds = "abcdefghijklmnopqrstuvwxyz"
+    s.map( ch => {
+      val oi = oldds.indexOf(ch)
+      newds(oi)
+    })
+  }
   def getUniqueBibtexID(bibtexid: String): String = {
     val replist = List(("ä", "ae"), ("ü", "ue"), ("ö", "oe"), ("ß", "ss"))
     var bid2 = bibtexid.toLowerCase
     replist.foreach { case (s1, s2) => bid2 = bid2.replaceAllLiterally(s1, s2) }
     bid2 = java.text.Normalizer.normalize(bid2, java.text.Normalizer.Form.NFD)
     bid2 = bid2.replaceAll("[^\\p{ASCII}]", "").toLowerCase
+    var bid3 = bid2
     debug("bid2 = " + bid2)
     var iii = 1
     inTransaction { // add numbers if bibtexid exist...
-      while (ReftoolDB.articles.where(a => a.bibtexid === bid2).nonEmpty) {
-        bid2 = bibtexid + iii
+      while (ReftoolDB.articles.where(a => a.bibtexid === bid3).nonEmpty) {
+        bid3 = bid2 + numberToAlphabetSequence(iii)
         iii += 1
       }
     }
-    bid2
+    bid3
   }
 
   private def getFirstAuthorLastName(s: String): String = {

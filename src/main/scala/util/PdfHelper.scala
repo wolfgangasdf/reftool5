@@ -12,24 +12,9 @@ import framework.Logging
 
 object PdfHelper extends Logging {
 
-/*
-  // use this for testing
-  def main(args: Array[String]): Unit = {
-    // getDOI(new File("/Unencrypted_Data/incoming/firefox/A differentiated plane wave as an electromagnetic vortex8110565808763115773.pdf"))
-    val re = """.*(?:DOI:\ ?|DOI\ |\.DOI\.ORG/)(.*)(?:\ .*)?""".r
-    val sl = List(
-      "NATURE 492, 411 (2012). DOI: 10.1038/NATURE11669 asdasd",
-      "NATURE 492, 411 (2012). DOI:10.1038/NATURE11669 asdasd",
-      "NATURE 492, 411 (2012). DOI:10.1038/NATURE11669",
-      "NATURE 492, 411 (2012). DOI 10.1038/NATURE11669 asdasd",
-      "DOI http://DX.DOI.ORG/10.1016/S1097-2765(03)00225-9 asdas"
-    )
-    sl.foreach(s => s match {
-      case re(sd) => debug("doi=[" + sd + "]")
-      case _ => debug("error parsing stuff")
-    })
-  }
-*/
+  // doi syntax: http://www.doi.org/doi_handbook/2_Numbering.html#2.2
+  // regex from http://stackoverflow.com/questions/27910/finding-a-doi-in-a-document-or-page
+  val doire = """(?s).*\b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b\s.*""".r
 
   def getDOI(file: File) = {
     var doi = ""
@@ -44,13 +29,9 @@ object PdfHelper extends Logging {
       for (k <- info.getMetadataKeys) {
         val v = Option(info.getCustomMetadataValue(k)).getOrElse("").toUpperCase
         debug(s"pdf metadata [$k]: " + v)
-        if (v.contains("DOI")) {
-          debug("  parsing this...")
-          val re = """.*(?:DOI:\ ?|DOI\ |\.DOI\.ORG/)(.*)(?:\ .*)?""".r
-          v match {
-            case re(sd) => debug("   match!!!"); doi = sd
-            case _ => debug(" error parsing " + v)
-          }
+        v match {
+          case doire(sd) => debug("   match!!!"); doi = sd
+          case _ => debug(" error parsing " + v)
         }
       }
     }
@@ -63,14 +44,13 @@ object PdfHelper extends Logging {
       pstrip.setEndPage(1)
       val text = pstrip.getText(pdoc)
       // debug("first page:\n" + text)
-      val re = """(?s).*(?:http://dx.doi.org/|DOI:\ |DOI\ )(\S{5,100})\s.*""".r
       text match {
-        case re(ddd) if ddd.length > 5 =>
+        case doire(ddd) =>
           debug("  found doi link: " + ddd)
           doi = ddd
         case _ =>
           val text2 = text.replaceAll("""[\r\n]""", "")
-          debug("found no doi, check for arxiv id...")
+          debug("found no doi, check for vertical arxiv id...")
           //debug("first page without line ends:\n" + text2)
           val re2 = """.*arXiv:(\d+\.\d+)(?:v\d+)*\s.*""".r
           text2 match {
