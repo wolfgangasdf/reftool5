@@ -115,9 +115,9 @@ object ImportHelper extends Logging {
     doi
   }
 
-  private def importDocument2(updateMetadata: Boolean, article: Article, sourceFile: File, doFileAction: Boolean, lastfolder: File, copyIt: Boolean, topic: Topic, interactive: Boolean = true): Unit = {
+  private def importDocument2(updateMetadata: Boolean, article: Article, sourceFile: File, doFileAction: Boolean, lastfolder: File, copyIt: Boolean, topic: Topic, interactive: Boolean = true) = {
     debug(s"id2: $updateMetadata $article ${sourceFile.getName} $interactive")
-    new MyWorker("Import document", new javafx.concurrent.Task[Unit] {
+    new javafx.concurrent.Task[Unit] {
       override def call(): Unit = {
         var a = if (article == null) new Article(title = sourceFile.getName) else article
         if (updateMetadata) try {
@@ -192,13 +192,13 @@ object ImportHelper extends Logging {
           }
           ApplicationController.submitArticleChanged(a)
           ApplicationController.showNotification("import successful of " + a)
-          debug("import successful of " + a)
+          debug("!!!!!!!!!!! import successful of " + sourceFile.getName)
         }
         if (!backgroundImportRunning.compareAndSet(true, false)) {
           throw new Exception("illegal state: backgroundImportRunning was false!")
         }
       }
-    }, () => { backgroundImportRunning.set(false) } ).runInBackground()
+    }
   }
 
   def updateMetadataFromDoc(article: Article, sourceFile: File): Boolean = {
@@ -206,7 +206,8 @@ object ImportHelper extends Logging {
       info("import document NOT executed because already running...")
       false
     } else {
-      importDocument2(updateMetadata = true, article, sourceFile, doFileAction = false, null, copyIt = false, null)
+      val task = importDocument2(updateMetadata = true, article, sourceFile, doFileAction = false, null, copyIt = false, null)
+      new MyWorker( "Update metadata...", task, () => { backgroundImportRunning.set(false) } ).runInBackground()
       true
     }
   }
@@ -217,8 +218,7 @@ object ImportHelper extends Logging {
       info("import document NOT executed because already running...")
       return false
     }
-    debug("find new document location...")
-    debug(s"importDocument: topic=$topic article=$article sourceFile=$sourceFile")
+    debug(s"!!!!!!!!!!! importDocument: topic=$topic article=$article sourceFile=$sourceFile")
     assert(!((article != null) && (topic != null))) // both must not be given!
 
     val pdfpath = new File(AppStorage.config.pdfpath)
@@ -259,7 +259,9 @@ object ImportHelper extends Logging {
       }
     } else copyFile.get
 
-    importDocument2(!isAdditionalDoc, article, sourceFile, doFileAction = true, lastfolder, copyIt = copyIt, topic, interactive)
+    val task = importDocument2(!isAdditionalDoc, article, sourceFile, doFileAction = true, lastfolder, copyIt = copyIt, topic, interactive)
+      new MyWorker("Import document", task, () => { backgroundImportRunning.set(false) } ).runInBackground()
+
     true
   }
 
