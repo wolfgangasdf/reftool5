@@ -20,7 +20,13 @@ Features (not complete):
 
 Reftool is not:
 
-* a collaborative thing. Reftool is a single-user application. But IMO references are personal, you exchange PDFs or links with collaborators. My experience tells me that you should not import any articles into a reference manager without having read at least the abstract, you'll never have time to read them later in nearly all cases!
+* a collaborative thing. 
+    * Reftool is a single-user application. 
+    * But IMO references are personal, you exchange PDFs or links with collaborators. 
+      My experience tells me that you should not import any articles into a reference manager 
+      without having read at least the abstract, you'll never have time to read them later in nearly all 
+      cases!
+    * Reftool contains tools to make this exchange easy (copy article links, copy pdfs)
 
 Key hints:
 
