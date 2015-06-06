@@ -31,18 +31,19 @@ object PdfHelper extends Logging {
         debug(s"pdf metadata [$k]: " + v)
         v match {
           case doire(sd) => debug("   match!!!"); doi = sd
-          case _ => debug(" error parsing " + v)
+          case _ =>
         }
       }
     }
     if (doi == "") { // parse for doi in first pdf page (not checking hyperlinks as it may be a reference link!)
-      debug("still no doi, parse first pdf page for doi link...")
+      debug("still no doi, get first pdf page...")
       val doc = pdf.getDocument
       val pdoc = new PDDocument(doc)
       val pstrip = new PDFTextStripper()
       pstrip.setStartPage(1)
       pstrip.setEndPage(1)
       val text = pstrip.getText(pdoc)
+      debug("search first page for doi link...")
       // debug("first page:\n" + text)
       text match {
         case doire(ddd) =>

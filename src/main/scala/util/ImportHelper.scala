@@ -115,7 +115,8 @@ object ImportHelper extends Logging {
     doi
   }
 
-  private def importDocument2(updateMetadata: Boolean, article: Article, sourceFile: File, doFileAction: Boolean, lastfolder: File, copyIt: Boolean, topic: Topic): Unit = {
+  private def importDocument2(updateMetadata: Boolean, article: Article, sourceFile: File, doFileAction: Boolean, lastfolder: File, copyIt: Boolean, topic: Topic, interactive: Boolean = true): Unit = {
+    debug(s"id2: $updateMetadata $article ${sourceFile.getName} $interactive")
     new MyWorker("Import document", new javafx.concurrent.Task[Unit] {
       override def call(): Unit = {
         var a = if (article == null) new Article(title = sourceFile.getName) else article
@@ -126,7 +127,7 @@ object ImportHelper extends Logging {
           if (sourceFile.getName.endsWith(".pdf")) {
             doi = PdfHelper.getDOI(sourceFile)
             debug(" pdf doi=" + doi)
-            if (doi == "") Helpers.runUIwait {
+            if (doi == "" && interactive) Helpers.runUIwait {
               doi = getDOImanually(sourceFile.getName, sourceFile.getAbsolutePath)
             }
             if (doi != "") {
@@ -191,6 +192,7 @@ object ImportHelper extends Logging {
           }
           ApplicationController.submitArticleChanged(a)
           ApplicationController.showNotification("import successful of " + a)
+          debug("import successful of " + a)
         }
         if (!backgroundImportRunning.compareAndSet(true, false)) {
           throw new Exception("illegal state: backgroundImportRunning was false!")
@@ -202,14 +204,15 @@ object ImportHelper extends Logging {
   def updateMetadataFromDoc(article: Article, sourceFile: File): Boolean = {
     if (!backgroundImportRunning.compareAndSet(false, true)) {
       info("import document NOT executed because already running...")
-      return false
+      false
+    } else {
+      importDocument2(updateMetadata = true, article, sourceFile, doFileAction = false, null, copyIt = false, null)
+      true
     }
-    importDocument2(updateMetadata = true, article, sourceFile, doFileAction = false, null, copyIt = false, null)
-    true
   }
 
   // topic OR article can be NULL, but both should not be set!
-  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article, copyFile: Option[Boolean], isAdditionalDoc: Boolean): Boolean = {
+  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article, copyFile: Option[Boolean], isAdditionalDoc: Boolean, interactive: Boolean = true): Boolean = {
     if (!backgroundImportRunning.compareAndSet(false, true)) {
       info("import document NOT executed because already running...")
       return false
@@ -256,7 +259,7 @@ object ImportHelper extends Logging {
       }
     } else copyFile.get
 
-    importDocument2(!isAdditionalDoc, article, sourceFile, doFileAction = true, lastfolder, copyIt = copyIt, topic)
+    importDocument2(!isAdditionalDoc, article, sourceFile, doFileAction = true, lastfolder, copyIt = copyIt, topic, interactive)
     true
   }
 
