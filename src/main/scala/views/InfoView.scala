@@ -1,27 +1,80 @@
 package views
 
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import db.{Article, ReftoolDB}
-import framework.{ApplicationController, MyAction, GenericView}
+import db.{Topic, Article, ReftoolDB}
+import framework._
 import org.squeryl.PrimitiveTypeMode._
-import util.{AppStorage, FileHelper}
+import util.{ImportHelper, AppStorage, FileHelper}
 
+import scala.collection.immutable.HashMap
 import scala.collection.mutable.ArrayBuffer
+import scalafx.concurrent.Task
 import scalafx.geometry.Insets
 import scalafx.scene.control._
 import scalafx.scene.image.Image
 import scalafx.scene.layout.BorderPane
+import scalafx.stage.DirectoryChooser
 
-class InfoView extends GenericView("infoview") {
-  debug(" initializing infoview...")
+class InfoView extends GenericView("toolview") {
+  debug(" initializing toolview...")
 
-  text = "Info"
+  text = "Tools"
 
   val taInfo = new TextArea()
 
-  val aDBstats: MyAction = new MyAction("Info", "Generate DB statistics") {
+  val aImportPDFTree: MyAction = new MyAction("Tools", "Import PDF tree") {
+    tooltipString = "Imports a whole PDF folder structure into database\n(under new toplevel-topic)"
+    action = () => {
+      val res = new DirectoryChooser { title = "Select base import directory" }.showDialog(main.Main.stage)
+      if (res != null) {
+        // must run from background task, otherwise hangs on UI update!
+        new Thread {
+          override def run(): Unit = {
+            debug("call in Worker import pdf tree")
+            val topicMap = new HashMap[java.io.File, Topic]
+            val articleMap = new HashMap[java.io.File, Article]
+            val ds = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())
+            debug("here0")
+            val tbase = Helpers.runUIwait( inTransaction {
+              ReftoolDB.topics.insert(new Topic("000-import-" + ds, ReftoolDB.rootTopic.id, expanded = true))
+            })
+            debug("here1")
+
+            def walkThroughAll(base: File, parentTopic: Topic): Array[File] = {
+              // base is directory!
+              val thisTopic = Helpers.runUIwait( inTransaction {
+                ReftoolDB.topics.insert(new Topic(base.getName, parentTopic.id, expanded = true))
+              })
+
+              debug("add new topic " + thisTopic + "   BELOW " + parentTopic)
+              val these = base.listFiles
+              these.filter(_.isFile).filter(!_.getName.startsWith(".")).foreach(ff => {
+                debug("  import file: " + ff.getName)
+                while (!Helpers.runUIwait(ImportHelper.importDocument(ff, thisTopic, null, copyFile = Some(true), isAdditionalDoc = false, interactive = false))) {
+                  debug("waiting...")
+                  Thread.sleep(1000) // TODO this whole thing doesn't work
+                  debug("waiting done, try again...")
+                }
+                Thread.sleep(3000) // TODO without this it doesn't work!!! some locking problem in importhelper!
+              })
+              these ++ these.filter(_.isDirectory).flatMap(walkThroughAll(_, thisTopic))
+            }
+            debug("hereA")
+            walkThroughAll(res, tbase)
+            debug("hereB")
+            Helpers.runUIwait { ApplicationController.submitRevealTopic(tbase) }
+            debug("hereC")
+          }
+        }.start()
+      }
+    }
+    enabled = true
+  }
+
+  val aDBstats: MyAction = new MyAction("Tools", "Generate DB statistics") {
     image = new Image(getClass.getResource("/images/dbstats.png").toExternalForm)
     tooltipString = "Generate DB statistics in " + ReftoolDB.TDBSTATS
     action = () => {
@@ -42,7 +95,7 @@ class InfoView extends GenericView("infoview") {
     enabled = true
   }
 
-  val aFindOrphanedPDFs: MyAction = new MyAction("Info", "Find orphaned documents") {
+  val aFindOrphanedPDFs: MyAction = new MyAction("Tools", "Find orphaned documents") {
     image = new Image(getClass.getResource("/images/checkpdfs.png").toExternalForm)
     tooltipString = "List orphaned and multiple times used documents\nTakes a long time!"
     action = () => {
@@ -73,7 +126,7 @@ class InfoView extends GenericView("infoview") {
     enabled = true
   }
 
-  val aCheckArticleDocs: MyAction = new MyAction("Info", "Check article documents") {
+  val aCheckArticleDocs: MyAction = new MyAction("Tools", "Check article documents") {
     image = new Image(getClass.getResource("/images/articledocs.png").toExternalForm)
     tooltipString = "Check for articles with documents that are missing"
     action = () => {
@@ -99,7 +152,7 @@ class InfoView extends GenericView("infoview") {
     enabled = true
   }
 
-  val aMemory: MyAction = new MyAction("Info", "Memory info") {
+  val aMemory: MyAction = new MyAction("Tools", "Memory info") {
     image = new Image(getClass.getResource("/images/meminfo.png").toExternalForm)
     tooltipString = "Memory cleanup and statistics"
     action = () => {
@@ -115,7 +168,7 @@ class InfoView extends GenericView("infoview") {
     enabled = true
   }
 
-  val aClear: MyAction = new MyAction("Info", "Clear output") {
+  val aClear: MyAction = new MyAction("Tools", "Clear output") {
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
     tooltipString = "Clear info output"
     action = () => {

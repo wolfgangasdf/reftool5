@@ -161,6 +161,8 @@ object ReftoolDB extends Schema with Logging {
   val SLASTTOPICID = "lasttopicid"
   val SLASTARTICLEID = "lastarticleid"
 
+  var rootTopic: Topic = null
+
 //  throw new Exception("huhu")
   /*
     there are issues in squeryl with renaming of columns ("named"). if a foreign key does not work, use uppercase!
@@ -279,17 +281,17 @@ object ReftoolDB extends Schema with Logging {
         dbSetSchemaVersion(lastschemaversion)
       }
       // ensure essential topics are present
-      var troot = topics.where(t => t.parent === 0).headOption.orNull
-      if (troot == null) {
+      rootTopic = topics.where(t => t.parent === 0).headOption.orNull
+      if (rootTopic == null) {
         debug("create root topic")
-        troot = new Topic("root", 0, true)
-        topics.insert(troot)
+        rootTopic = new Topic("root", 0, true)
+        rootTopic = topics.insert(rootTopic)
       }
-      if (topics.where(t => t.title === TORPHANS).isEmpty) topics.insert(new Topic(TORPHANS, troot.id, false))
-      if (topics.where(t => t.title === TSTACK).isEmpty) topics.insert(new Topic(TSTACK, troot.id, false))
-      if (topics.where(t => t.title === TDBSTATS).isEmpty) topics.insert(new Topic(TDBSTATS, troot.id, false))
+      if (topics.where(t => t.title === TORPHANS).isEmpty) topics.insert(new Topic(TORPHANS, rootTopic.id, false))
+      if (topics.where(t => t.title === TSTACK).isEmpty) topics.insert(new Topic(TSTACK, rootTopic.id, false))
+      if (topics.where(t => t.title === TDBSTATS).isEmpty) topics.insert(new Topic(TDBSTATS, rootTopic.id, false))
 
-      if (startwithempty) addDemoContent(troot)
+      if (startwithempty) addDemoContent(rootTopic)
     }
     info("Database loaded!")
   }
