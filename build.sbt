@@ -26,4 +26,3 @@ appbundle.icon := Some(file("src/deploy/macosx/reftool5.icns"))
 appbundle.mainClass := JFX.mainClass.value
 
 appbundle.executable := file("src/deploy/macosx/universalJavaApplicationStub")
-

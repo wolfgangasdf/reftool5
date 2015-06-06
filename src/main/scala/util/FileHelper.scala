@@ -54,10 +54,10 @@ object FileHelper extends Logging {
   def getDocumentFileAbs(relPath: String) = new File(AppStorage.config.pdfpath + "/" + relPath)
 
   def getDocumentPathRelative(file: File) = {
-    if (!file.getAbsolutePath.startsWith(AppStorage.config.pdfpath + "/")) {
+    if (!file.getAbsolutePath.startsWith(new File(AppStorage.config.pdfpath).getAbsolutePath)) {
       throw new IOException("file " + file + " is not below reftool store!")
     }
-    file.getAbsolutePath.substring( (AppStorage.config.pdfpath + "/").length )
+    file.getAbsolutePath.substring( new File(AppStorage.config.pdfpath).getAbsolutePath.length + 1 )
   }
 
   def openDocument(relPath: String) = {
@@ -85,7 +85,7 @@ object FileHelper extends Logging {
     if (Helpers.isMac) {
       Runtime.getRuntime.exec(Array("open", "-R", file.getAbsolutePath))
     } else if (Helpers.isWin) {
-      Runtime.getRuntime.exec("explorer.exe /select,"+file.getCanonicalPath)
+      Runtime.getRuntime.exec("explorer.exe /select,"+file.getAbsolutePath)
     } else if (Helpers.isLinux) {
       error("not supported OS, tell me how to do it!")
     } else {
