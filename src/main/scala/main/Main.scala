@@ -23,6 +23,7 @@ import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control._
 import scalafx.scene.control.Button._
 import scalafx.scene.control.TextField._
+import scalafx.scene.control.ComboBox._
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout._
 import scalafx.stage.{WindowEvent, DirectoryChooser, Stage}
@@ -257,31 +258,47 @@ object Main extends JFXApp with Logging {
       tryit {
         scene = new Scene {
           content = new VBox(20) {
+            alignment = scalafx.geometry.Pos.Center
+            fillWidth = true
             children += new ImageView(new Image(getClass.getResource("/images/about.png").toExternalForm))
             if (!doAutostart) {
               children += new Button("Open last reftool data directory \n" + AppStorage.config.datadir) {
+                maxWidth = Double.PositiveInfinity
                 disable = !new java.io.File(AppStorage.config.datadir).isDirectory
                 onAction = (ae: ActionEvent) => {
                   loadMainScene(createNewStorage = false)
                 }
               }
+              children += new ComboBox[String](AppStorage.config.recentDatadirs) {
+                maxWidth = Double.PositiveInfinity
+                promptText = "Select recent data directory..."
+                disable = AppStorage.config.recentDatadirs.isEmpty
+                onAction = (ae: ActionEvent) => {
+                  if (new File(value.value).isDirectory) {
+                    AppStorage.config.datadir = value.value
+                    loadMainScene(createNewStorage = false)
+                  }
+                }
+              }
               children += new Button("Open other reftool data directory") {
+                maxWidth = Double.PositiveInfinity
                 onAction = (ae: ActionEvent) => {
                   val res = new DirectoryChooser { title = "Select reftool data directory" }.showDialog(stage)
                   if (res != null) {
-                    AppStorage.config.datadir = res.getPath
+                    AppStorage.config.datadir = res.getAbsolutePath
                     loadMainScene(createNewStorage = false)
                   }
                 }
               }
               children += new Button("Create new reftool data directory...") {
+                maxWidth = Double.PositiveInfinity
                 onAction = (ae: ActionEvent) => {
                   val res = new DirectoryChooser { title = "Select new reftool data directory" }.showDialog(stage)
                   if (res != null) {
                     if (res.listFiles.nonEmpty) {
                       new Alert(AlertType.Error, "Need empty new data directory").showAndWait()
                     } else {
-                      AppStorage.config.datadir = res.getPath
+                      AppStorage.config.datadir = res.getAbsolutePath
                       loadMainScene(createNewStorage = true)
                     }
                   }
