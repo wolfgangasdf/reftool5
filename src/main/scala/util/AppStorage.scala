@@ -14,6 +14,7 @@ class Config extends Logging {
   val uiSettings = new mutable.HashMap[String, String]()
 
   var datadir = ""
+  var recentDatadirs = Array[String]()
   var autoimportdir = ""
   var debuglevel = 0
   var showstartupdialog = false
@@ -82,7 +83,9 @@ object AppStorage extends Logging {
               sys.error("wrong settings version")
               return
             }
-          case "lastdatadir" => config.datadir = sett(1)
+          case "recentdatadirs" =>
+            config.recentDatadirs = sett(1).split("\t")
+            if (config.recentDatadirs.nonEmpty) config.datadir = config.recentDatadirs.head
           case "autoimportdir" => config.autoimportdir = sett(1)
           case "debuglevel" => config.debuglevel = sett(1).toInt
           case "showstartupdialog" => config.showstartupdialog = sett(1).toBoolean
@@ -103,7 +106,8 @@ object AppStorage extends Logging {
     }
 
     saveSett("reftoolsettingsversion", 1)
-    saveSett("lastdatadir", config.datadir)
+    config.recentDatadirs = Array(config.datadir) ++ config.recentDatadirs.filterNot(_ == config.datadir)
+    saveSett("recentdatadirs", config.recentDatadirs.mkString("\t"))
     saveSett("autoimportdir", config.autoimportdir)
     saveSett("debuglevel", config.debuglevel)
     saveSett("showstartupdialog", config.showstartupdialog)
