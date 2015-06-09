@@ -14,7 +14,7 @@ object PdfHelper extends Logging {
 
   // doi syntax: http://www.doi.org/doi_handbook/2_Numbering.html#2.2
   // regex from http://stackoverflow.com/questions/27910/finding-a-doi-in-a-document-or-page
-  val doire = """(?s).*\b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b\s.*""".r
+  val doire = """\b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b(?s)\s""".r
 
   def getDOI(file: File) = {
     var doi = ""
@@ -30,7 +30,7 @@ object PdfHelper extends Logging {
         val v = Option(info.getCustomMetadataValue(k)).getOrElse("").toUpperCase
         debug(s"pdf metadata [$k]: " + v)
         v match {
-          case doire(sd) => debug("   match!!!"); doi = sd
+          case doire.unanchored(sd) => debug("   match!!!"); doi = sd
           case _ =>
         }
       }
@@ -45,25 +45,22 @@ object PdfHelper extends Logging {
       val text = pstrip.getText(pdoc)
       debug("search first page for doi link...")
       // debug("first page:\n" + text)
-      text match {
-        case doire(ddd) =>
-          debug("  found doi link: " + ddd)
-          doi = ddd
-        case _ =>
-          val text2 = text.replaceAll("""[\r\n]""", "")
-          debug("found no doi, check for vertical arxiv id...")
-          //debug("first page without line ends:\n" + text2)
-          val re2 = """.*arXiv:(\d+\.\d+)(?:v\d+)*\s.*""".r
-          text2 match {
-            case re2(aaa) =>
-              debug("  found arxiv id: " + aaa)
-              doi = "arxiv:" + aaa
-            case _ => debug("could not find doi on first pdf page!")
-          }
+      doi = doire.findFirstIn(text).getOrElse("")
+      if (doi == "") {
+        val text2 = text.replaceAll("""[\r\n]""", "")
+        debug("found no doi, check for vertical arxiv id...")
+        //debug("first page without line ends:\n" + text2)
+        val re2 = """.*arXiv:(\d+\.\d+)(?:v\d+)*\s.*""".r
+        text2 match {
+          case re2(aaa) =>
+            debug("  found arxiv id: " + aaa)
+            doi = "arxiv:" + aaa
+          case _ => debug("could not find doi on first pdf page!")
+        }
       }
     }
     pdf.close()
-    debug("getDOI = [" + doi + "]")
-    doi
+    debug("getDOI = [" + doi.trim + "]")
+    doi.trim
   }
 }
