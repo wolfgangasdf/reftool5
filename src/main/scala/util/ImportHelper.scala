@@ -157,7 +157,7 @@ object ImportHelper extends Logging {
           // choose nice filename if possible
           val (sourceName, sourceExt) = FileHelper.splitName(sourceFile.getName)
           val newFileName = if (a.title != "" && a.bibtexid != "") {
-            a.bibtexid + "-" + FileHelper.cleanFileNameString(a.title) + "." + sourceExt
+            FileHelper.cleanFileNameString(a.bibtexid + "-" + FileHelper.cleanFileNameString(a.title)) + "." + sourceExt
           } else {
             FileHelper.cleanFileNameString(sourceName) + "." + sourceExt
           }
