@@ -1,17 +1,12 @@
 package util
 
-/**
- * Created with IntelliJ IDEA.
- * User: wolle
- * Date: 14.10.2012
- * Time: 18:47
- * To change this template use File | Settings | File Templates.
- */
-
 import java.io._
 import java.net.URI
 
+import db.Article
 import framework.{Logging, Helpers}
+
+import scala.util.Random
 
 object FileHelper extends Logging {
 
@@ -47,8 +42,8 @@ object FileHelper extends Logging {
     val name = f.substring(0, f.lastIndexOf('.'))
     (name, extension)
   }
-  def cleanFileNameString(fn: String) = {
-    StringHelper.headString(fn.replaceAll("[^a-zA-Z0-9-]", ""), 30)
+  def cleanFileNameString(fn: String, maxlen: Int) = {
+    StringHelper.headString(fn.replaceAll("[^a-zA-Z0-9-]", ""), maxlen)
   }
 
   def getDocumentFileAbs(relPath: String) = new File(AppStorage.config.pdfpath + "/" + relPath)
@@ -68,6 +63,49 @@ object FileHelper extends Logging {
         desktop.open(getDocumentFileAbs(relPath))
       }
     }
+  }
+
+  def getLastImportFolder: File = {
+    val pdfpath = new File(AppStorage.config.pdfpath)
+    val ifolders = pdfpath.listFiles(new FileFilter {
+      override def accept(pathname: File): Boolean = pathname.getName.startsWith(AppStorage.config.importfolderprefix)
+    }).sorted
+    debug("import folders:\n" + ifolders.mkString("\n"))
+    var lastfolder = if (ifolders.length == 0)
+      new File(AppStorage.getImportFolder(1))
+    else
+      ifolders.last
+    if (lastfolder.exists()) {
+      if (lastfolder.list().length > 99) {
+        val rex = """.*-([0-9]+)""".r
+        val lastno = lastfolder.getName match {
+          case rex(s) => s.toInt
+        }
+        lastfolder = new File(AppStorage.getImportFolder(lastno + 1))
+        info("new import folder: " + lastfolder)
+      }
+    }
+    if (!lastfolder.exists()) lastfolder.mkdir()
+    lastfolder
+  }
+
+  def getDocumentFilenameBase(a: Article, docname: String): Option[String] = {
+    if (a.title != "" && a.bibtexid != "") Some(FileHelper.cleanFileNameString(
+        a.bibtexid + "-" + FileHelper.cleanFileNameString(a.title, 20) + "-" + docname
+      , 70))
+    else None
+  }
+  def getUniqueDocFile(lastfolder: File, a: Article, docname: String, startfilename: String): File = {
+    // choose nice filename if possible
+    val (sourceName, sourceExt) = FileHelper.splitName(startfilename)
+    val newFileName = getDocumentFilenameBase(a, docname).getOrElse(FileHelper.cleanFileNameString(sourceName, 30))
+
+    // get unique file
+    var newFile1 = new File(lastfolder.getAbsolutePath + "/" + newFileName + "." + sourceExt)
+    while (newFile1.exists()) {
+      newFile1 = new File(lastfolder.getAbsolutePath + "/" + newFileName + "-" + Random.nextInt(1000) + "." + sourceExt)
+    }
+    newFile1
   }
 
   def openURL(url: String) = {

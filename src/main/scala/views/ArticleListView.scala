@@ -6,6 +6,7 @@ import framework.{ApplicationController, GenericView, MyAction}
 import org.squeryl.PrimitiveTypeMode._
 import util.{DnDHelper, FileHelper, StringHelper}
 
+import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
 import scalafx.beans.property.StringProperty
 import scalafx.collections.ObservableBuffer
@@ -259,6 +260,35 @@ class ArticleListView extends GenericView("articlelistview") {
       }
     }
   }
+  val aUpdateDocumentFilenames = new MyAction("Article", "Update document filenames") {
+    tooltipString = "use [bibtexid]-[title]-[docname]"
+    action = () => inTransaction {
+      val articles = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
+      articles.foreach( a => {
+        debug("renaming " + a + " ...")
+        val dlnew = a.getDocuments.map(d => {
+          val dfb = FileHelper.getDocumentFilenameBase(a, d.docName)
+          val renameit = if (dfb.nonEmpty) {
+            !d.docPath.contains(dfb.get) // lazy...
+          } else false
+          if (renameit) {
+            val lastfolder = FileHelper.getLastImportFolder
+            val oldFile = FileHelper.getDocumentFileAbs(d.docPath)
+            FileHelper.getDocumentFilenameBase(a, d.docName) foreach( _ => {
+              val newFile = FileHelper.getUniqueDocFile(lastfolder, a, d.docName, oldFile.getName)
+              debug(s"renaming [$oldFile] to [$newFile]")
+              java.nio.file.Files.move(oldFile.toPath, newFile.toPath)
+              d.docPath = FileHelper.getDocumentPathRelative(newFile)
+            })
+          }
+          d
+        })
+        a.setDocuments(dlnew.toList)
+        ReftoolDB.articles.update(a)
+        ApplicationController.submitArticleChanged(a)
+      })
+    }
+  }
 
   alv.selectionModel().selectedItems.onChange(
     (ob, change) => {
@@ -273,6 +303,7 @@ class ArticleListView extends GenericView("articlelistview") {
         aOpenPDF.enabled = false
         aRevealPDF.enabled = false
         aOpenURL.enabled = false
+        aUpdateDocumentFilenames.enabled = false
       } else if (change.nonEmpty) { // no idea why it's empty sometimes...
         aRemoveArticle.enabled = true
         aCopyToStack.enabled = true
@@ -280,6 +311,7 @@ class ArticleListView extends GenericView("articlelistview") {
         aRemoveFromTopic.enabled = currentTopic != null
         aCopyURLs.enabled = true
         aCopyPDFs.enabled = true
+        aUpdateDocumentFilenames.enabled = true
         if (ob.size == 1) {
           aSetColor.enabled = currentTopic != null
           aOpenPDF.enabled = true

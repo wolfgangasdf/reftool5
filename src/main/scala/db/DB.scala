@@ -45,6 +45,10 @@ class Document(var docName: String, var docPath: String) extends Ordered[Documen
     else -1
   }
 }
+object Document {
+  val NMAIN = "0-main"
+  val NOTHER = "1-other"
+}
 
 class Article(var entrytype: String = "",
               var title: String = "",
@@ -83,13 +87,13 @@ class Article(var entrytype: String = "",
           abres += new Document(docinfo(0), docinfo(1))
         })
       } else
-        abres += new Document("0-main", pdflink)
+        abres += new Document(Document.NMAIN, pdflink)
     }
     abres.sorted
   }
+
   def setDocuments(dl: List[Document]) = {
     pdflink = dl.map(d => s"${d.docName}\t${d.docPath}\n").mkString("")
-    debug("setdocs: " + pdflink)
   }
 
   // list of <docname>\t<docpath>\n OR <docpath>
