@@ -218,6 +218,10 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
 
   onDragDone = (de: DragEvent) => clearDnDFormatting()
 
+  onMouseClicked = (me: MouseEvent) => {
+    if (me.clickCount == 1)
+      ApplicationController.submitShowArticlesFromTopic(item.value)
+  }
 }
 object MyTreeCell {
   var lastDragoverCell: TreeCell[Topic] = null
@@ -459,7 +463,7 @@ class TopicsTreeView extends GenericView("topicsview") {
   tv.selectionModel().selectedItem.onChange { (_, oldVal, newVal) => {
     if (newVal != null) {
       debug(s"tv sel onchange old=$oldVal new=$newVal: ")
-      ApplicationController.submitShowArticlesFromTopic(newVal.getValue)
+      // show articles moved to TreeCell: refresh articles list if single-click on topic!
       aAddArticle.enabled = true
       aAddTopic.enabled = true
       aExportBibtex.enabled = true
