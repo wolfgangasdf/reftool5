@@ -200,6 +200,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
             a.topics.associate(treeItem.value.getValue)
             ApplicationController.submitShowArticlesFromTopic(DnDHelper.articlesTopic)
           }
+          ApplicationController.submitArticleChanged(a)
         }
       }
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
