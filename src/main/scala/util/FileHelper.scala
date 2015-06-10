@@ -48,7 +48,7 @@ object FileHelper extends Logging {
     (name, extension)
   }
   def cleanFileNameString(fn: String) = {
-    StringHelper.headString(fn.replaceAll("[^a-zA-Z0-9]", ""), 30)
+    StringHelper.headString(fn.replaceAll("[^a-zA-Z0-9-]", ""), 30)
   }
 
   def getDocumentFileAbs(relPath: String) = new File(AppStorage.config.pdfpath + "/" + relPath)
