@@ -56,6 +56,8 @@ object AppSettings extends Logging {
 object AppStorage extends Logging {
   var config : Config = null
 
+  def getImportFolder(num: Int) = AppStorage.config.pdfpath + "/" + AppStorage.config.importfolderprefix + num
+
   def splitsetting(ss: String) : List[String] = {
     val commapos = ss.indexOf("=")
     if (commapos > -1) {
@@ -84,7 +86,7 @@ object AppStorage extends Logging {
               return
             }
           case "recentdatadirs" =>
-            config.recentDatadirs = sett(1).split("\t")
+            config.recentDatadirs = sett(1).split("\t").filter(dd => new java.io.File(dd).isDirectory)
             if (config.recentDatadirs.nonEmpty) config.datadir = config.recentDatadirs.head
           case "autoimportdir" => config.autoimportdir = sett(1)
           case "debuglevel" => config.debuglevel = sett(1).toInt

@@ -27,8 +27,6 @@ object ImportHelper extends Logging {
   // this variable is reset if import finished (successful or not)
   val backgroundImportRunning = new java.util.concurrent.atomic.AtomicBoolean(false)
 
-  private def getImportFolder(num: Int) = AppStorage.config.pdfpath + "/" + AppStorage.config.importfolderprefix + num
-
   private def getDOImanually(iniSearch: String, filename: String): String = {
     var doi = ""
     val webView = new WebView {
@@ -154,26 +152,15 @@ object ImportHelper extends Logging {
 
         updateProgress(60, 100)
         if (doFileAction) {
-          // choose nice filename if possible
-          val (sourceName, sourceExt) = FileHelper.splitName(sourceFile.getName)
-          val newFileName = if (a.title != "" && a.bibtexid != "") {
-            FileHelper.cleanFileNameString(a.bibtexid + "-" + FileHelper.cleanFileNameString(a.title)) + "." + sourceExt
-          } else {
-            FileHelper.cleanFileNameString(sourceName) + "." + sourceExt
-          }
+          val newdoc = new Document(if (article == null) Document.NMAIN else Document.NOTHER, "")
 
-          // get unique file
-          val newFile0 = new File(lastfolder.getAbsolutePath + "/" + newFileName)
-          var newFile1 = newFile0
-          while (newFile1.exists()) {
-            val (name, extension) = FileHelper.splitName(newFile1.getName)
-            newFile1 = new File(lastfolder.getAbsolutePath + "/" + name + "-" + Random.nextInt(1000) + "." + extension)
-          }
-          val newFile1rel = FileHelper.getDocumentPathRelative(newFile1)
+          val newFile1 = FileHelper.getUniqueDocFile(lastfolder, a, newdoc.docName, sourceFile.getName)
+
+          newdoc.docPath = FileHelper.getDocumentPathRelative(newFile1)
 
           // add pdf to documents
           val docs = a.getDocuments
-          docs += new Document(if (article == null) "0main" else "1additional", newFile1rel)
+          docs += newdoc
           a.setDocuments(docs.toList)
 
           // actually copy/move file
@@ -221,26 +208,7 @@ object ImportHelper extends Logging {
     debug(s"!!!!!!!!!!! importDocument: topic=$topic article=$article sourceFile=$sourceFile")
     assert(!((article != null) && (topic != null))) // both must not be given!
 
-    val pdfpath = new File(AppStorage.config.pdfpath)
-    val ifolders = pdfpath.listFiles(new FileFilter {
-      override def accept(pathname: File): Boolean = pathname.getName.startsWith(AppStorage.config.importfolderprefix)
-    }).sorted
-    debug("import folders:\n" + ifolders.mkString("\n"))
-    var lastfolder = if (ifolders.length == 0)
-      new File(getImportFolder(1))
-    else
-      ifolders.last
-    if (lastfolder.exists()) {
-      if (lastfolder.list().length > 99) {
-        val rex = """.*-([0-9]+)""".r
-        val lastno = lastfolder.getName match {
-          case rex(s) => s.toInt
-        }
-        lastfolder = new File(getImportFolder(lastno + 1))
-        info("new import folder: " + lastfolder)
-      }
-    }
-    if (!lastfolder.exists()) lastfolder.mkdir()
+    val lastfolder = FileHelper.getLastImportFolder
 
     // check if move or copy file
     val copyIt = if (copyFile.isEmpty) Helpers.runUIwait {

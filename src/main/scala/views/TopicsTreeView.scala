@@ -282,7 +282,7 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   def loadTopicsShowID(id: Long): Unit = {
     inTransaction {
-      ReftoolDB.topics.lookup(id) foreach(t => loadTopics(revealLastTopic = false, t))
+      ReftoolDB.topics.lookup(id) foreach(t => loadTopics(revealLastTopic = false, revealTopic = t))
     }
   }
   def loadTopics(revealLastTopic: Boolean = true, revealTopic: Topic = null, editTopic: Boolean = false, clearSearch: Boolean = false): Unit = {
@@ -329,6 +329,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         if (tin.getValue != null) if (tin.getValue.id == tlast.id) {
           tv.requestFocus()
           tv.selectionModel.value.select(tin)
+          ApplicationController.submitShowArticlesFromTopic(tin.getValue)
           val idx = tv.selectionModel.value.getSelectedIndex
           tv.scrollTo(math.max(0, idx - 5))
           if (editTopic) {
