@@ -113,7 +113,9 @@ object ImportHelper extends Logging {
     doi
   }
 
-  private def importDocument2(updateMetadata: Boolean, article: Article, sourceFile: File, doFileAction: Boolean, lastfolder: File, copyIt: Boolean, topic: Topic, interactive: Boolean = true) = {
+  private def importDocument2(updateMetadata: Boolean, article: Article, sourceFile: File,
+                              doFileAction: Boolean, lastfolder: File, copyIt: Boolean, topic: Topic,
+                              interactive: Boolean = true, parsePdf: Boolean = true) = {
     debug(s"id2: $updateMetadata $article ${sourceFile.getName} $interactive")
     new javafx.concurrent.Task[Unit] {
       override def call(): Unit = {
@@ -123,7 +125,7 @@ object ImportHelper extends Logging {
           updateMessage("find document metadata...")
           var doi = ""
           if (sourceFile.getName.endsWith(".pdf")) {
-            doi = PdfHelper.getDOI(sourceFile)
+            if (parsePdf) doi = PdfHelper.getDOI(sourceFile)
             debug(" pdf doi=" + doi)
             if (doi == "" && interactive) Helpers.runUIwait {
               doi = getDOImanually(sourceFile.getName, sourceFile.getAbsolutePath)
@@ -188,12 +190,12 @@ object ImportHelper extends Logging {
     }
   }
 
-  def updateMetadataFromDoc(article: Article, sourceFile: File): Boolean = {
+  def updateMetadataFromDoc(article: Article, sourceFile: File, parsePdf: Boolean = false): Boolean = {
     if (!backgroundImportRunning.compareAndSet(false, true)) {
       info("import document NOT executed because already running...")
       false
     } else {
-      val task = importDocument2(updateMetadata = true, article, sourceFile, doFileAction = false, null, copyIt = false, null)
+      val task = importDocument2(updateMetadata = true, article, sourceFile, doFileAction = false, null, copyIt = false, null, parsePdf = parsePdf)
       new MyWorker( "Update metadata...", task, () => { backgroundImportRunning.set(false) } ).runInBackground()
       true
     }
