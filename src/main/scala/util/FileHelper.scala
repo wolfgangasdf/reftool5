@@ -118,8 +118,7 @@ object FileHelper extends Logging {
     }
   }
 
-  def revealDocument(relPath: String) {
-    val file = getDocumentFileAbs(relPath)
+  def revealFile(file: File): Unit = {
     if (Helpers.isMac) {
       Runtime.getRuntime.exec(Array("open", "-R", file.getAbsolutePath))
     } else if (Helpers.isWin) {
@@ -130,6 +129,7 @@ object FileHelper extends Logging {
       error("not supported OS, tell me how to do it!")
     }
   }
+  def revealDocument(relPath: String)  = revealFile(getDocumentFileAbs(relPath))
 
   def listFilesRec(f: File): Array[File] = {
     val these = f.listFiles

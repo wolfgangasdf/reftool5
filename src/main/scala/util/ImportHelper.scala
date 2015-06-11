@@ -1,6 +1,6 @@
 package util
 
-import java.io.{File, FileFilter, StringReader, StringWriter}
+import java.io.{File, StringReader, StringWriter}
 
 import db.{Article, Document, ReftoolDB, Topic}
 import framework.{ApplicationController, Helpers, Logging, MyWorker}
@@ -8,7 +8,6 @@ import org.jbibtex._
 import org.squeryl.PrimitiveTypeMode._
 
 import scala.collection.JavaConversions._
-import scala.util.Random
 import scalafx.Includes._
 import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
@@ -27,7 +26,7 @@ object ImportHelper extends Logging {
   // this variable is reset if import finished (successful or not)
   val backgroundImportRunning = new java.util.concurrent.atomic.AtomicBoolean(false)
 
-  private def getDOImanually(iniSearch: String, filename: String): String = {
+  private def getDOImanually(iniSearch: String, filepath: String): String = {
     var doi = ""
     val webView = new WebView {
       prefHeight = 200
@@ -65,11 +64,18 @@ object ImportHelper extends Logging {
       }
     }
 
+    val btReveal = new Button("reveal") {
+      onAction = (ae: ActionEvent) => FileHelper.revealFile(new File(filepath))
+    }
+
     val myContent = new VBox {
       padding = Insets(10)
       spacing = 10
       children ++= Seq(
-        new Label("Import file: " + filename),
+        new HBox{ children ++= Seq(
+          new Label("Import file: " + filepath),
+          btReveal
+        )},
         new Label("Cannot extract the DOI from the pdf. Please either search for title or so, you can also enter the DOI manually here, or see below."),
         new HBox { children ++= Seq(tfSearch, btSearch) },
         webView,
