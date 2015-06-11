@@ -132,7 +132,7 @@ object FileHelper extends Logging {
   def revealDocument(relPath: String)  = revealFile(getDocumentFileAbs(relPath))
 
   def listFilesRec(f: File): Array[File] = {
-    val these = f.listFiles
+    val these = f.listFiles.filter(f => f.getName != ".DS_Store")
     these ++ these.filter(_.isDirectory).flatMap(listFilesRec)
   }
 
