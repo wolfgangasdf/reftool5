@@ -90,33 +90,36 @@ class InfoView extends GenericView("toolview") {
     enabled = true
   }
 
+  def addToInfo(s: String) = {
+    taInfo.appendText(s + "\n")
+    debug("i: " + s)
+  }
   val aFindOrphanedPDFs: MyAction = new MyAction("Tools", "Find orphaned documents") {
     image = new Image(getClass.getResource("/images/checkpdfs.png").toExternalForm)
     tooltipString = "List orphaned and multiple times used documents\nTakes a long time!"
     action = () => {
-      taInfo.text = "Retrieving all documents...\n"
+      addToInfo("Retrieving all documents...")
+      val alldocs = FileHelper.listFilesRec(new java.io.File(AppStorage.config.pdfpath)).filter(_.isFile)
+      addToInfo("  found " + alldocs.length + " files!")
+      addToInfo("find all used documents...")
+      val alladocs = new ArrayBuffer[String]()
       inTransaction {
-        val alldocs = FileHelper.listFilesRec(new java.io.File(AppStorage.config.pdfpath)).filter(_.isFile)
-        taInfo.appendText("  found " + alldocs.length + " files!")
-        taInfo.appendText("checking if they are used in articles...")
-        inTransaction {
-          var tocheck = alldocs.length
-          alldocs.foreach( doc => {
-            tocheck -= 1
-            if (tocheck % 100 == 0) debug(s"still $tocheck documents to check!")
-            val relpath = FileHelper.getDocumentPathRelative(doc)
-            val res = ReftoolDB.articles.where(a => a.pdflink like s"%$relpath%")
-            if (res.size != 1) {
-              val msg = if (res.isEmpty)
-                s"found orphaned document: $relpath"
-              else
-                s"multiple (${res.size}) use of: $relpath"
-              error(msg)
-              taInfo.appendText(msg + "\n")
-            }
-          })
-        }
+        ReftoolDB.articles.foreach(a => alladocs ++= a.getDocuments.filter(d => d.docPath.nonEmpty).map(d => d.docPath))
       }
+      addToInfo("  found " + alladocs.length + " article documents!")
+      addToInfo("find pdf orphans...")
+      alldocs.foreach( file => {
+        val relpath = FileHelper.getDocumentPathRelative(file)
+        val res = alladocs.filter(ad => ad == relpath)
+        if (res.length != 1) {
+          val msg = if (res.isEmpty)
+            s"found orphaned document: $relpath"
+          else
+            s"multiple (${res.size}) use of: $relpath"
+          addToInfo(msg)
+        }
+      })
+      addToInfo("done!")
     }
     enabled = true
   }

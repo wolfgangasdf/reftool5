@@ -84,10 +84,10 @@ class Article(var entrytype: String = "",
       if (pdflink.contains("\n")) {
         pdflink.split("\n").map(s => {
           val docinfo = s.split("\t")
-          abres += new Document(docinfo(0), docinfo(1))
+          abres += new Document(docinfo(0), docinfo(1).replaceFirst("^/+", ""))
         })
       } else
-        abres += new Document(Document.NMAIN, pdflink)
+        abres += new Document(Document.NMAIN, pdflink.replaceFirst("^/+", ""))
     }
     abres.sorted
   }
