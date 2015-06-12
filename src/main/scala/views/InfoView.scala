@@ -1,13 +1,12 @@
 package views
 
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 
 import db.{Topic, Article, ReftoolDB}
 import framework._
 import org.squeryl.PrimitiveTypeMode._
-import util.{ImportHelper, AppStorage, FileHelper}
+import util.{File, ImportHelper, AppStorage, FileHelper}
 
 import scala.collection.mutable.ArrayBuffer
 import scalafx.geometry.Insets
@@ -26,8 +25,9 @@ class InfoView extends GenericView("toolview") {
   val aImportPDFTree: MyAction = new MyAction("Tools", "Import PDF tree") {
     tooltipString = "Imports a whole PDF folder structure into database\n(under new toplevel-topic)"
     action = (_) => {
-      val res = new DirectoryChooser { title = "Select base import directory" }.showDialog(main.Main.stage)
-      if (res != null) {
+      val res2 = File(new DirectoryChooser { title = "Select base import directory" }.showDialog(main.Main.stage))
+      if (res2 != null) {
+        val res = File(res2)
         // must run from background task, otherwise hangs on UI update!
         new Thread {
           override def run(): Unit = {
@@ -46,7 +46,7 @@ class InfoView extends GenericView("toolview") {
               })
 
               debug("add new topic " + thisTopic + "   BELOW " + parentTopic)
-              val these = base.listFiles
+              val these = base.listFiles2
               these.filter(_.isFile).filter(!_.getName.startsWith(".")).foreach(ff => {
                 debug("  import file: " + ff.getName)
                 while (!Helpers.runUIwait(ImportHelper.importDocument(ff, thisTopic, null, copyFile = Some(true), isAdditionalDoc = false, interactive = false))) {
@@ -99,7 +99,7 @@ class InfoView extends GenericView("toolview") {
     tooltipString = "List orphaned and multiple times used documents\nTakes a long time!"
     action = (_) => {
       addToInfo("Retrieving all documents...")
-      val alldocs = FileHelper.listFilesRec(new java.io.File(AppStorage.config.pdfpath)).filter(_.isFile)
+      val alldocs = FileHelper.listFilesRec(new File(AppStorage.config.pdfpath)).filter(_.isFile)
       addToInfo("  found " + alldocs.length + " files!")
       addToInfo("find all used documents...")
       val alladocs = new ArrayBuffer[String]()
@@ -109,7 +109,7 @@ class InfoView extends GenericView("toolview") {
       addToInfo("  found " + alladocs.length + " article documents!")
       addToInfo("find pdf orphans...")
       alldocs.foreach( file => {
-        val relpath = FileHelper.toSlashSeparator(FileHelper.getDocumentPathRelative(file))
+        val relpath = FileHelper.getDocumentPathRelative(file)
         val res = alladocs.filter(ad => ad == relpath)
         if (res.length != 1) {
           val msg = if (res.isEmpty)

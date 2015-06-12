@@ -4,8 +4,6 @@ import org.apache.pdfbox.util.PDFTextStripper
 
 import scala.collection.JavaConversions._
 
-import java.io.File
-
 import org.apache.pdfbox.pdmodel.PDDocument
 
 import framework.Logging

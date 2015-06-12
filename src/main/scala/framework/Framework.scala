@@ -4,7 +4,7 @@ import javafx.scene
 
 import db.{Article, Topic}
 import main.Main
-import util.AppStorage
+import util.{File, AppStorage}
 
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
@@ -180,9 +180,9 @@ class MyInputDirchooser(gpRow: Int, labelText: String, iniText: String, helpStri
 
   val bt = new Button("Browse...") {
     onAction = (ae: ActionEvent) => {
-      val dc = new DirectoryChooser {
+      val dc = File(new DirectoryChooser {
         title = "Choose directory..."
-      }.showDialog(this.delegate.getScene.getWindow)
+      }.showDialog(this.delegate.getScene.getWindow))
       if (dc != null) {
         tf.text = dc.getAbsolutePath
       }
@@ -391,7 +391,7 @@ object ApplicationController extends Logging {
         // throw new Exception("aaaaatestexception")
         Thread.sleep(2000)
         updateProgress(30, 100)
-        val res = Helpers.runUIwait { new DirectoryChooser { title = "Select directory" }.showDialog(main.Main.stage) }
+        val res = File(Helpers.runUIwait { new DirectoryChooser { title = "Select directory" }.showDialog(main.Main.stage) })
         updateMessage("huhuhuhuhu2" + res)
         Thread.sleep(2000)
         updateProgress(100, 100)

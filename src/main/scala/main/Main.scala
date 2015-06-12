@@ -1,7 +1,7 @@
 package main
 
 
-import java.io.{File, FileOutputStream, PrintStream}
+import java.io
 
 import buildinfo.BuildInfo
 import db.ReftoolDB
@@ -189,12 +189,12 @@ object Main extends JFXApp with Logging {
   // redirect console output, must happen on top of this object!
   val oldOut = System.out
   val oldErr = System.err
-  var logps: FileOutputStream = null
-  System.setOut(new PrintStream(new MyConsole(false), true))
-  System.setErr(new PrintStream(new MyConsole(true), true))
+  var logps: io.FileOutputStream = null
+  System.setOut(new io.PrintStream(new MyConsole(false), true))
+  System.setErr(new io.PrintStream(new MyConsole(true), true))
 
   val logfile = File.createTempFile("reftool5log",".txt")
-  logps = new FileOutputStream(logfile)
+  logps = new io.FileOutputStream(logfile)
 
   Thread.currentThread().setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler {
     override def uncaughtException(t: Thread, e: Throwable): Unit = {
@@ -204,7 +204,7 @@ object Main extends JFXApp with Logging {
     }
   })
 
-  class MyConsole(errchan: Boolean) extends java.io.OutputStream {
+  class MyConsole(errchan: Boolean) extends io.OutputStream {
     override def write(b: Int): Unit = {
       runUI { if (mainScene != null) if (mainScene.logView != null) if (mainScene.logView.taLog != null) mainScene.logView.taLog.appendText(b.toChar.toString) }
       if (logps != null) logps.write(b)
@@ -248,7 +248,7 @@ object Main extends JFXApp with Logging {
   }
 
   def loadStartupDialog() = {
-    val doAutostart = !AppStorage.config.showstartupdialog && new java.io.File(AppStorage.config.datadir).isDirectory
+    val doAutostart = !AppStorage.config.showstartupdialog && new File(AppStorage.config.datadir).isDirectory
 
     stage = new PrimaryStage {
       title = "Reftool 5"
@@ -264,7 +264,7 @@ object Main extends JFXApp with Logging {
             if (!doAutostart) {
               children += new Button("Open last reftool data directory \n" + AppStorage.config.datadir) {
                 maxWidth = Double.PositiveInfinity
-                disable = !new java.io.File(AppStorage.config.datadir).isDirectory
+                disable = !new File(AppStorage.config.datadir).isDirectory
                 onAction = (ae: ActionEvent) => {
                   loadMainScene(createNewStorage = false)
                 }
@@ -283,7 +283,7 @@ object Main extends JFXApp with Logging {
               children += new Button("Open other reftool data directory") {
                 maxWidth = Double.PositiveInfinity
                 onAction = (ae: ActionEvent) => {
-                  val res = new DirectoryChooser { title = "Select reftool data directory" }.showDialog(stage)
+                  val res = File(new DirectoryChooser { title = "Select reftool data directory" }.showDialog(stage))
                   if (res != null) {
                     AppStorage.config.datadir = res.getAbsolutePath
                     loadMainScene(createNewStorage = false)
@@ -293,9 +293,9 @@ object Main extends JFXApp with Logging {
               children += new Button("Create new reftool data directory...") {
                 maxWidth = Double.PositiveInfinity
                 onAction = (ae: ActionEvent) => {
-                  val res = new DirectoryChooser { title = "Select new reftool data directory" }.showDialog(stage)
+                  val res = File(new DirectoryChooser { title = "Select new reftool data directory" }.showDialog(stage))
                   if (res != null) {
-                    if (res.listFiles.nonEmpty) {
+                    if (res.listFiles2.nonEmpty) {
                       new Alert(AlertType.Error, "Need empty new data directory").showAndWait()
                     } else {
                       AppStorage.config.datadir = res.getAbsolutePath

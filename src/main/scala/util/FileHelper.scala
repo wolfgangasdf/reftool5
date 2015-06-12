@@ -1,6 +1,6 @@
 package util
 
-import java.io._
+import java.io
 import java.net.URI
 
 import db.Article
@@ -8,12 +8,39 @@ import framework.{Logging, Helpers}
 
 import scala.util.Random
 
-object FileHelper extends Logging {
+// wrap everything that returns a java.io.File into util.File!
+class File(pathname: String) extends io.File(pathname) with Logging {
 
   def toSlashSeparator(s: String) = s.replaceAllLiterally("\\", "/")
 
+  override def listFiles(): Array[io.File] = { assert(assertion = false, "dont use this") ; null }
+  def listFiles2: Array[File] = super.listFiles.sorted.map(f => File(f))
+  override def listFiles(filter: io.FileFilter): Array[io.File] = { assert(assertion = false, "dont use this") ; null }
+  def listFiles2(filter: io.FileFilter): Array[File] = super.listFiles(filter).sorted.map(f => File(f))
+  override def listFiles(filter: io.FilenameFilter): Array[io.File] = { assert(assertion = false, "dont use this") ; null }
+  def listFiles2(filter: io.FilenameFilter): Array[File] = super.listFiles(filter).sorted.map(f => File(f))
+
+
+  override def getAbsolutePath: String = toSlashSeparator(super.getAbsolutePath)
+
+  override def getParent: String = toSlashSeparator(super.getParent)
+
+  override def getPath: String = toSlashSeparator(super.getPath)
+
+  override def getCanonicalPath: String = toSlashSeparator(super.getCanonicalPath)
+
+  override def toString: String = getPath
+
+}
+object File {
+  def apply(f: io.File) = if (f == null) null else new File(f.getAbsolutePath)
+  def createTempFile(prefix: String, suffix: String) = io.File.createTempFile(prefix, suffix)
+}
+
+object FileHelper extends Logging {
+
   def writeString(file: File, text : String) : Unit = {
-    val fw = new FileWriter(file)
+    val fw = new io.FileWriter(file)
     try{ fw.write(text) }
     finally{ fw.close() }
   }
@@ -25,7 +52,7 @@ object FileHelper extends Logging {
   }
 
   def foreachLine(file: File, proc : String=>Unit) : Unit = {
-    val br = new BufferedReader(new FileReader(file))
+    val br = new io.BufferedReader(new io.FileReader(file))
     try{ while(br.ready) proc(br.readLine) }
     finally{ br.close() }
   }
@@ -33,7 +60,7 @@ object FileHelper extends Logging {
     def deleteFile(dfile : File) : Unit = {
       if(dfile.isDirectory) {
         info("deleting " + dfile + " recursively")
-        dfile.listFiles.foreach{ f => deleteFile(f) }
+        dfile.listFiles2.foreach{ f => deleteFile(f) }
       }
       dfile.delete
     }
@@ -52,7 +79,7 @@ object FileHelper extends Logging {
 
   def getDocumentPathRelative(file: File) = {
     if (!file.getAbsolutePath.startsWith(new File(AppStorage.config.pdfpath).getAbsolutePath)) {
-      throw new IOException("file " + file + " is not below reftool store!")
+      throw new io.IOException("file " + file + " is not below reftool store!")
     }
     file.getAbsolutePath.substring( new File(AppStorage.config.pdfpath).getAbsolutePath.length + 1 )
   }
@@ -69,14 +96,14 @@ object FileHelper extends Logging {
 
   def getLastImportFolder: File = {
     val pdfpath = new File(AppStorage.config.pdfpath)
-    val ifolders = pdfpath.listFiles(new FileFilter {
-      override def accept(pathname: File): Boolean = pathname.getName.startsWith(AppStorage.config.importfolderprefix)
-    }).sorted
+    val ifolders = pdfpath.listFiles2(new io.FileFilter {
+      override def accept(pathname: io.File): Boolean = pathname.getName.startsWith(AppStorage.config.importfolderprefix)
+    })
     debug("import folders:\n" + ifolders.mkString("\n"))
-    var lastfolder = if (ifolders.length == 0)
+    var lastfolder: File = if (ifolders.isEmpty)
       new File(AppStorage.getImportFolder(1))
     else
-      ifolders.last
+      File(ifolders.last)
     if (lastfolder.exists()) {
       if (lastfolder.list().length > 99) {
         val rex = """.*-([0-9]+)""".r
@@ -134,8 +161,9 @@ object FileHelper extends Logging {
   def revealDocument(relPath: String)  = revealFile(getDocumentFileAbs(relPath))
 
   def listFilesRec(f: File): Array[File] = {
-    val these = f.listFiles.filter(f => f.getName != ".DS_Store")
-    these ++ these.filter(_.isDirectory).flatMap(listFilesRec)
+    val these = f.listFiles2.filter(f => f.getName != ".DS_Store")
+    val res = these ++ these.filter(_.isDirectory).flatMap(listFilesRec)
+    res.map(f => File(f))
   }
 
 }

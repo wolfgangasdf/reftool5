@@ -1,12 +1,12 @@
 package views
 
-import java.io.{File, FileOutputStream, PrintWriter}
+import java.io
 import javafx.scene.{control => jfxsc}
 
 import db.{Article, ReftoolDB, Topic}
 import framework._
 import org.squeryl.PrimitiveTypeMode._
-import util.{AppStorage, DnDHelper, ImportHelper}
+import util.{File, AppStorage, DnDHelper, ImportHelper}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -113,7 +113,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
 
   def clearDnDFormatting() {
     if (MyTreeCell.lastDragoverCell != null) { // clear old formatting
-      debug("clear DnD format " + MyTreeCell.lastDragoverCell)
+      // debug("clear DnD format " + MyTreeCell.lastDragoverCell)
       MyTreeCell.lastDragoverCell.effect = null
       MyTreeCell.lastDragoverCell = null
     }
@@ -134,7 +134,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       treeView.value.scrollTo(newtopindex.toInt)
     } else {
       MyTreeCell.lastDragoverCell = this
-      debug("setting effects for " + MyTreeCell.lastDragoverCell)
+      // debug("setting effects for " + MyTreeCell.lastDragoverCell)
       if (tirely < (tiheight * .25d)) { // determine drop position: onto or below
         effect = MyTreeCell.effectDropshadow
         res = 2
@@ -202,7 +202,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       }
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
-      val f = files.head
+      val f = File(files.head)
       debug(s" importing file $f treeItem=$treeItem")
       ImportHelper.importDocument(f, treeItem.value.getValue, null, Some(de.transferMode == TransferMode.COPY), isAdditionalDoc = false)
       dropOk = true
@@ -400,18 +400,18 @@ class TopicsTreeView extends GenericView("topicsview") {
         title = "Select bibtex export file"
         extensionFilters += new ExtensionFilter("bibtex files", "*.bib")
         if (t.exportfn != "") {
-          val oldef = new java.io.File(t.exportfn)
+          val oldef = new File(t.exportfn)
           initialFileName = oldef.getName
           initialDirectory = oldef.getParentFile
         } else initialFileName = "articles.bib"
       }
-      val fn = fc.showSaveDialog(toolbarButton.getParent.getScene.getWindow)
+      val fn = File(fc.showSaveDialog(toolbarButton.getParent.getScene.getWindow))
       if (fn != null) inTransaction {
         if (t.exportfn != fn.getPath) {
           t.exportfn = fn.getPath
           ReftoolDB.topics.update(t)
         }
-        val pw = new PrintWriter(new FileOutputStream(fn, false))
+        val pw = new io.PrintWriter(new io.FileOutputStream(fn, false))
         t.articles.foreach( a => pw.write(a.bibtexentry) )
         pw.close()
       }
@@ -521,14 +521,14 @@ class TopicsTreeView extends GenericView("topicsview") {
         val aid = AppStorage.config.autoimportdir
         if (aid != "") {
           val aidf = new File(aid)
-          val res = aidf.listFiles(new java.io.FilenameFilter() {
-            override def accept(dir: File, name: String): Boolean = name.startsWith("reftool5import") && name.endsWith(".pdf")
+          val res = aidf.listFiles2(new io.FilenameFilter() {
+            override def accept(dir: java.io.File, name: String): Boolean = name.startsWith("reftool5import") && name.endsWith(".pdf")
           })
           if (res.nonEmpty) {
             debug("background: found files: " + res.mkString(","))
             Helpers.runUI( {
               val sel = tv.getSelectionModel.getSelectedItem
-              ImportHelper.importDocument(res.head, if (sel != null) sel.getValue else null, null, copyFile = Some(false), isAdditionalDoc = false)
+              ImportHelper.importDocument(File(res.head), if (sel != null) sel.getValue else null, null, copyFile = Some(false), isAdditionalDoc = false)
             } )
             }
           }
