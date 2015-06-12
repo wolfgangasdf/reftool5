@@ -79,7 +79,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
   val aDeletePDF = new MyAction("Documents", "Delete document") {
     tooltipString = "Delete selected documents from article and delete document"
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
-    action = () => {
+    action = (_) => {
       new Alert(AlertType.Confirmation, "Really deleted selected documents", ButtonType.Yes, ButtonType.No).showAndWait() match {
         case Some(ButtonType.Yes) =>
           lv.selectionModel.value.getSelectedItems.foreach( dd => {
@@ -96,7 +96,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
   val aAddDocument = new MyAction("Documents", "Add document") {
     tooltipString = "Add document to article"
     image = new Image(getClass.getResource("/images/add_correction.png").toExternalForm)
-    action = () => {
+    action = (_) => {
       val fn = new FileChooser() {
         title = "Select new document"
       }.showOpenDialog(toolbarButton.getParent.getScene.getWindow)
@@ -109,7 +109,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
   val aRevealPDF = new MyAction("Article", "Reveal document") {
     tooltipString = "Reveal document in file browser"
     image = new Image(getClass.getResource("/images/Finder_icon.png").toExternalForm)
-    action = () => {
+    action = (_) => {
       val a = lv.selectionModel.value.getSelectedItem
       debug("reveal doc " + a.docPath)
       revealDocument(a.docPath)
@@ -119,7 +119,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
   val aOpenPDF = new MyAction("Article", "Open document") {
     tooltipString = "Open document"
     image = new Image(getClass.getResource("/images/pdf.png").toExternalForm)
-    action = () => {
+    action = (_) => {
       val a = lv.selectionModel.value.getSelectedItem
       debug("open doc " + a.docPath)
       openDocument(a.docPath)

@@ -15,7 +15,7 @@ import scalafx.geometry.Pos
 import scalafx.scene.control.Tab._
 import scalafx.scene.control._
 import scalafx.scene.image.{Image, ImageView}
-import scalafx.scene.input.KeyCombination
+import scalafx.scene.input.{MouseEvent, KeyCombination}
 import scalafx.scene.layout.{GridPane, HBox, Pane, VBox}
 import scalafx.scene.{Group, Node}
 import scalafx.stage.{DirectoryChooser, WindowEvent}
@@ -104,7 +104,7 @@ class MyAction(val category: String, val title: String) extends Logging {
   private var _enabled: Boolean = false
   private var _accelerator: KeyCombination = null
 
-  var action: () => Unit = null
+  var action: (String) => Unit = null // argument: modifier key
 
   // must use getter & setter because toolbarbutton etc has to be modified after it's instantiated
   def image = _image
@@ -137,16 +137,26 @@ class MyAction(val category: String, val title: String) extends Logging {
   val toolbarButton = {
     new Button {
       text = title
-      onAction = (ae: ActionEvent) => action()
+      onAction = (ae: ActionEvent) => action(MyAction.MNONE)
     }
+  }
+  toolbarButton.onMouseClicked = (me: MouseEvent) => {
+    // this is always called after action. but with shift-click, action() is not called!
+    if (me.shiftDown) action(MyAction.MSHIFT)
+    else if (me.controlDown) action(MyAction.MCTRL)
   }
   val menuEntry = {
     new MenuItem(title) {
-      onAction = (ae: ActionEvent) => action()
+      onAction = (ae: ActionEvent) => action(MyAction.MNONE)
     }
   }
   enabled = false
   ApplicationController.actions += this
+}
+object MyAction {
+  val MNONE = ""
+  val MSHIFT = "shift"
+  val MCTRL = "ctrl"
 }
 
 
