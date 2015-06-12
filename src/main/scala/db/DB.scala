@@ -1,6 +1,5 @@
 package db
 
-import java.io.File
 import java.sql.{SQLNonTransientConnectionException, SQLException}
 
 import org.squeryl.adapters.DerbyAdapter
@@ -93,7 +92,7 @@ class Article(var entrytype: String = "",
   }
 
   def setDocuments(dl: List[Document]) = {
-    pdflink = dl.map(d => s"${d.docName}\t${FileHelper.toSlashSeparator(d.docPath)}\n").mkString("")
+    pdflink = dl.map(d => s"${d.docName}\t${d.docPath}\n").mkString("")
   }
 
   // list of <docname>\t<docpath>\n OR <docpath>
@@ -258,11 +257,11 @@ object ReftoolDB extends Schema with Logging {
     if (!pp.exists()) pp.mkdir()
 
     if (!startwithempty) {
-      if (!new java.io.File(AppStorage.config.dbpath).exists() && new java.io.File(AppStorage.config.olddbpath).exists()) {
+      if (!new File(AppStorage.config.dbpath).exists() && new File(AppStorage.config.olddbpath).exists()) {
         DBupgrades.upgrade4to5()
         dbSetSchemaVersion(1)
       }
-      assert(new java.io.File(AppStorage.config.dbpath).exists())
+      assert(new File(AppStorage.config.dbpath).exists())
       assert(pp.exists())
       // upgrade DB schema if needed
       while (dbGetSchemaVersion != lastschemaversion) dbSetSchemaVersion(DBupgrades.upgradeSchema(dbGetSchemaVersion))

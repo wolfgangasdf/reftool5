@@ -1,6 +1,6 @@
 package framework
 
-import java.io.{PrintWriter, StringWriter}
+import java.io
 import java.nio.charset.Charset
 import java.util.concurrent.FutureTask
 
@@ -77,8 +77,8 @@ object Helpers extends Logging {
     error(t.getMessage)
     t.printStackTrace()
     val exceptionText = {
-      val sw = new StringWriter()
-      val pw = new PrintWriter(sw)
+      val sw = new io.StringWriter()
+      val pw = new io.PrintWriter(sw)
       t.printStackTrace(pw)
       sw.toString
     }

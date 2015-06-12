@@ -1,6 +1,6 @@
 package util
 
-import java.io.{File, StringReader, StringWriter}
+import java.io
 
 import db.{Article, Document, ReftoolDB, Topic}
 import framework.{ApplicationController, Helpers, Logging, MyWorker}
@@ -208,13 +208,30 @@ object ImportHelper extends Logging {
   }
 
   // topic OR article can be NULL, but both should not be set!
-  def importDocument(sourceFile: java.io.File, topic: Topic, article: Article, copyFile: Option[Boolean], isAdditionalDoc: Boolean, interactive: Boolean = true): Boolean = {
+  def importDocument(sourceFile: File, topic: Topic, article: Article, copyFile: Option[Boolean], isAdditionalDoc: Boolean, interactive: Boolean = true): Boolean = {
     if (!backgroundImportRunning.compareAndSet(false, true)) {
       info("import document NOT executed because already running...")
       return false
     }
     debug(s"!!!!!!!!!!! importDocument: topic=$topic article=$article sourceFile=$sourceFile")
     assert(!((article != null) && (topic != null))) // both must not be given!
+
+    // check if file is below datadir
+    StringHelper.startsWithGetRest(sourceFile.getAbsolutePath, AppStorage.config.pdfpath + "/") foreach( relp => {
+      error("cannot import file below datadir, checking if article exists...")
+
+      inTransaction {
+        debug("relp=" + relp)
+        val res = ReftoolDB.articles.where(a =>
+            upper(a.pdflink) like s"%$relp%"
+        )
+        if (res.nonEmpty) {
+          debug("found!")
+          ApplicationController.submitShowArticlesList(res.toList, s"Search [$relp]")
+        }
+      }
+      return false
+    })
 
     val lastfolder = FileHelper.getLastImportFolder
 
@@ -348,7 +365,7 @@ object ImportHelper extends Logging {
 
   private def parseBibtex(bibtexentry: String): (Key, BibTeXEntry) = {
     val btparser = new org.jbibtex.BibTeXParser
-    val btdb = btparser.parse(new StringReader(bibtexentry))
+    val btdb = btparser.parse(new io.StringReader(bibtexentry))
     val btentries = btdb.getEntries
     if (btentries.size() == 1)
       btentries.head
@@ -389,7 +406,7 @@ object ImportHelper extends Logging {
     val bdb = new BibTeXDatabase()
     bdb.addObject(be)
     val bf = new BibTeXFormatter()
-    val writer = new StringWriter()
+    val writer = new io.StringWriter()
     bf.format(bdb, writer)
     writer.toString
   }

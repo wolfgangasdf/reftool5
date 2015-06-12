@@ -86,7 +86,7 @@ object AppStorage extends Logging {
               return
             }
           case "recentdatadirs" =>
-            config.recentDatadirs = sett(1).split("\t").filter(dd => new java.io.File(dd).isDirectory)
+            config.recentDatadirs = sett(1).split("\t").filter(dd => new File(dd).isDirectory)
             if (config.recentDatadirs.nonEmpty) config.datadir = config.recentDatadirs.head
           case "autoimportdir" => config.autoimportdir = sett(1)
           case "debuglevel" => config.debuglevel = sett(1).toInt
