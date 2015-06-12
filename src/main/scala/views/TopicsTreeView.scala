@@ -54,9 +54,11 @@ class MyTreeItem(vv: Topic, ttv: TopicsTreeView) extends TreeItem[Topic](vv) wit
         children.clear() // to remove dummy topic!
         inTransaction {
           for (newt <- vv.orderedChilds) {
-            // debug(s"  add child ($newt)")
             val doit = if (ttv.searchActive) { if (newt.expanded) true else false } else true
-            if (doit) children += new MyTreeItem(newt, ttv)
+            if (doit) {
+              // debug(s"  add child ($newt)")
+              children += new MyTreeItem(newt, ttv)
+            }
           }
           vv.expanded = true
           ReftoolDB.topics.update(vv)
@@ -130,19 +132,14 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
     } else if (de.getSceneY - tvpossc.getY > tvheight - tiheight) {
       val newtopindex = 2 + treeView.value.getRow(treeItem.value) - tvheight / tiheight
       treeView.value.scrollTo(newtopindex.toInt)
-      debug(s" scroll: newtopindex=$newtopindex")
     } else {
       MyTreeCell.lastDragoverCell = this
       debug("setting effects for " + MyTreeCell.lastDragoverCell)
       if (tirely < (tiheight * .25d)) { // determine drop position: onto or below
-        effect = new DropShadow(5.0, 0.0, -3.0, Color.web("#666666"))
+        effect = MyTreeCell.effectDropshadow
         res = 2
       } else {
-        val shadow = new InnerShadow()
-        shadow.setOffsetX(1.0)
-        shadow.setColor(Color.web("#666666"))
-        shadow.setOffsetY(1.0)
-        effect = shadow
+        effect = MyTreeCell.effectInnershadow
         res = 1
       }
     }
@@ -228,6 +225,13 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
 object MyTreeCell {
   var lastDragoverCell: TreeCell[Topic] = null
   var selectionJustChanged: Boolean = false
+
+  val effectDropshadow = new DropShadow(5.0, 0.0, -3.0, Color.web("#666666"))
+  val effectInnershadow = new InnerShadow()
+  effectInnershadow.setOffsetX(1.0)
+  effectInnershadow.setColor(Color.web("#666666"))
+  effectInnershadow.setOffsetY(1.0)
+
 }
 
 // an iterator over all *displayed* tree items! (not the lazy ones)
@@ -305,6 +309,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     // remove all treeitems!
     debug("  clear all items...")
     if (tv.root.value != null) {
+      tv.root.value.setExpanded(false) // speedup!
       def removeRec(ti: TreeItem[Topic]): Unit = {
         if (ti.children.nonEmpty) ti.children.foreach( child => removeRec(child) )
         ti.children.clear()
@@ -316,7 +321,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     debug("  add items...")
     inTransaction {
       if (tlast != null) expandAllParents(tlast) // expand topic to be revealed
-      troot = ReftoolDB.topics.where(t => t.parent === 0).single // root item must have parent == 0
+      troot = ReftoolDB.rootTopic
       debug(s"ttv: root topic=$troot where expanded=${troot.expanded}")
       tiroot = new MyTreeItem(troot, this)
       tv.root = tiroot
