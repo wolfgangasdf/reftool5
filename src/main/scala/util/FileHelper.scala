@@ -10,6 +10,8 @@ import scala.util.Random
 
 object FileHelper extends Logging {
 
+  def toSlashSeparator(s: String) = s.replaceAllLiterally("\\", "/")
+
   def writeString(file: File, text : String) : Unit = {
     val fw = new FileWriter(file)
     try{ fw.write(text) }
