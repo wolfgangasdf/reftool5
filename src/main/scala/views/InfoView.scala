@@ -109,7 +109,7 @@ class InfoView extends GenericView("toolview") {
       addToInfo("  found " + alladocs.length + " article documents!")
       addToInfo("find pdf orphans...")
       alldocs.foreach( file => {
-        val relpath = FileHelper.getDocumentPathRelative(file)
+        val relpath = FileHelper.toSlashSeparator(FileHelper.getDocumentPathRelative(file))
         val res = alladocs.filter(ad => ad == relpath)
         if (res.length != 1) {
           val msg = if (res.isEmpty)

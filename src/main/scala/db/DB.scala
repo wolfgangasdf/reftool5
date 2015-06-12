@@ -93,7 +93,7 @@ class Article(var entrytype: String = "",
   }
 
   def setDocuments(dl: List[Document]) = {
-    pdflink = dl.map(d => s"${d.docName}\t${d.docPath}\n").mkString("")
+    pdflink = dl.map(d => s"${d.docName}\t${FileHelper.toSlashSeparator(d.docPath)}\n").mkString("")
   }
 
   // list of <docname>\t<docpath>\n OR <docpath>
