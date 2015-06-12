@@ -154,13 +154,13 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     tooltipString = "Save changes to current article"
     image = new Image(getClass.getResource("/images/save_edit.gif").toExternalForm)
     accelerator = KeyCombination.keyCombination("shortcut +S")
-    action = () => saveArticle()
+    action = (_) => saveArticle()
   }
 
   val aUpdateFromBibtex = new MyAction("Article", "Update from bibtex") {
     tooltipString = "Update article fields from bibtex (not overwriting review!)"
     image = new Image(getClass.getResource("/images/bib2article.png").toExternalForm)
-    action = () => {
+    action = (_) => {
       val newa = ImportHelper.updateArticleFromBibtex(article)
       inTransaction {
         ReftoolDB.articles.update(newa)
@@ -177,7 +177,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
       // this is always called after action. but with shift-click, action() is not called!
       if (me.shiftDown) ImportHelper.updateMetadataFromDoc(article, FileHelper.getDocumentFileAbs(article.getFirstDocRelative), parsePdf = false)
     }
-    action = () => {
+    action = (_) => {
       ImportHelper.updateMetadataFromDoc(article, FileHelper.getDocumentFileAbs(article.getFirstDocRelative))
     }
   }
@@ -185,7 +185,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   val aCreateBibtex = new MyAction("Article", "Create bibtex entry") {
     tooltipString = "Create the article's bibtex entry from article fields"
     image = new Image(getClass.getResource("/images/article2bib.png").toExternalForm)
-    action = () => {
+    action = (_) => {
       val newa = ImportHelper.createBibtexFromArticle(article)
       inTransaction {
         ReftoolDB.articles.update(newa)

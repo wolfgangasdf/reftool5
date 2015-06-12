@@ -58,7 +58,7 @@ class PreferencesView extends GenericView("prefsview") {
   val aSave = new MyAction("Preferences", "Save") {
     tooltipString = "Save changes"
     image = new Image(getClass.getResource("/images/save_edit.gif").toExternalForm)
-    action = () => {
+    action = (_) => {
       AppStorage.config.autoimportdir = lAutoimport.tf.getText
       AppStorage.config.debuglevel = lDebug.tf.getText.toInt
       AppStorage.config.showstartupdialog = lShowStartupdialog.cb.isSelected

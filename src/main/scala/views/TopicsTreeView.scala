@@ -355,7 +355,7 @@ class TopicsTreeView extends GenericView("topicsview") {
   val aAddArticle: MyAction = new MyAction("Topic", "Add empty article") {
     image = new Image(getClass.getResource("/images/new_con.gif").toExternalForm)
     tooltipString = "Create new article in current topic"
-    action = () => {
+    action = (_) => {
       val si = tv.getSelectionModel.getSelectedItem
       inTransaction {
         val t = ReftoolDB.topics.get(si.getValue.id)
@@ -381,20 +381,20 @@ class TopicsTreeView extends GenericView("topicsview") {
       }
       loadTopics(revealLastTopic = false, revealTopic = t2, editTopic = true)
     }
-    toolbarButton.onMouseClicked = (me: MouseEvent) => {
-      // this is always called after action. but with shift-click, action() is not called!
-      if (me.shiftDown) addNewTopic(troot.id)
-    }
-    action = () => {
-      val si = tv.getSelectionModel.getSelectedItem
-      val pid = si.getValue.id
-      addNewTopic(pid)
+    action = (m) => {
+      if (m == MyAction.MSHIFT) {
+        addNewTopic(troot.id)
+      } else {
+        val si = tv.getSelectionModel.getSelectedItem
+        val pid = si.getValue.id
+        addNewTopic(pid)
+      }
     }
   }
   val aExportBibtex: MyAction = new MyAction("Topic", "Export to bibtex") {
     image = new Image(getClass.getResource("/images/export2bib.png").toExternalForm)
     tooltipString = "Export all articles in current topic to bibtex file"
-    action = () => {
+    action = (_) => {
       val t = tv.getSelectionModel.getSelectedItem.getValue
       val fc = new FileChooser() {
         title = "Select bibtex export file"
@@ -426,12 +426,11 @@ class TopicsTreeView extends GenericView("topicsview") {
   }
   val aCollapseAll: MyAction = new MyAction("Topic", "Collapse all") {
     image = new Image(getClass.getResource("/images/collapse.png").toExternalForm)
-    tooltipString = "Collapse all topics"
-    action = () => {
-      tiroot.expanded = false
-      inTransaction {
-        collapseAllTopics()
-      }
+    tooltipString = "Collapse all topics\nshift: collapse all but current topic"
+
+    action = (m) => {
+      if (m != MyAction.MSHIFT) tiroot.expanded = false
+      inTransaction { collapseAllTopics() }
       loadTopics()
     }
     enabled = true
@@ -439,7 +438,7 @@ class TopicsTreeView extends GenericView("topicsview") {
   val aRemoveTopic: MyAction = new MyAction("Topic", "Collapse all") {
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
     tooltipString = "Remove topic"
-    action = () => {
+    action = (_) => {
       val t = tv.getSelectionModel.getSelectedItem.getValue
       inTransaction {
         if (t.childrenTopics.nonEmpty) {
