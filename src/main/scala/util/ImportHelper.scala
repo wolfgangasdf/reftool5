@@ -216,20 +216,16 @@ object ImportHelper extends Logging {
     debug(s"!!!!!!!!!!! importDocument: topic=$topic article=$article sourceFile=$sourceFile")
     assert(!((article != null) && (topic != null))) // both must not be given!
 
-    // check if file is below datadir
+    // check if file is below datadir -> reveal article
     StringHelper.startsWithGetRest(sourceFile.getAbsolutePath, AppStorage.config.pdfpath + "/") foreach( relp => {
-      error("cannot import file below datadir, checking if article exists...")
-
+      info("cannot import file below datadir, checking if article exists...")
       inTransaction {
-        debug("relp=" + relp)
-        val res = ReftoolDB.articles.where(a =>
-            upper(a.pdflink) like s"%$relp%"
-        )
+        val res = ReftoolDB.articles.where(a => upper(a.pdflink) like s"%${relp.toUpperCase}%")
         if (res.nonEmpty) {
-          debug("found!")
           ApplicationController.submitShowArticlesList(res.toList, s"Search [$relp]")
         }
       }
+      backgroundImportRunning.set(false)
       return false
     })
 
