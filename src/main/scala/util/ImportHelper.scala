@@ -134,7 +134,7 @@ object ImportHelper extends Logging {
             if (parsePdf) doi = PdfHelper.getDOI(sourceFile)
             debug(" pdf doi=" + doi)
             if (doi == "" && interactive) Helpers.runUIwait {
-              doi = getDOImanually(sourceFile.getName, sourceFile.getAbsolutePath)
+              doi = getDOImanually(sourceFile.getName, sourceFile.getPath)
             }
             if (doi != "") {
               updateProgress(30, 100)
@@ -217,7 +217,7 @@ object ImportHelper extends Logging {
     assert(!((article != null) && (topic != null))) // both must not be given!
 
     // check if file is below datadir -> reveal article
-    StringHelper.startsWithGetRest(sourceFile.getAbsolutePath, AppStorage.config.pdfpath + "/") foreach( relp => {
+    StringHelper.startsWithGetRest(sourceFile.getPath, AppStorage.config.pdfpath + "/") foreach( relp => {
       info("cannot import file below datadir, checking if article exists...")
       inTransaction {
         val res = ReftoolDB.articles.where(a => upper(a.pdflink) like s"%${relp.toUpperCase}%")

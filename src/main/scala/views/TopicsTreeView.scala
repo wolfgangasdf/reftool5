@@ -149,19 +149,21 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
   onDragOver = (de: DragEvent) => {
     //debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}  tm = " + de.transferMode)
     clearDnDFormatting()
-    getDropPositionScroll(de)
-    if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "topic") {
-      val dti = DnDHelper.topicTreeItem
-      if (dti.getParent != treeItem.value) {
+    if (treeItem.value != null) {
+      getDropPositionScroll(de)
+      if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "topic") {
+        val dti = DnDHelper.topicTreeItem
+        if (dti.getParent != treeItem.value) {
+          MyTreeCell.lastDragoverCell = this
+          de.acceptTransferModes(TransferMode.MOVE)
+        }
+      } else if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "articles") {
         MyTreeCell.lastDragoverCell = this
-        de.acceptTransferModes(TransferMode.MOVE)
+        de.acceptTransferModes(TransferMode.COPY, TransferMode.LINK)
+      } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
+        if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].length == 1) // only one file at a time!
+          de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK)
       }
-    } else if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "articles") {
-      MyTreeCell.lastDragoverCell = this
-      de.acceptTransferModes(TransferMode.COPY, TransferMode.LINK)
-    } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
-      if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].length == 1) // only one file at a time!
-        de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK)
     }
   }
 
@@ -402,7 +404,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         if (t.exportfn != "") {
           val oldef = new MFile(t.exportfn)
           initialFileName = oldef.getName
-          initialDirectory = oldef.getParentFile.file
+          initialDirectory = oldef.getParent.file
         } else initialFileName = "articles.bib"
       }
       val fn = MFile(fc.showSaveDialog(toolbarButton.getParent.getScene.getWindow))

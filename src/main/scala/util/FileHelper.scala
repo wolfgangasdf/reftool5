@@ -20,20 +20,11 @@ class MFile(var file: io.File) extends Logging {
   def list = file.list.sorted.map(s => toSlashSeparator(s))
 
   def getName: String = file.getName
-
-  def getAbsolutePath: String = toSlashSeparator(file.getAbsolutePath)
-
-  def getParent: String = toSlashSeparator(file.getParent)
-  def getParentFile = new MFile(file.getParentFile)
-
-  def getPath: String = toSlashSeparator(file.getPath)
-
-  def getCanonicalPath: String = toSlashSeparator(file.getCanonicalPath)
+  def getPath: String = toSlashSeparator(file.getCanonicalPath)
+  def getParent = new MFile(file.getParentFile)
 
   def exists: Boolean = file.exists
-
   def canRead: Boolean = file.canRead
-
   def isDirectory = file.isDirectory
   def isFile = file.isFile
 
@@ -42,14 +33,14 @@ class MFile(var file: io.File) extends Logging {
 
   def toPath = file.toPath
 
-  def readAllLines = java.nio.file.Files.readAllLines(java.nio.file.Paths.get(getAbsolutePath), MFile.filecharset)
+  def readAllLines = java.nio.file.Files.readAllLines(java.nio.file.Paths.get(getPath), MFile.filecharset)
   def createFile(createParents: Boolean) = {
-    if (createParents) MFile.createDirectories(getParentFile)
+    if (createParents) MFile.createDirectories(getParent)
     file.createNewFile()
   }
 
   def appendString(s: String) = {
-    java.nio.file.Files.write(java.nio.file.Paths.get(getAbsolutePath),s.getBytes(MFile.filecharset),java.nio.file.StandardOpenOption.APPEND)
+    java.nio.file.Files.write(java.nio.file.Paths.get(getPath),s.getBytes(MFile.filecharset),java.nio.file.StandardOpenOption.APPEND)
   }
 
   override def toString: String = getPath
@@ -64,7 +55,7 @@ object MFile {
   def move(oldFile: MFile, newFile: MFile) = java.nio.file.Files.move(oldFile.toPath, newFile.toPath)
   def copy(oldFile: MFile, newFile: MFile) = java.nio.file.Files.copy(oldFile.toPath, newFile.toPath)
   def createDirectories(mf: MFile) = {
-    java.nio.file.Files.createDirectories(java.nio.file.Paths.get(mf.getAbsolutePath))
+    java.nio.file.Files.createDirectories(java.nio.file.Paths.get(mf.getPath))
   }
   // implicit def mfileToFile(mf: MFile): io.File = mf.file
 }
@@ -110,10 +101,10 @@ object FileHelper extends Logging {
   def getDocumentFileAbs(relPath: String) = new MFile(AppStorage.config.pdfpath + "/" + relPath)
 
   def getDocumentPathRelative(file: MFile) = {
-    if (!file.getAbsolutePath.startsWith(new MFile(AppStorage.config.pdfpath).getAbsolutePath)) {
+    if (!file.getPath.startsWith(new MFile(AppStorage.config.pdfpath).getPath)) {
       throw new io.IOException("file " + file + " is not below reftool store!")
     }
-    file.getAbsolutePath.substring( new MFile(AppStorage.config.pdfpath).getAbsolutePath.length + 1 )
+    file.getPath.substring( new MFile(AppStorage.config.pdfpath).getPath.length + 1 )
   }
 
   def openDocument(relPath: String) = {
@@ -162,9 +153,9 @@ object FileHelper extends Logging {
     val newFileName = getDocumentFilenameBase(a, docname).getOrElse(FileHelper.cleanFileNameString(sourceName, 30))
 
     // get unique file
-    var newFile1 = new MFile(lastfolder.getAbsolutePath + "/" + newFileName + "." + sourceExt)
+    var newFile1 = new MFile(lastfolder.getPath + "/" + newFileName + "." + sourceExt)
     while (newFile1.exists) {
-      newFile1 = new MFile(lastfolder.getAbsolutePath + "/" + newFileName + "-" + Random.nextInt(1000) + "." + sourceExt)
+      newFile1 = new MFile(lastfolder.getPath + "/" + newFileName + "-" + Random.nextInt(1000) + "." + sourceExt)
     }
     newFile1
   }
@@ -181,9 +172,9 @@ object FileHelper extends Logging {
 
   def revealFile(file: MFile): Unit = {
     if (Helpers.isMac) {
-      Runtime.getRuntime.exec(Array("open", "-R", file.getAbsolutePath))
+      Runtime.getRuntime.exec(Array("open", "-R", file.getPath))
     } else if (Helpers.isWin) {
-      Runtime.getRuntime.exec("explorer.exe /select,"+file.getAbsolutePath)
+      Runtime.getRuntime.exec("explorer.exe /select,"+file.getPath)
     } else if (Helpers.isLinux) {
       error("not supported OS, tell me how to do it!")
     } else {
