@@ -285,7 +285,7 @@ object Main extends JFXApp with Logging {
                 onAction = (ae: ActionEvent) => {
                   val res = MFile(new DirectoryChooser { title = "Select reftool data directory" }.showDialog(stage))
                   if (res != null) {
-                    AppStorage.config.datadir = res.getAbsolutePath
+                    AppStorage.config.datadir = res.getPath
                     loadMainScene(createNewStorage = false)
                   }
                 }
@@ -298,7 +298,7 @@ object Main extends JFXApp with Logging {
                     if (res.listFiles.nonEmpty) {
                       new Alert(AlertType.Error, "Need empty new data directory").showAndWait()
                     } else {
-                      AppStorage.config.datadir = res.getAbsolutePath
+                      AppStorage.config.datadir = res.getPath
                       loadMainScene(createNewStorage = true)
                     }
                   }

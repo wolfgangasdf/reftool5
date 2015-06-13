@@ -184,7 +184,7 @@ class MyInputDirchooser(gpRow: Int, labelText: String, iniText: String, helpStri
         title = "Choose directory..."
       }.showDialog(this.delegate.getScene.getWindow))
       if (dc != null) {
-        tf.text = dc.getAbsolutePath
+        tf.text = dc.getPath
       }
     }
   }
