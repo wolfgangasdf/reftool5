@@ -265,27 +265,9 @@ class ArticleListView extends GenericView("articlelistview") {
     action = (_) => inTransaction {
       val articles = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
       articles.foreach( a => {
-        debug("renaming " + a + " ...")
-        val dlnew = a.getDocuments.map(d => {
-          val dfb = FileHelper.getDocumentFilenameBase(a, d.docName)
-          val renameit = if (dfb.nonEmpty) {
-            !d.docPath.contains(dfb.get) // lazy...
-          } else false
-          if (renameit) {
-            val lastfolder = FileHelper.getLastImportFolder
-            val oldFile = FileHelper.getDocumentFileAbs(d.docPath)
-            FileHelper.getDocumentFilenameBase(a, d.docName) foreach( _ => {
-              val newFile = FileHelper.getUniqueDocFile(lastfolder, a, d.docName, oldFile.getName)
-              debug(s"renaming [$oldFile] to [$newFile]")
-              java.nio.file.Files.move(oldFile.toPath, newFile.toPath)
-              d.docPath = FileHelper.getDocumentPathRelative(newFile)
-            })
-          }
-          d
-        })
-        a.setDocuments(dlnew.toList)
-        ReftoolDB.articles.update(a)
-        ApplicationController.submitArticleChanged(a)
+        val aa = ReftoolDB.renameDocuments(a)
+        ReftoolDB.articles.update(aa)
+        ApplicationController.submitArticleChanged(aa)
       })
     }
   }
