@@ -55,13 +55,13 @@ class MainScene(stage: Stage) extends Scene with Logging {
                 dialogPane.value.content = cont
               }.showAndWait()
             }
+          },
+          new MenuItem("Reload CSS") {
+            onAction = (e: ActionEvent) => {
+              info("Reload application CSS stylesheets")
+              stylesheets = List(AppStorage.config.csspath)
+            }
           }
-//          , new MenuItem("reload CSS") {
-//            onAction = (e: ActionEvent) => {
-//              info("reload CSS!")
-//              stylesheets = List(AppStorage.config.csspath)
-//            }
-//          }
         )
       }
     )
