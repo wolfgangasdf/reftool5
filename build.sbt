@@ -34,10 +34,22 @@ tzip := {
   IO.zip(
     Path.allSubpaths(new File(crossTarget.value + "/" + JFX.artifactBaseNameValue.value)).
       filterNot(_._2.endsWith(".html")).filterNot(_._2.endsWith(".jnlp")),
-    new File(target.value + "/" + JFX.artifactBaseNameValue.value + ".zip")
+    new File(target.value + "/" + JFX.artifactBaseNameValue.value + "-win-linux.zip")
   )
 }
 tzip <<= tzip.dependsOn(JFX.packageJavaFx)
+
+/////////////// task to zip the mac app bundle
+lazy val tzipmac = TaskKey[Unit]("zipmac")
+tzipmac := {
+  println("zipping mac app bundle...")
+  println("x=[" + target.value + "/" + appbundle.name.value + ".app" + "]")
+  IO.zip(
+    Path.allSubpaths(new File(target.value + "/" + appbundle.name.value + ".app")),
+    new File(target.value + "/" + appbundle.name.value + "-mac.zip")
+  )
+}
+tzipmac <<= tzipmac.dependsOn(appbundle.appbundle)
 
 /////////////// task to zip the chrome extension
 lazy val tzipchrome = TaskKey[Unit]("zipchrome")
@@ -52,5 +64,5 @@ tzipchrome := {
 /////////////// task to do all at once
 lazy val tdist = TaskKey[Unit]("dist")
 tdist := println("Created reftool5 distribution files!")
-tdist <<= tdist.dependsOn(appbundle.appbundle, tzip, tzipchrome)
+tdist <<= tdist.dependsOn(tzipmac, tzip, tzipchrome)
 
