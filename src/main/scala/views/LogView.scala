@@ -6,6 +6,7 @@ import scalafx.Includes._
 import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
 import scalafx.scene.control._
+import scalafx.scene.image.{ImageView, Image}
 import scalafx.scene.layout.BorderPane
 
 class LogView extends GenericView("logview") {
@@ -13,8 +14,8 @@ class LogView extends GenericView("logview") {
 
   text = "Log"
 
-  toolbaritems += new Button("clear") {
-
+  toolbaritems += new Button("Clear output") {
+    graphic = new ImageView(new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm))
     onAction = (ae: ActionEvent) => taLog.text = ""
   }
 
