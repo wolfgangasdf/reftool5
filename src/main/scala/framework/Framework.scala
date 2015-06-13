@@ -86,7 +86,7 @@ class ViewContainer extends Pane with Logging {
   this.children += group
 
   toolbar.layoutX <== tabpane.width.subtract(toolbar.width.add(10.0))
-  toolbar.layoutY = 5
+  toolbar.layoutY = 2
 
   def addView(view: GenericView) {
     debug(" add view " + view)
