@@ -6,7 +6,7 @@ import javafx.scene.{control => jfxsc}
 import db.{Article, ReftoolDB, Topic}
 import framework._
 import org.squeryl.PrimitiveTypeMode._
-import util.{File, AppStorage, DnDHelper, ImportHelper}
+import util.{MFile, AppStorage, DnDHelper, ImportHelper}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -202,7 +202,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       }
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
-      val f = File(files.head)
+      val f = MFile(files.head)
       debug(s" importing file $f treeItem=$treeItem")
       ImportHelper.importDocument(f, treeItem.value.getValue, null, Some(de.transferMode == TransferMode.COPY), isAdditionalDoc = false)
       dropOk = true
@@ -400,18 +400,18 @@ class TopicsTreeView extends GenericView("topicsview") {
         title = "Select bibtex export file"
         extensionFilters += new ExtensionFilter("bibtex files", "*.bib")
         if (t.exportfn != "") {
-          val oldef = new File(t.exportfn)
+          val oldef = new MFile(t.exportfn)
           initialFileName = oldef.getName
-          initialDirectory = oldef.getParentFile
+          initialDirectory = oldef.getParentFile.file
         } else initialFileName = "articles.bib"
       }
-      val fn = File(fc.showSaveDialog(toolbarButton.getParent.getScene.getWindow))
+      val fn = MFile(fc.showSaveDialog(toolbarButton.getParent.getScene.getWindow))
       if (fn != null) inTransaction {
         if (t.exportfn != fn.getPath) {
           t.exportfn = fn.getPath
           ReftoolDB.topics.update(t)
         }
-        val pw = new io.PrintWriter(new io.FileOutputStream(fn, false))
+        val pw = new io.PrintWriter(new io.FileOutputStream(fn.file, false))
         t.articles.foreach( a => pw.write(a.bibtexentry) )
         pw.close()
       }
@@ -520,15 +520,15 @@ class TopicsTreeView extends GenericView("topicsview") {
       override def run(): Unit = {
         val aid = AppStorage.config.autoimportdir
         if (aid != "") {
-          val aidf = new File(aid)
-          val res = aidf.listFiles2(new io.FilenameFilter() {
+          val aidf = new MFile(aid)
+          val res = aidf.listFiles(new io.FilenameFilter() {
             override def accept(dir: java.io.File, name: String): Boolean = name.startsWith("reftool5import") && name.endsWith(".pdf")
           })
           if (res.nonEmpty) {
             debug("background: found files: " + res.mkString(","))
             Helpers.runUI( {
               val sel = tv.getSelectionModel.getSelectedItem
-              ImportHelper.importDocument(File(res.head), if (sel != null) sel.getValue else null, null, copyFile = Some(false), isAdditionalDoc = false)
+              ImportHelper.importDocument(res.head, if (sel != null) sel.getValue else null, null, copyFile = Some(false), isAdditionalDoc = false)
             } )
             }
           }

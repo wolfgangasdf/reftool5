@@ -4,7 +4,7 @@ package views
 import db.{Article, ReftoolDB, Topic}
 import framework.{ApplicationController, GenericView, MyAction}
 import org.squeryl.PrimitiveTypeMode._
-import util.{File, DnDHelper, FileHelper, StringHelper}
+import util.{MFile, DnDHelper, FileHelper, StringHelper}
 
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
@@ -249,13 +249,13 @@ class ArticleListView extends GenericView("articlelistview") {
     tooltipString = "Copy documents of articles somewhere"
     image = new Image(getClass.getResource("/images/copypdfs.png").toExternalForm)
     action = (_) => {
-      val res = File(new DirectoryChooser {
+      val res = MFile(new DirectoryChooser {
         title = "Select folder for copying documents"
       }.showDialog(toolbarButton.getParent.getScene.getWindow))
       if (res != null) {
         alv.selectionModel.value.getSelectedItems.foreach( a => {
           val f = FileHelper.getDocumentFileAbs(a.getFirstDocRelative)
-          java.nio.file.Files.copy(f.toPath, new File(res.getPath + "/" + f.getName).toPath)
+          MFile.copy(f, new MFile(res.getPath + "/" + f.getName))
         } )
       }
     }

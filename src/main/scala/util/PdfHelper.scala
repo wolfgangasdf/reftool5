@@ -1,10 +1,9 @@
 package util
 
 import org.apache.pdfbox.util.PDFTextStripper
+import org.apache.pdfbox.pdmodel.PDDocument
 
 import scala.collection.JavaConversions._
-
-import org.apache.pdfbox.pdmodel.PDDocument
 
 import framework.Logging
 
@@ -14,9 +13,9 @@ object PdfHelper extends Logging {
   // regex from http://stackoverflow.com/questions/27910/finding-a-doi-in-a-document-or-page
   val doire = """\b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b(?s)\s""".r
 
-  def getDOI(file: File) = {
+  def getDOI(file: MFile) = {
     var doi = ""
-    val pdf = PDDocument.load(file)
+    val pdf = PDDocument.load(file.file)
     if (!pdf.isEncrypted) {
       val info = pdf.getDocumentInformation
       debug("parse pdf metadata for doi...")

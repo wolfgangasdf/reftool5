@@ -6,7 +6,7 @@ import java.util.Date
 import db.{Topic, Article, ReftoolDB}
 import framework._
 import org.squeryl.PrimitiveTypeMode._
-import util.{File, ImportHelper, AppStorage, FileHelper}
+import util.{MFile, ImportHelper, AppStorage, FileHelper}
 
 import scala.collection.mutable.ArrayBuffer
 import scalafx.geometry.Insets
@@ -25,9 +25,8 @@ class InfoView extends GenericView("toolview") {
   val aImportPDFTree: MyAction = new MyAction("Tools", "Import PDF tree") {
     tooltipString = "Imports a whole PDF folder structure into database\n(under new toplevel-topic)"
     action = (_) => {
-      val res2 = File(new DirectoryChooser { title = "Select base import directory" }.showDialog(main.Main.stage))
-      if (res2 != null) {
-        val res = File(res2)
+      val res = MFile(new DirectoryChooser { title = "Select base import directory" }.showDialog(main.Main.stage))
+      if (res != null) {
         // must run from background task, otherwise hangs on UI update!
         new Thread {
           override def run(): Unit = {
@@ -39,14 +38,14 @@ class InfoView extends GenericView("toolview") {
             })
             debug("here1")
 
-            def walkThroughAll(base: File, parentTopic: Topic): Array[File] = {
+            def walkThroughAll(base: MFile, parentTopic: Topic): Array[MFile] = {
               // base is directory!
               val thisTopic = Helpers.runUIwait( inTransaction {
                 ReftoolDB.topics.insert(new Topic(base.getName, parentTopic.id, expanded = true))
               })
 
               debug("add new topic " + thisTopic + "   BELOW " + parentTopic)
-              val these = base.listFiles2
+              val these = base.listFiles
               these.filter(_.isFile).filter(!_.getName.startsWith(".")).foreach(ff => {
                 debug("  import file: " + ff.getName)
                 while (!Helpers.runUIwait(ImportHelper.importDocument(ff, thisTopic, null, copyFile = Some(true), isAdditionalDoc = false, interactive = false))) {
@@ -99,7 +98,7 @@ class InfoView extends GenericView("toolview") {
     tooltipString = "List orphaned and multiple times used documents\nTakes a long time!"
     action = (_) => {
       addToInfo("Retrieving all documents...")
-      val alldocs = FileHelper.listFilesRec(new File(AppStorage.config.pdfpath)).filter(_.isFile)
+      val alldocs = FileHelper.listFilesRec(new MFile(AppStorage.config.pdfpath)).filter(_.isFile)
       addToInfo("  found " + alldocs.length + " files!")
       addToInfo("find all used documents...")
       val alladocs = new ArrayBuffer[String]()
@@ -136,7 +135,7 @@ class InfoView extends GenericView("toolview") {
           tocheck -= 1
           if (tocheck % 100 == 0) debug(s"still $tocheck articles to check!")
           a.getDocuments.foreach(d => {
-            if (!FileHelper.getDocumentFileAbs(d.docPath).exists()) {
+            if (!FileHelper.getDocumentFileAbs(d.docPath).exists) {
               val s = s"[${a.bibtexid}] $a : missing ${d.docName} (${d.docPath})"
               taInfo.appendText(s + "\n")
               info(s)

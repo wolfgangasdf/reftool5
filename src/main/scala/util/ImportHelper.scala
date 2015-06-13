@@ -65,7 +65,7 @@ object ImportHelper extends Logging {
     }
 
     val btReveal = new Button("reveal") {
-      onAction = (ae: ActionEvent) => FileHelper.revealFile(new File(filepath))
+      onAction = (ae: ActionEvent) => FileHelper.revealFile(new MFile(filepath))
     }
 
     val myContent = new VBox {
@@ -119,8 +119,8 @@ object ImportHelper extends Logging {
     doi
   }
 
-  private def importDocument2(updateMetadata: Boolean, article: Article, sourceFile: File,
-                              doFileAction: Boolean, lastfolder: File, copyIt: Boolean, topic: Topic,
+  private def importDocument2(updateMetadata: Boolean, article: Article, sourceFile: MFile,
+                              doFileAction: Boolean, lastfolder: MFile, copyIt: Boolean, topic: Topic,
                               interactive: Boolean = true, parsePdf: Boolean = true) = {
     debug(s"id2: $updateMetadata $article ${sourceFile.getName} $interactive")
     new javafx.concurrent.Task[Unit] {
@@ -173,9 +173,9 @@ object ImportHelper extends Logging {
 
           // actually copy/move file
           if (copyIt)
-            java.nio.file.Files.copy(sourceFile.toPath, newFile1.toPath)
+            MFile.copy(sourceFile, newFile1)
           else
-            java.nio.file.Files.move(sourceFile.toPath, newFile1.toPath)
+            MFile.move(sourceFile, newFile1)
         }
 
         updateProgress(90, 100)
@@ -196,7 +196,7 @@ object ImportHelper extends Logging {
     }
   }
 
-  def updateMetadataFromDoc(article: Article, sourceFile: File, parsePdf: Boolean = false): Boolean = {
+  def updateMetadataFromDoc(article: Article, sourceFile: MFile, parsePdf: Boolean = false): Boolean = {
     if (!backgroundImportRunning.compareAndSet(false, true)) {
       info("import document NOT executed because already running...")
       false
@@ -208,7 +208,7 @@ object ImportHelper extends Logging {
   }
 
   // topic OR article can be NULL, but both should not be set!
-  def importDocument(sourceFile: File, topic: Topic, article: Article, copyFile: Option[Boolean], isAdditionalDoc: Boolean, interactive: Boolean = true): Boolean = {
+  def importDocument(sourceFile: MFile, topic: Topic, article: Article, copyFile: Option[Boolean], isAdditionalDoc: Boolean, interactive: Boolean = true): Boolean = {
     if (!backgroundImportRunning.compareAndSet(false, true)) {
       info("import document NOT executed because already running...")
       return false

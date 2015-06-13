@@ -235,7 +235,7 @@ object ReftoolDB extends Schema with Logging {
         FileHelper.getDocumentFilenameBase(a, d.docName) foreach( _ => {
           val newFile = FileHelper.getUniqueDocFile(lastfolder, a, d.docName, oldFile.getName)
           debug(s"renaming [$oldFile] to [$newFile]")
-          java.nio.file.Files.move(oldFile.toPath, newFile.toPath)
+          MFile.move(oldFile, newFile)
           d.docPath = FileHelper.getDocumentPathRelative(newFile)
         })
       }
@@ -253,12 +253,12 @@ object ReftoolDB extends Schema with Logging {
     }
   }
   def dbGetSchemaVersion: Int = {
-    val res = FileHelper.readString(new File(AppStorage.config.dbschemaversionpath))
+    val res = FileHelper.readString(new MFile(AppStorage.config.dbschemaversionpath))
     assert(res.nonEmpty, "db schema version file not present!")
     res.get.toInt
   }
   def dbSetSchemaVersion(v: Int) {
-    FileHelper.writeString(new File(AppStorage.config.dbschemaversionpath), v.toString)
+    FileHelper.writeString(new MFile(AppStorage.config.dbschemaversionpath), v.toString)
   }
 
   def getDBstats: String = {
@@ -276,16 +276,16 @@ object ReftoolDB extends Schema with Logging {
 
   def initialize(startwithempty: Boolean) {
 
-    val pp = new File(AppStorage.config.pdfpath)
-    if (!pp.exists()) pp.mkdir()
+    val pp = new MFile(AppStorage.config.pdfpath)
+    if (!pp.exists) pp.mkdir()
 
     if (!startwithempty) {
-      if (!new File(AppStorage.config.dbpath).exists() && new File(AppStorage.config.olddbpath).exists()) {
+      if (!new MFile(AppStorage.config.dbpath).exists && new MFile(AppStorage.config.olddbpath).exists) {
         DBupgrades.upgrade4to5()
         dbSetSchemaVersion(1)
       }
-      assert(new File(AppStorage.config.dbpath).exists())
-      assert(pp.exists())
+      assert(new MFile(AppStorage.config.dbpath).exists)
+      assert(pp.exists)
       // upgrade DB schema if needed
       while (dbGetSchemaVersion != lastschemaversion) dbSetSchemaVersion(DBupgrades.upgradeSchema(dbGetSchemaVersion))
     }

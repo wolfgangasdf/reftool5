@@ -9,60 +9,92 @@ import framework.{Logging, Helpers}
 import scala.util.Random
 
 // wrap everything that returns a java.io.File into util.File!
-class File(pathname: String) extends io.File(pathname) with Logging {
+class MFile(var file: io.File) extends Logging {
 
+  def this(pathname: String) = this(new io.File(pathname))
   def toSlashSeparator(s: String) = s.replaceAllLiterally("\\", "/")
 
-  override def listFiles(): Array[io.File] = { assert(assertion = false, "dont use this") ; null }
-  def listFiles2: Array[File] = super.listFiles.sorted.map(f => File(f))
-  override def listFiles(filter: io.FileFilter): Array[io.File] = { assert(assertion = false, "dont use this") ; null }
-  def listFiles2(filter: io.FileFilter): Array[File] = super.listFiles(filter).sorted.map(f => File(f))
-  override def listFiles(filter: io.FilenameFilter): Array[io.File] = { assert(assertion = false, "dont use this") ; null }
-  def listFiles2(filter: io.FilenameFilter): Array[File] = super.listFiles(filter).sorted.map(f => File(f))
+  def listFiles: Array[MFile] = file.listFiles.sorted.map(f => MFile(f))
+  def listFiles(filter: io.FileFilter): Array[MFile] = file.listFiles(filter).sorted.map(f => MFile(f))
+  def listFiles(filter: io.FilenameFilter): Array[MFile] = file.listFiles(filter).sorted.map(f => MFile(f))
+  def list = file.list.sorted.map(s => toSlashSeparator(s))
 
+  def getName: String = file.getName
 
-  override def getAbsolutePath: String = toSlashSeparator(super.getAbsolutePath)
+  def getAbsolutePath: String = toSlashSeparator(file.getAbsolutePath)
 
-  override def getParent: String = toSlashSeparator(super.getParent)
+  def getParent: String = toSlashSeparator(file.getParent)
+  def getParentFile = new MFile(file.getParentFile)
 
-  override def getPath: String = toSlashSeparator(super.getPath)
+  def getPath: String = toSlashSeparator(file.getPath)
 
-  override def getCanonicalPath: String = toSlashSeparator(super.getCanonicalPath)
+  def getCanonicalPath: String = toSlashSeparator(file.getCanonicalPath)
+
+  def exists: Boolean = file.exists
+
+  def canRead: Boolean = file.canRead
+
+  def isDirectory = file.isDirectory
+  def isFile = file.isFile
+
+  def mkdir() = file.mkdir()
+  def delete() = file.delete()
+
+  def toPath = file.toPath
+
+  def readAllLines = java.nio.file.Files.readAllLines(java.nio.file.Paths.get(getAbsolutePath), MFile.filecharset)
+  def createFile(createParents: Boolean) = {
+    if (createParents) MFile.createDirectories(getParentFile)
+    file.createNewFile()
+  }
+
+  def appendString(s: String) = {
+    java.nio.file.Files.write(java.nio.file.Paths.get(getAbsolutePath),s.getBytes(MFile.filecharset),java.nio.file.StandardOpenOption.APPEND)
+  }
 
   override def toString: String = getPath
-
 }
-object File {
-  def apply(f: io.File) = if (f == null) null else new File(f.getAbsolutePath)
+
+object MFile {
+  val filecharset = java.nio.charset.Charset.forName("UTF-8")
+
+  def apply(f: io.File) = if (f == null) null else new MFile(f.getAbsolutePath)
+  def apply(filepath: String) = if (filepath == null) null else new MFile(filepath)
   def createTempFile(prefix: String, suffix: String) = io.File.createTempFile(prefix, suffix)
+  def move(oldFile: MFile, newFile: MFile) = java.nio.file.Files.move(oldFile.toPath, newFile.toPath)
+  def copy(oldFile: MFile, newFile: MFile) = java.nio.file.Files.copy(oldFile.toPath, newFile.toPath)
+  def createDirectories(mf: MFile) = {
+    java.nio.file.Files.createDirectories(java.nio.file.Paths.get(mf.getAbsolutePath))
+  }
+  // implicit def mfileToFile(mf: MFile): io.File = mf.file
 }
 
 object FileHelper extends Logging {
 
-  def writeString(file: File, text : String) : Unit = {
-    val fw = new io.FileWriter(file)
+  def writeString(file: MFile, text : String) : Unit = {
+    val fw = new io.FileWriter(file.file)
     try{ fw.write(text) }
     finally{ fw.close() }
   }
-  def readString(file: File) : Option[String] = {
-    if (file.exists() && file.canRead)
-      Some(scala.io.Source.fromFile(file).mkString)
+  def readString(file: MFile) : Option[String] = {
+    if (file.exists && file.canRead)
+      Some(scala.io.Source.fromFile(file.file).mkString)
     else
       None
   }
 
-  def foreachLine(file: File, proc : String=>Unit) : Unit = {
-    val br = new io.BufferedReader(new io.FileReader(file))
+  def foreachLine(file: MFile, proc : String=>Unit) : Unit = {
+    val br = new io.BufferedReader(new io.FileReader(file.file))
     try{ while(br.ready) proc(br.readLine) }
     finally{ br.close() }
   }
-  def deleteAll(file: File) : Unit = {
-    def deleteFile(dfile : File) : Unit = {
+  def deleteAll(file: MFile) : Unit = {
+    def deleteFile(dfile : MFile) : Unit = {
       if(dfile.isDirectory) {
         info("deleting " + dfile + " recursively")
-        dfile.listFiles2.foreach{ f => deleteFile(f) }
+        dfile.listFiles.foreach{ f => deleteFile(f) }
       }
-      dfile.delete
+      dfile.delete()
     }
     deleteFile(file)
   }
@@ -75,13 +107,13 @@ object FileHelper extends Logging {
     StringHelper.headString(fn.replaceAll("[^a-zA-Z0-9-]", ""), maxlen)
   }
 
-  def getDocumentFileAbs(relPath: String) = new File(AppStorage.config.pdfpath + "/" + relPath)
+  def getDocumentFileAbs(relPath: String) = new MFile(AppStorage.config.pdfpath + "/" + relPath)
 
-  def getDocumentPathRelative(file: File) = {
-    if (!file.getAbsolutePath.startsWith(new File(AppStorage.config.pdfpath).getAbsolutePath)) {
+  def getDocumentPathRelative(file: MFile) = {
+    if (!file.getAbsolutePath.startsWith(new MFile(AppStorage.config.pdfpath).getAbsolutePath)) {
       throw new io.IOException("file " + file + " is not below reftool store!")
     }
-    file.getAbsolutePath.substring( new File(AppStorage.config.pdfpath).getAbsolutePath.length + 1 )
+    file.getAbsolutePath.substring( new MFile(AppStorage.config.pdfpath).getAbsolutePath.length + 1 )
   }
 
   def openDocument(relPath: String) = {
@@ -89,32 +121,32 @@ object FileHelper extends Logging {
     if (Desktop.isDesktopSupported) {
       val desktop = Desktop.getDesktop
       if (desktop.isSupported(Desktop.Action.OPEN)) {
-        desktop.open(getDocumentFileAbs(relPath))
+        desktop.open(getDocumentFileAbs(relPath).file)
       }
     }
   }
 
-  def getLastImportFolder: File = {
-    val pdfpath = new File(AppStorage.config.pdfpath)
-    val ifolders = pdfpath.listFiles2(new io.FileFilter {
+  def getLastImportFolder: MFile = {
+    val pdfpath = new MFile(AppStorage.config.pdfpath)
+    val ifolders = pdfpath.listFiles(new io.FileFilter {
       override def accept(pathname: io.File): Boolean = pathname.getName.startsWith(AppStorage.config.importfolderprefix)
     })
     debug("import folders:\n" + ifolders.mkString("\n"))
-    var lastfolder: File = if (ifolders.isEmpty)
-      new File(AppStorage.getImportFolder(1))
+    var lastfolder: MFile = if (ifolders.isEmpty)
+      new MFile(AppStorage.getImportFolder(1))
     else
-      File(ifolders.last)
-    if (lastfolder.exists()) {
-      if (lastfolder.list().length > 99) {
+      ifolders.last
+    if (lastfolder.exists) {
+      if (lastfolder.list.length > 99) {
         val rex = """.*-([0-9]+)""".r
         val lastno = lastfolder.getName match {
           case rex(s) => s.toInt
         }
-        lastfolder = new File(AppStorage.getImportFolder(lastno + 1))
+        lastfolder = new MFile(AppStorage.getImportFolder(lastno + 1))
         info("new import folder: " + lastfolder)
       }
     }
-    if (!lastfolder.exists()) lastfolder.mkdir()
+    if (!lastfolder.exists) lastfolder.mkdir()
     lastfolder
   }
 
@@ -124,15 +156,15 @@ object FileHelper extends Logging {
       , 70))
     else None
   }
-  def getUniqueDocFile(lastfolder: File, a: Article, docname: String, startfilename: String): File = {
+  def getUniqueDocFile(lastfolder: MFile, a: Article, docname: String, startfilename: String): MFile = {
     // choose nice filename if possible
     val (sourceName, sourceExt) = FileHelper.splitName(startfilename)
     val newFileName = getDocumentFilenameBase(a, docname).getOrElse(FileHelper.cleanFileNameString(sourceName, 30))
 
     // get unique file
-    var newFile1 = new File(lastfolder.getAbsolutePath + "/" + newFileName + "." + sourceExt)
-    while (newFile1.exists()) {
-      newFile1 = new File(lastfolder.getAbsolutePath + "/" + newFileName + "-" + Random.nextInt(1000) + "." + sourceExt)
+    var newFile1 = new MFile(lastfolder.getAbsolutePath + "/" + newFileName + "." + sourceExt)
+    while (newFile1.exists) {
+      newFile1 = new MFile(lastfolder.getAbsolutePath + "/" + newFileName + "-" + Random.nextInt(1000) + "." + sourceExt)
     }
     newFile1
   }
@@ -147,7 +179,7 @@ object FileHelper extends Logging {
     }
   }
 
-  def revealFile(file: File): Unit = {
+  def revealFile(file: MFile): Unit = {
     if (Helpers.isMac) {
       Runtime.getRuntime.exec(Array("open", "-R", file.getAbsolutePath))
     } else if (Helpers.isWin) {
@@ -160,10 +192,9 @@ object FileHelper extends Logging {
   }
   def revealDocument(relPath: String)  = revealFile(getDocumentFileAbs(relPath))
 
-  def listFilesRec(f: File): Array[File] = {
-    val these = f.listFiles2.filter(f => f.getName != ".DS_Store")
-    val res = these ++ these.filter(_.isDirectory).flatMap(listFilesRec)
-    res.map(f => File(f))
+  def listFilesRec(f: MFile): Array[MFile] = {
+    val these = f.listFiles.filter(f => f.getName != ".DS_Store")
+    these ++ these.filter(_.isDirectory).flatMap(listFilesRec)
   }
 
 }
