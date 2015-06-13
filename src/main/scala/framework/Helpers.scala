@@ -1,7 +1,6 @@
 package framework
 
 import java.io
-import java.nio.charset.Charset
 import java.util.concurrent.FutureTask
 
 import scalafx.scene.control.Alert.AlertType
@@ -9,8 +8,6 @@ import scalafx.scene.control.{Alert, TextArea, Label}
 import scalafx.scene.layout.{GridPane, Priority}
 
 object Helpers extends Logging {
-
-  val filecharset = Charset.forName("UTF-8")
 
   val insetsstd = scalafx.geometry.Insets(5)
 

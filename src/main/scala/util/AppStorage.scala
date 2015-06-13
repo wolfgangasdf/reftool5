@@ -1,8 +1,5 @@
 package util
 
-import java.nio.charset.Charset
-import java.nio.file.{Files, Paths, StandardOpenOption}
-
 import framework.Helpers._
 import framework.Logging
 
@@ -43,13 +40,12 @@ object AppSettings extends Logging {
 
   info("AppSettings: file = " + getSettingPath)
   def getLines = {
-    val fff = Paths.get(getSettingPath)
-    if (!Files.exists(fff)) {
+    val fff = MFile(getSettingPath)
+    if (!fff.exists) {
       info("creating setting file " + fff.toString)
-      Files.createDirectories(fff.getParent)
-      Files.createFile(fff)
+      fff.createFile(true)
     }
-    Files.readAllLines(fff, Charset.forName("UTF-8")).toArray
+    fff.readAllLines.toArray
   }
 }
 
@@ -86,7 +82,7 @@ object AppStorage extends Logging {
               return
             }
           case "recentdatadirs" =>
-            config.recentDatadirs = sett(1).split("\t").filter(dd => new File(dd).isDirectory)
+            config.recentDatadirs = sett(1).split("\t").filter(dd => new MFile(dd).isDirectory)
             if (config.recentDatadirs.nonEmpty) config.datadir = config.recentDatadirs.head
           case "autoimportdir" => config.autoimportdir = sett(1)
           case "debuglevel" => config.debuglevel = sett(1).toInt
@@ -99,12 +95,12 @@ object AppStorage extends Logging {
   }
 
   def save() {
-    val fff = Paths.get(AppSettings.getSettingPath)
-    Files.delete(fff)
-    Files.createFile(fff)
+    val fff = MFile(AppSettings.getSettingPath)
+    fff.delete()
+    fff.createFile(false)
 
     def saveSett(key: String, what: Any) {
-      Files.write(fff, (key + "=" + what + "\n").getBytes(Charset.forName("UTF-8")),StandardOpenOption.APPEND)
+      fff.appendString(key + "=" + what + "\n")
     }
 
     saveSett("reftoolsettingsversion", 1)

@@ -193,7 +193,7 @@ object Main extends JFXApp with Logging {
   System.setOut(new io.PrintStream(new MyConsole(false), true))
   System.setErr(new io.PrintStream(new MyConsole(true), true))
 
-  val logfile = File.createTempFile("reftool5log",".txt")
+  val logfile = MFile.createTempFile("reftool5log",".txt")
   logps = new io.FileOutputStream(logfile)
 
   Thread.currentThread().setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler {
@@ -248,7 +248,7 @@ object Main extends JFXApp with Logging {
   }
 
   def loadStartupDialog() = {
-    val doAutostart = !AppStorage.config.showstartupdialog && new File(AppStorage.config.datadir).isDirectory
+    val doAutostart = !AppStorage.config.showstartupdialog && new MFile(AppStorage.config.datadir).isDirectory
 
     stage = new PrimaryStage {
       title = "Reftool 5"
@@ -264,7 +264,7 @@ object Main extends JFXApp with Logging {
             if (!doAutostart) {
               children += new Button("Open last reftool data directory \n" + AppStorage.config.datadir) {
                 maxWidth = Double.PositiveInfinity
-                disable = !new File(AppStorage.config.datadir).isDirectory
+                disable = !new MFile(AppStorage.config.datadir).isDirectory
                 onAction = (ae: ActionEvent) => {
                   loadMainScene(createNewStorage = false)
                 }
@@ -274,7 +274,7 @@ object Main extends JFXApp with Logging {
                 promptText = "Select recent data directory..."
                 disable = AppStorage.config.recentDatadirs.isEmpty
                 onAction = (ae: ActionEvent) => {
-                  if (new File(value.value).isDirectory) {
+                  if (new MFile(value.value).isDirectory) {
                     AppStorage.config.datadir = value.value
                     loadMainScene(createNewStorage = false)
                   }
@@ -283,7 +283,7 @@ object Main extends JFXApp with Logging {
               children += new Button("Open other reftool data directory") {
                 maxWidth = Double.PositiveInfinity
                 onAction = (ae: ActionEvent) => {
-                  val res = File(new DirectoryChooser { title = "Select reftool data directory" }.showDialog(stage))
+                  val res = MFile(new DirectoryChooser { title = "Select reftool data directory" }.showDialog(stage))
                   if (res != null) {
                     AppStorage.config.datadir = res.getAbsolutePath
                     loadMainScene(createNewStorage = false)
@@ -293,9 +293,9 @@ object Main extends JFXApp with Logging {
               children += new Button("Create new reftool data directory...") {
                 maxWidth = Double.PositiveInfinity
                 onAction = (ae: ActionEvent) => {
-                  val res = File(new DirectoryChooser { title = "Select new reftool data directory" }.showDialog(stage))
+                  val res = MFile(new DirectoryChooser { title = "Select new reftool data directory" }.showDialog(stage))
                   if (res != null) {
-                    if (res.listFiles2.nonEmpty) {
+                    if (res.listFiles.nonEmpty) {
                       new Alert(AlertType.Error, "Need empty new data directory").showAndWait()
                     } else {
                       AppStorage.config.datadir = res.getAbsolutePath

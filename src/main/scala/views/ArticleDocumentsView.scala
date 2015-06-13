@@ -4,7 +4,7 @@ import db.{ReftoolDB, Document, Article}
 import framework.{Logging, ApplicationController, GenericView, MyAction}
 import org.squeryl.PrimitiveTypeMode._
 import util.FileHelper._
-import util.{File, ImportHelper}
+import util.{MFile, ImportHelper}
 
 import scala.collection.JavaConversions._
 
@@ -67,7 +67,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     onDragDropped = (de: DragEvent) => {
       if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
         val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
-        val f = File(files.head)
+        val f = MFile(files.head)
         ImportHelper.importDocument(f, null, article, Some(de.transferMode == TransferMode.COPY), isAdditionalDoc = true)
       }
 
@@ -101,7 +101,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
         title = "Select new document"
       }.showOpenDialog(toolbarButton.getParent.getScene.getWindow)
       if (fn != null) {
-        ImportHelper.importDocument(File(fn), null, article, None, isAdditionalDoc = true)
+        ImportHelper.importDocument(MFile(fn), null, article, None, isAdditionalDoc = true)
       }
     }
   }
