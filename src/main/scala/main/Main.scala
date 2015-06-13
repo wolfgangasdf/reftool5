@@ -194,7 +194,7 @@ object Main extends JFXApp with Logging {
   System.setErr(new io.PrintStream(new MyConsole(true), true))
 
   val logfile = MFile.createTempFile("reftool5log",".txt")
-  logps = new io.FileOutputStream(logfile)
+  logps = new io.FileOutputStream(logfile.toFile)
 
   Thread.currentThread().setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler {
     override def uncaughtException(t: Thread, e: Throwable): Unit = {

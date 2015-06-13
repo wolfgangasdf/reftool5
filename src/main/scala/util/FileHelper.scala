@@ -8,8 +8,9 @@ import framework.{Logging, Helpers}
 
 import scala.util.Random
 
-// wrap everything that returns a java.io.File into util.File!
-class MFile(var file: io.File) extends Logging {
+// wrap everything that returns a java.io.File into util.MFile!
+// this always uses "/" as file separator and includes useful classes from java.nio
+class MFile(file: io.File) extends Logging {
 
   def this(pathname: String) = this(new io.File(pathname))
   def toSlashSeparator(s: String) = s.replaceAllLiterally("\\", "/")
@@ -32,6 +33,7 @@ class MFile(var file: io.File) extends Logging {
   def delete() = file.delete()
 
   def toPath = file.toPath
+  def toFile = file
 
   def readAllLines = java.nio.file.Files.readAllLines(java.nio.file.Paths.get(getPath), MFile.filecharset)
   def createFile(createParents: Boolean) = {
@@ -51,10 +53,10 @@ object MFile {
 
   def apply(f: io.File) = if (f == null) null else new MFile(f.getAbsolutePath)
   def apply(filepath: String) = if (filepath == null) null else new MFile(filepath)
-  def createTempFile(prefix: String, suffix: String) = io.File.createTempFile(prefix, suffix)
+  def createTempFile(prefix: String, suffix: String) = MFile(io.File.createTempFile(prefix, suffix))
   def move(oldFile: MFile, newFile: MFile) = java.nio.file.Files.move(oldFile.toPath, newFile.toPath)
   def copy(oldFile: MFile, newFile: MFile) = java.nio.file.Files.copy(oldFile.toPath, newFile.toPath)
-  def createDirectories(mf: MFile) = {
+  def createDirectories(mf: MFile): Unit = {
     java.nio.file.Files.createDirectories(java.nio.file.Paths.get(mf.getPath))
   }
   // implicit def mfileToFile(mf: MFile): io.File = mf.file
@@ -63,19 +65,19 @@ object MFile {
 object FileHelper extends Logging {
 
   def writeString(file: MFile, text : String) : Unit = {
-    val fw = new io.FileWriter(file.file)
+    val fw = new io.FileWriter(file.toFile)
     try{ fw.write(text) }
     finally{ fw.close() }
   }
   def readString(file: MFile) : Option[String] = {
     if (file.exists && file.canRead)
-      Some(scala.io.Source.fromFile(file.file).mkString)
+      Some(scala.io.Source.fromFile(file.toFile).mkString)
     else
       None
   }
 
   def foreachLine(file: MFile, proc : String=>Unit) : Unit = {
-    val br = new io.BufferedReader(new io.FileReader(file.file))
+    val br = new io.BufferedReader(new io.FileReader(file.toFile))
     try{ while(br.ready) proc(br.readLine) }
     finally{ br.close() }
   }
@@ -112,7 +114,7 @@ object FileHelper extends Logging {
     if (Desktop.isDesktopSupported) {
       val desktop = Desktop.getDesktop
       if (desktop.isSupported(Desktop.Action.OPEN)) {
-        desktop.open(getDocumentFileAbs(relPath).file)
+        desktop.open(getDocumentFileAbs(relPath).toFile)
       }
     }
   }

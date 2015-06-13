@@ -15,7 +15,7 @@ object PdfHelper extends Logging {
 
   def getDOI(file: MFile) = {
     var doi = ""
-    val pdf = PDDocument.load(file.file)
+    val pdf = PDDocument.load(file.toFile)
     if (!pdf.isEncrypted) {
       val info = pdf.getDocumentInformation
       debug("parse pdf metadata for doi...")
