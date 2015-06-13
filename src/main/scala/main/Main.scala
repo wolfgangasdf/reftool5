@@ -258,6 +258,7 @@ object Main extends JFXApp with Logging {
       tryit {
         scene = new Scene {
           content = new VBox(20) {
+            padding = Insets(10)
             alignment = scalafx.geometry.Pos.Center
             fillWidth = true
             children += new ImageView(new Image(getClass.getResource("/images/about.png").toExternalForm))
