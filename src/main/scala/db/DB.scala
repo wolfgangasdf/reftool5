@@ -222,6 +222,29 @@ object ReftoolDB extends Schema with Logging {
     settings.insertOrUpdate(sett)
   }
 
+  // rename documents
+  def renameDocuments(a: Article): Article = {
+    val dlnew = a.getDocuments.map(d => {
+      val dfb = FileHelper.getDocumentFilenameBase(a, d.docName)
+      val renameit = if (dfb.nonEmpty) {
+        !d.docPath.contains(dfb.get) // lazy...
+      } else false
+      if (renameit) {
+        val lastfolder = FileHelper.getLastImportFolder
+        val oldFile = FileHelper.getDocumentFileAbs(d.docPath)
+        FileHelper.getDocumentFilenameBase(a, d.docName) foreach( _ => {
+          val newFile = FileHelper.getUniqueDocFile(lastfolder, a, d.docName, oldFile.getName)
+          debug(s"renaming [$oldFile] to [$newFile]")
+          java.nio.file.Files.move(oldFile.toPath, newFile.toPath)
+          d.docPath = FileHelper.getDocumentPathRelative(newFile)
+        })
+      }
+      d
+    })
+    a.setDocuments(dlnew.toList)
+    a
+  }
+
   def dbShutdown(dbpath: String = null): Unit = {
     val dbpath2 = if (dbpath == null) AppStorage.config.dbpath else dbpath
     try { java.sql.DriverManager.getConnection(s"jdbc:derby:$dbpath2;shutdown=true") } catch {

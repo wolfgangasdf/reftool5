@@ -103,6 +103,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     article.linkurl = lLinkURL.tf.getText
     article.doi = lDOI.tf.getText
     inTransaction {
+      article = ReftoolDB.renameDocuments(article)
       ReftoolDB.articles.update(article)
     }
     isDirty.value = false
