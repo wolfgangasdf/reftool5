@@ -47,7 +47,7 @@ Everything should be self-explanatory (watch out for tooltips) and if you create
 ### How to develop, compile & package ###
 
 * Get Java JDK >= 8u40
-* check out the code (`git clone ...` or download a zip) 
+* check out the code (`hg clone ...` or download a zip) 
 * I use [IntelliJ IDEA](https://www.jetbrains.com/idea/download/) with the scala plugin for development, just import the project. 
 
 * Install the [Scala Build Tool](http://www.scala-sbt.org/)
@@ -67,9 +67,9 @@ contact: http://home.physics.leidenuniv.nl/~loeffler
 * [Apache Pdfbox](https://pdfbox.apache.org) to access PDF files
 * [JBibtex](https://github.com/jbibtex/jbibtex) to parse and write bibtex and latex
 * [scalaj-http](https://github.com/scalaj/scalaj-http) to make http connections
-* [sbt-javafx](https://github.com/kavedaa/sbt-javafx) to create javafx jar files
+* [sbt-javafx](https://github.com/kavedaa/sbt-javafx) to create the javafx jar file
 * [sbt-buildinfo](https://github.com/sbt/sbt-buildinfo) to access build information
-* [sbt-appbundle](https://github.com/Sciss/sbt-appbundle) to create mac app bundle
+* [sbt-appbundle](https://github.com/Sciss/sbt-appbundle) to create the mac app bundle
 * a modified version of [universalJavaApplicationStub](https://github.com/tofi86/universalJavaApplicationStub) to launch it on Mac. 
 
 * Scalafx GUI Application framework: I couldn't find one (yet), so reftool contains its own GUI app framework with, e.g., buttons next to tabs (`Framework.scala`)
