@@ -17,10 +17,6 @@ class SearchView extends GenericView("searchview") {
 
   text = "Search"
 
-  toolbaritems += new Button("bbb") {
-    onAction = (ae: ActionEvent) => tfSearch.requestFocus()
-  }
-
   val tfSearch = new TextField {
     hgrow = Priority.Always
     this.promptText = "Enter search string"
