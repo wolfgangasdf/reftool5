@@ -404,7 +404,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         if (t.exportfn != "") {
           val oldef = new MFile(t.exportfn)
           initialFileName = oldef.getName
-          initialDirectory = oldef.getParent.file
+          initialDirectory = oldef.getParent.toFile
         } else initialFileName = "articles.bib"
       }
       val fn = MFile(fc.showSaveDialog(toolbarButton.getParent.getScene.getWindow))
@@ -413,7 +413,7 @@ class TopicsTreeView extends GenericView("topicsview") {
           t.exportfn = fn.getPath
           ReftoolDB.topics.update(t)
         }
-        val pw = new io.PrintWriter(new io.FileOutputStream(fn.file, false))
+        val pw = new io.PrintWriter(new io.FileOutputStream(fn.toFile, false))
         t.articles.foreach( a => pw.write(a.bibtexentry) )
         pw.close()
       }
