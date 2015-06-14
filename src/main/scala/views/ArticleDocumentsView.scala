@@ -151,6 +151,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
   def updateArticle(): Unit = {
     article.setDocuments(lv.getItems.toList)
     inTransaction {
+      article = ReftoolDB.renameDocuments(article)
       ReftoolDB.articles.update(article)
     }
     ApplicationController.submitArticleChanged(article)
