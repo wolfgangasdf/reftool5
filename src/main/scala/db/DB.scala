@@ -165,6 +165,7 @@ object ReftoolDB extends Schema with Logging {
   val SLASTARTICLEID = "lastarticleid"
 
   var rootTopic: Topic = null
+  var stackTopic: Topic = null
 
 //  throw new Exception("huhu")
   /*
@@ -316,6 +317,8 @@ object ReftoolDB extends Schema with Logging {
       if (topics.where(t => t.title === TORPHANS).isEmpty) topics.insert(new Topic(TORPHANS, rootTopic.id, false))
       if (topics.where(t => t.title === TSTACK).isEmpty) topics.insert(new Topic(TSTACK, rootTopic.id, false))
       if (topics.where(t => t.title === TDBSTATS).isEmpty) topics.insert(new Topic(TDBSTATS, rootTopic.id, false))
+
+      stackTopic = topics.where(t => t.title === TSTACK).head
 
       if (startwithempty) addDemoContent(rootTopic)
     }

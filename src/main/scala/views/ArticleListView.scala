@@ -2,7 +2,7 @@ package views
 
 
 import db.{Article, ReftoolDB, Topic}
-import framework.{ApplicationController, GenericView, MyAction}
+import framework.{Helpers, ApplicationController, GenericView, MyAction}
 import org.squeryl.PrimitiveTypeMode._
 import util.{MFile, DnDHelper, FileHelper, StringHelper}
 
@@ -125,21 +125,22 @@ class ArticleListView extends GenericView("articlelistview") {
     tooltipString = "Move selected articles to stack"
     image = new Image(getClass.getResource("/images/stackmove.gif").toExternalForm)
     action = (_) => inTransaction {
-      val stack = ReftoolDB.topics.where(t => t.title === ReftoolDB.TSTACK).head
-      alv.selectionModel.value.getSelectedItems.foreach( a => {
+      val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
+      as.foreach( a => {
         a.topics.dissociate(currentTopic)
-        a.topics.associate(stack)
+        a.topics.associate(ReftoolDB.stackTopic)
         ApplicationController.submitArticleChanged(a)
       })
+      Helpers.runUIdelayed(alv.requestFocus())
     }
   }
   val aCopyToStack = new MyAction("Article", "Copy to stack") {
     tooltipString = "Copy selected articles to stack"
     image = new Image(getClass.getResource("/images/stackadd.gif").toExternalForm)
     action = (_) => inTransaction {
-      val stack = ReftoolDB.topics.where(t => t.title === ReftoolDB.TSTACK).head
-      alv.selectionModel.value.getSelectedItems.foreach( a => {
-        a.topics.associate(stack)
+      val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
+      as.foreach( a => {
+        a.topics.associate(ReftoolDB.stackTopic)
         ApplicationController.submitArticleChanged(a)
       })
     }
@@ -148,9 +149,8 @@ class ArticleListView extends GenericView("articlelistview") {
     tooltipString = "Move all stack articles here"
     image = new Image(getClass.getResource("/images/stackmovetohere.gif").toExternalForm)
     action = (_) => inTransaction {
-      val stack = ReftoolDB.topics.where(t => t.title === ReftoolDB.TSTACK).head
-      stack.articles.foreach( a => {
-        a.topics.dissociate(stack)
+      ReftoolDB.stackTopic.articles.foreach( a => {
+        a.topics.dissociate(ReftoolDB.stackTopic)
         a.topics.associate(currentTopic)
         ApplicationController.submitArticleChanged(a)
       })
@@ -161,8 +161,7 @@ class ArticleListView extends GenericView("articlelistview") {
     tooltipString = "Copy all stack articles here"
     image = new Image(getClass.getResource("/images/stackcopytohere.gif").toExternalForm)
     action = (_) => inTransaction {
-      val stack = ReftoolDB.topics.where(t => t.title === ReftoolDB.TSTACK).head
-      stack.articles.foreach( a => {
+      ReftoolDB.stackTopic.articles.foreach( a => {
         a.topics.associate(currentTopic)
         ApplicationController.submitArticleChanged(a)
       } )
@@ -173,7 +172,7 @@ class ArticleListView extends GenericView("articlelistview") {
     tooltipString = "Show articles on stack"
     image = new Image(getClass.getResource("/images/stack.gif").toExternalForm)
     action = (_) => inTransaction {
-      setArticlesTopic(ReftoolDB.topics.where(t => t.title === ReftoolDB.TSTACK).head)
+      setArticlesTopic(ReftoolDB.stackTopic)
     }
     enabled = true
   }
@@ -206,26 +205,35 @@ class ArticleListView extends GenericView("articlelistview") {
     tooltipString = "Remove articles from current topic"
     image = new Image(getClass.getResource("/images/remove_correction.gif").toExternalForm)
     action = (_) => inTransaction {
-      alv.selectionModel.value.getSelectedItems.foreach( a => {
+      val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
+      as.foreach( a => {
         a.topics.dissociate(currentTopic)
         ApplicationController.submitArticleChanged(a)
       })
+      Helpers.runUIdelayed(alv.requestFocus())
     }
   }
   val aRemoveArticle = new MyAction("Article", "Delete article") {
     tooltipString = "Deletes articles completely"
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
     action = (_) => inTransaction {
-      new Alert(AlertType.Confirmation, "Really deleted selected articles, including their documents?", ButtonType.Yes, ButtonType.No).showAndWait() match {
+      val res = Helpers.showTextAlert(AlertType.Confirmation, "Delete articles", "Really deleted selected articles, including their documents?", "",
+        alv.selectionModel.value.getSelectedItems.mkString("\n"), Seq(ButtonType.Yes, ButtonType.No))
+      res match {
         case Some(ButtonType.Yes) =>
-          alv.selectionModel.value.getSelectedItems.foreach( a => {
+          val oldidx = alv.selectionModel.value.getSelectedIndices.headOption
+          val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
+          as.foreach( a => {
             for (t <- a.topics.toList)
               a.topics.dissociate(t)
-            a.getDocuments.foreach( d => FileHelper.getDocumentFileAbs(d.docPath).delete() )
+            a.getDocuments.foreach( d => {
+              info("deleting document " + FileHelper.getDocumentFileAbs(d.docPath).getPath)
+              FileHelper.getDocumentFileAbs(d.docPath).delete()
+            })
             ReftoolDB.articles.delete(a.id)
             ApplicationController.submitArticleRemoved(a)
           })
-          articles --= alv.selectionModel.value.getSelectedItems
+          Helpers.runUIdelayed(alv.requestFocus())
         case _ =>
       }
     }
@@ -263,8 +271,8 @@ class ArticleListView extends GenericView("articlelistview") {
   val aUpdateDocumentFilenames = new MyAction("Article", "Update document filenames") {
     tooltipString = "use [bibtexid]-[title]-[docname]"
     action = (_) => inTransaction {
-      val articles = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
-      articles.foreach( a => {
+      val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
+      as.foreach( a => {
         val aa = ReftoolDB.renameDocuments(a)
         ReftoolDB.articles.update(aa)
         ApplicationController.submitArticleChanged(aa)
@@ -299,7 +307,7 @@ class ArticleListView extends GenericView("articlelistview") {
           aOpenPDF.enabled = true
           aRevealPDF.enabled = true
           aOpenURL.enabled = true
-          if (onSelectionChangedDoAction) ApplicationController.submitShowArticle(ob.head)
+          ApplicationController.submitShowArticle(ob.head)
         }
       }
     }
@@ -351,22 +359,43 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   }
 
+  def safeSelect(oldidx: Int) = {
+    val newidx = if (articles.length > oldidx) oldidx
+    else { if (articles.length > 0) math.max(0, oldidx - 1) else -1 }
+    debug(s"safesel: oldi=$oldidx len=${articles.length} newi=$newidx")
+    if (newidx > -1) alv.getSelectionModel.select(newidx)
+  }
+
   ApplicationController.showArticlesListListeners += ( (al: List[Article], title: String) => setArticles(al, title, null) )
   ApplicationController.showArticlesFromTopicListeners += ( (t: Topic) => setArticlesTopic(t) )
   ApplicationController.revealArticleInListListeners += revealArticle
   ApplicationController.articleChangedListeners += ( (a: Article) => {
     if (currentTopic != null) {
       val oldsel = alv.getSelectionModel.getSelectedItems.headOption
+      val oldselidx = alv.getSelectionModel.getSelectedIndices.headOption
       setArticlesTopic(currentTopic)
+      debug(s"acl: oi=$oldselidx length=${articles.length}")
       if (oldsel.nonEmpty) {
-        onSelectionChangedDoAction = false
-        if (articles.contains(oldsel.get)) alv.getSelectionModel.select(oldsel.get)
-        onSelectionChangedDoAction = true
+        val founda = articles.find(a => a.id == oldsel.get.id)
+        if (founda.nonEmpty) {
+          debug("acl: found old sel article, select it!")
+          alv.getSelectionModel.select(founda.get)
+        } else {
+          debug("acl: did not findold sel article, safe select!")
+          safeSelect(oldselidx.get)
+        }
       }
     } else {
       val oldart = articles.find(oa => oa.id == a.id)
       if (oldart.isDefined) { articles.replaceAll(oldart.get, a) }
     }
+  })
+  ApplicationController.articleRemovedListeners += ( (a: Article) => {
+    val oldselidx = alv.getSelectionModel.getSelectedIndices.headOption
+    debug("arl: " + oldselidx + " a.len=" + articles.length)
+    articles -= a
+    debug("arl: after remove: a.len=" + articles.length)
+//    if (oldselidx.nonEmpty) safeSelect(oldselidx.get)
   })
 
   def setArticles(al: List[Article], title: String, topic: Topic): Unit = {
