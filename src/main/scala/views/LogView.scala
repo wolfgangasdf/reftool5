@@ -10,7 +10,6 @@ import scalafx.scene.image.{ImageView, Image}
 import scalafx.scene.layout.BorderPane
 
 class LogView extends GenericView("logview") {
-  debug(" initializing logview...")
 
   text = "Log"
 

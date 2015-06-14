@@ -25,8 +25,6 @@ import scalafx.stage.DirectoryChooser
 //https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/TableWithCustomCellDemo.scala
 class ArticleListView extends GenericView("articlelistview") {
 
-  debug(" initializing alv...")
-
   var currentTopic: Topic = null
 
   val colors = List("-fx-background-color: white", "-fx-background-color: red", "-fx-background-color: LightSalmon", "-fx-background-color: LightGreen")

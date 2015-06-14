@@ -13,7 +13,6 @@ import scalafx.scene.control._
 import scalafx.scene.layout.{BorderPane, HBox, Priority, VBox}
 
 class SearchView extends GenericView("searchview") {
-  debug(" initializing searchview...")
 
   text = "Search"
 

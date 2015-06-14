@@ -242,8 +242,6 @@ class TreeIterator[T](root: TreeItem[T]) extends Iterator[TreeItem[T]] with Logg
 
 class TopicsTreeView extends GenericView("topicsview") {
 
-  debug(" initializing ttv...")
-
   var troot: Topic = null
   var tiroot: MyTreeItem = null
   val gv = this

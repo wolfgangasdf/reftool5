@@ -150,7 +150,7 @@ object ReftoolDB extends Schema with Logging {
 
   val lastschemaversion = 2
 
-  debug(" initializing reftooldb...")
+  info("Initializing reftooldb...")
 
   val settings = table[Setting]("SETTING")
   val articles = table[Article]("ARTICLES")
