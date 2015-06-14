@@ -255,9 +255,7 @@ class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () 
     lab.text <== worker.message
     progress.progress <== worker.progress
     worker.onSucceeded = (wse: WorkerStateEvent) => {
-      debug("onsucceed")
       al.close()
-      debug("onsucceed/")
     }
     worker.onFailed = (wse: WorkerStateEvent) => {
       error("onfailed: " + atask.getException.getMessage)
