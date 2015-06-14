@@ -11,7 +11,7 @@ import scalafx.geometry.Insets
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control.{Label, _}
 import scalafx.scene.image.Image
-import scalafx.scene.input.{MouseEvent, KeyCombination}
+import scalafx.scene.input.KeyCombination
 import scalafx.scene.layout.ColumnConstraints._
 import scalafx.scene.layout._
 
@@ -174,12 +174,8 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   val aUpdateMetadatafromPDF = new MyAction("Article", "Update metadata") {
     tooltipString = "Update article metadata from first PDF or manually (force with shift)"
     image = new Image(getClass.getResource("/images/pdf2meta.png").toExternalForm)
-    toolbarButton.onMouseClicked = (me: MouseEvent) => {
-      // this is always called after action. but with shift-click, action() is not called!
-      if (me.shiftDown) ImportHelper.updateMetadataFromDoc(article, FileHelper.getDocumentFileAbs(article.getFirstDocRelative), parsePdf = false)
-    }
-    action = (_) => {
-      ImportHelper.updateMetadataFromDoc(article, FileHelper.getDocumentFileAbs(article.getFirstDocRelative))
+    action = (m) => {
+      ImportHelper.updateMetadataFromDoc(article, FileHelper.getDocumentFileAbs(article.getFirstDocRelative), parsePdf = m != MyAction.MSHIFT)
     }
   }
 
