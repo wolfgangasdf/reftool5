@@ -31,11 +31,11 @@ appbundle.executable := file("src/deploy/macosx/universalJavaApplicationStub")
 lazy val tzip = TaskKey[Unit]("zip")
 tzip := {
   println("zipping jar & libs...")
+  val s = target.value + "/" + JFX.artifactBaseNameValue.value + "-win-linux.zip"
   IO.zip(
     Path.allSubpaths(new File(crossTarget.value + "/" + JFX.artifactBaseNameValue.value)).
-      filterNot(_._2.endsWith(".html")).filterNot(_._2.endsWith(".jnlp")),
-    new File(target.value + "/" + JFX.artifactBaseNameValue.value + "-win-linux.zip")
-  )
+      filterNot(_._2.endsWith(".html")).filterNot(_._2.endsWith(".jnlp")), new File(s))
+  println("==> created windows & linux zip: " + s)
 }
 tzip <<= tzip.dependsOn(JFX.packageJavaFx)
 
@@ -43,11 +43,9 @@ tzip <<= tzip.dependsOn(JFX.packageJavaFx)
 lazy val tzipmac = TaskKey[Unit]("zipmac")
 tzipmac := {
   println("zipping mac app bundle...")
-  println("x=[" + target.value + "/" + appbundle.name.value + ".app" + "]")
-  IO.zip(
-    Path.allSubpaths(new File(target.value + "/" + appbundle.name.value + ".app")),
-    new File(target.value + "/" + appbundle.name.value + "-mac.zip")
-  )
+  val s = target.value + "/" + appbundle.name.value + "-mac.zip"
+  IO.zip(Path.allSubpaths(new File(target.value + "/" + appbundle.name.value + ".app")), new File(s))
+  println("==> created mac app zip: " + s)
 }
 tzipmac <<= tzipmac.dependsOn(appbundle.appbundle)
 
@@ -55,10 +53,9 @@ tzipmac <<= tzipmac.dependsOn(appbundle.appbundle)
 lazy val tzipchrome = TaskKey[Unit]("zipchrome")
 tzipchrome := {
   println("zipping chrome extension...")
-  IO.zip(
-    Path.allSubpaths(new File("extensions/chrome")),
-    new File(target.value + "/reftool5-chromeextension.zip")
-  )
+  val s = target.value + "/reftool5-chromeextension.zip"
+  IO.zip(Path.allSubpaths(new File("extensions/chrome")), new File(s))
+  println("==> created chrome extension zip: " + s)
 }
 
 /////////////// task to do all at once
