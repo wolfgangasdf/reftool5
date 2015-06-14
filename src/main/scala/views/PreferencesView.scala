@@ -12,7 +12,6 @@ import scalafx.scene.layout.ColumnConstraints._
 
 
 class PreferencesView extends GenericView("prefsview") {
-  debug(" initializing prefsview...")
 
   val title = "Preferences"
 

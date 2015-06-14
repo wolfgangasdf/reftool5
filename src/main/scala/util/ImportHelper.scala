@@ -113,7 +113,6 @@ object ImportHelper extends Logging {
       }
     } )
 
-    debug(" before dialogstage.showandwait!")
     dialogStage.showAndWait()
     debug(" returning doi=" + doi)
     doi
@@ -187,7 +186,7 @@ object ImportHelper extends Logging {
           }
           ApplicationController.submitArticleChanged(a)
           ApplicationController.showNotification("import successful of " + a)
-          debug("!!!!!!!!!!! import successful of " + sourceFile.getName)
+          debug(" import successful of " + sourceFile.getName)
         }
         if (!backgroundImportRunning.compareAndSet(true, false)) {
           throw new Exception("illegal state: backgroundImportRunning was false!")
@@ -271,7 +270,6 @@ object ImportHelper extends Logging {
     bid2 = java.text.Normalizer.normalize(bid2, java.text.Normalizer.Form.NFD)
     bid2 = bid2.replaceAll("[^\\p{ASCII}]", "").toLowerCase
     var bid3 = bid2
-    debug("bid2 = " + bid2)
     var iii = 1
     inTransaction { // add numbers if bibtexid exist...
       while (ReftoolDB.articles.where(a => a.bibtexid === bid3).nonEmpty) {
@@ -312,7 +310,6 @@ object ImportHelper extends Logging {
     import scalaj.http._
     var a = article
     val resp1 = Http("http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:" + aid).timeout(3000, 5000).asString
-    debug("resp1=" + resp1.code + "   ")
     if (resp1.code == 200) {
       val re1 = """(?s).*<a href="(.*)">Bibtex entry for this abstract</a>.*""".r
       resp1.body match {
@@ -320,7 +317,6 @@ object ImportHelper extends Logging {
           debug("found biblink: " + biblink)
           val resp2 = Http(biblink).asString
           if (resp2.code == 200) {
-            debug("resp2: " + resp2.code)
             if (resp2.body.contains("@")) {
               val be = resp2.body.substring(resp2.body.indexOf("@"))
               a = generateUpdateBibtexID(be, a)
@@ -337,7 +333,7 @@ object ImportHelper extends Logging {
     var a = article
     val response = Http("http://dx.doi.org/" + doi).
         header("Accept", "text/bibliography; style=bibtex").option(HttpOptions.followRedirects(shouldFollow = true)).asString
-    debug(s"""curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
+    // debug(s"""curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
     if (response.code == 200) {
       a = generateUpdateBibtexID(response.body, a)
     }

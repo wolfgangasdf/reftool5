@@ -18,8 +18,6 @@ import scalafx.scene.layout._
 
 class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
-  debug(" initializing adv...")
-
   val lines = new ArrayBuffer[MyLine]()
 
   val title = "Article details"

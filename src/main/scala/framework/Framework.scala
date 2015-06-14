@@ -56,7 +56,6 @@ class ViewContainer extends Pane with Logging {
   }
   def updateToolbar(viewno: Int): Unit = {
     if (views.length > viewno) {
-      debug(" update toolbar")
       toolbar.children.clear()
       views(viewno).toolbaritems.foreach(v => toolbar.children += v)
     }
@@ -250,7 +249,6 @@ class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () 
     dialogPane.value.getButtonTypes += ButtonType.Cancel
   }
   def runInBackground() = {
-    debug("show")
     al.show()
     lab.text <== worker.message
     progress.progress <== worker.progress
@@ -266,7 +264,6 @@ class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () 
       }
       cleanup()
     }
-    debug("start")
     worker.start()
   }
 }
@@ -291,7 +288,6 @@ object ApplicationController extends Logging {
   }
 
   def afterShown(): Unit = {
-    debug("aftershown!")
     info("Reftool log file: " + main.Main.logfile.getPath)
 
     import java.lang.management.ManagementFactory
@@ -316,7 +312,6 @@ object ApplicationController extends Logging {
     val mb = Main.mainScene.menuBar
     actions.foreach( action => {
       var menu = mb.menus.find(m => m.getText == action.category)
-      debug(s"action=${action.title} menu=" + menu)
       if (menu.isEmpty) {
         menu = Some(new Menu(action.category))
         mb.menus += menu.get

@@ -18,9 +18,8 @@ import scalafx.stage.FileChooser
 import scalafx.util.StringConverter
 
 class ArticleDocumentsView extends GenericView("articledocumentsview") with Logging {
-  debug(" initializing articledocumentsview...")
 
-  text = "A.docs"
+  text = "Docs"
 
   var article: Article = null
 

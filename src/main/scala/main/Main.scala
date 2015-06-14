@@ -143,8 +143,6 @@ class MainScene(stage: Stage) extends Scene with Logging {
     bottom = statusbar
   }
 
-  debug("window = " + window)
-
   stylesheets = List(AppStorage.config.csspath)
 
   content = maincontent
@@ -170,7 +168,6 @@ class MainScene(stage: Stage) extends Scene with Logging {
     if (parms.length == getMainUIsettings.split(";").length) {
       val it = parms.iterator
       val xxx: Double = it.next().toDouble
-      debug("stage = " + stage + "  xpos=" + xxx)
       stage.setX(xxx)
       stage.setY(it.next().toDouble)
       stage.setWidth(it.next().toDouble)

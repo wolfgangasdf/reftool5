@@ -16,7 +16,6 @@ import scalafx.scene.layout.BorderPane
 import scalafx.stage.DirectoryChooser
 
 class InfoView extends GenericView("toolview") {
-  debug(" initializing toolview...")
 
   text = "Tools"
 
@@ -30,13 +29,10 @@ class InfoView extends GenericView("toolview") {
         // must run from background task, otherwise hangs on UI update!
         new Thread {
           override def run(): Unit = {
-            debug("call in Worker import pdf tree")
             val ds = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())
-            debug("here0")
             val tbase = Helpers.runUIwait( inTransaction {
               ReftoolDB.topics.insert(new Topic("000-import-" + ds, ReftoolDB.rootTopic.id, expanded = true))
             })
-            debug("here1")
 
             def walkThroughAll(base: MFile, parentTopic: Topic): Array[MFile] = {
               // base is directory!
@@ -51,16 +47,12 @@ class InfoView extends GenericView("toolview") {
                 while (!Helpers.runUIwait(ImportHelper.importDocument(ff, thisTopic, null, copyFile = Some(true), isAdditionalDoc = false, interactive = false))) {
                   debug("waiting...")
                   Thread.sleep(100)
-                  debug("waiting done, try again...")
                 }
               })
               these ++ these.filter(_.isDirectory).flatMap(walkThroughAll(_, thisTopic))
             }
-            debug("hereA")
             walkThroughAll(res, tbase)
-            debug("hereB")
             Helpers.runUIwait { ApplicationController.submitRevealTopic(tbase) }
-            debug("hereC")
           }
         }.start()
       }
