@@ -362,7 +362,6 @@ class ArticleListView extends GenericView("articlelistview") {
   def safeSelect(oldidx: Int) = {
     val newidx = if (articles.length > oldidx) oldidx
     else { if (articles.length > 0) math.max(0, oldidx - 1) else -1 }
-    debug(s"safesel: oldi=$oldidx len=${articles.length} newi=$newidx")
     if (newidx > -1) alv.getSelectionModel.select(newidx)
   }
 
@@ -374,14 +373,11 @@ class ArticleListView extends GenericView("articlelistview") {
       val oldsel = alv.getSelectionModel.getSelectedItems.headOption
       val oldselidx = alv.getSelectionModel.getSelectedIndices.headOption
       setArticlesTopic(currentTopic)
-      debug(s"acl: oi=$oldselidx length=${articles.length}")
       if (oldsel.nonEmpty) {
         val founda = articles.find(a => a.id == oldsel.get.id)
         if (founda.nonEmpty) {
-          debug("acl: found old sel article, select it!")
           alv.getSelectionModel.select(founda.get)
         } else {
-          debug("acl: did not findold sel article, safe select!")
           safeSelect(oldselidx.get)
         }
       }
@@ -392,10 +388,7 @@ class ArticleListView extends GenericView("articlelistview") {
   })
   ApplicationController.articleRemovedListeners += ( (a: Article) => {
     val oldselidx = alv.getSelectionModel.getSelectedIndices.headOption
-    debug("arl: " + oldselidx + " a.len=" + articles.length)
     articles -= a
-    debug("arl: after remove: a.len=" + articles.length)
-//    if (oldselidx.nonEmpty) safeSelect(oldselidx.get)
   })
 
   def setArticles(al: List[Article], title: String, topic: Topic): Unit = {

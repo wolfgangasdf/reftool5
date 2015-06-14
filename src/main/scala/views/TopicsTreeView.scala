@@ -38,9 +38,7 @@ class MyTreeItem(vv: Topic, ttv: TopicsTreeView) extends TreeItem[Topic](vv) wit
       hasloadedchilds = true
       expanded = true
     } else {
-      // only check for children here!
-      if (vv.childrenTopics.nonEmpty) {
-        // debug("myti: topic " + topic + " : have children!")
+      if (vv.childrenTopics.nonEmpty) { // only check for children here!
         children += new TreeItem[Topic]() // dummy tree item
       }
     }
@@ -49,16 +47,12 @@ class MyTreeItem(vv: Topic, ttv: TopicsTreeView) extends TreeItem[Topic](vv) wit
   // lazy-load via this:
   delegate.addEventHandler(jfxsc.TreeItem.branchExpandedEvent[Topic](), new javafx.event.EventHandler[jfxsc.TreeItem.TreeModificationEvent[Topic]]() {
     def handle(p1: jfxsc.TreeItem.TreeModificationEvent[Topic]): Unit = {
-      debug(s"ttv: branchexpanded($value, has=$hasloadedchilds)")
       if (!hasloadedchilds) {
         children.clear() // to remove dummy topic!
         inTransaction {
           for (newt <- vv.orderedChilds) {
             val doit = if (ttv.searchActive) { if (newt.expanded) true else false } else true
-            if (doit) {
-              // debug(s"  add child ($newt)")
-              children += new MyTreeItem(newt, ttv)
-            }
+            if (doit) children += new MyTreeItem(newt, ttv)
           }
           vv.expanded = true
           ReftoolDB.topics.update(vv)
@@ -97,7 +91,6 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
   delegate.setConverter(myStringConverter)
 
   treeItem.onChange((_, oldti, newti) => {
-    // debug("tconchange sa=" + TopicsTreeView.searchActive + ": oldti=" + oldti + "  newti=" + newti)
     text = if (newti != null) newti.getValue.title else null
   })
 
@@ -113,7 +106,6 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
 
   def clearDnDFormatting() {
     if (MyTreeCell.lastDragoverCell != null) { // clear old formatting
-      // debug("clear DnD format " + MyTreeCell.lastDragoverCell)
       MyTreeCell.lastDragoverCell.effect = null
       MyTreeCell.lastDragoverCell = null
     }
@@ -134,7 +126,6 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       treeView.value.scrollTo(newtopindex.toInt)
     } else {
       MyTreeCell.lastDragoverCell = this
-      // debug("setting effects for " + MyTreeCell.lastDragoverCell)
       if (tirely < (tiheight * .25d)) { // determine drop position: onto or below
         effect = MyTreeCell.effectDropshadow
         res = 2
@@ -205,7 +196,6 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
       val f = MFile(files.head)
-      debug(s" importing file $f treeItem=$treeItem")
       ImportHelper.importDocument(f, treeItem.value.getValue, null, Some(de.transferMode == TransferMode.COPY), isAdditionalDoc = false)
       dropOk = true
     }
@@ -282,8 +272,10 @@ class TopicsTreeView extends GenericView("topicsview") {
   def expandAllParents(t: Topic) = {
     var pt = t.parentTopic.head
     while (pt != null) {
-      pt.expanded = true
-      ReftoolDB.topics.update(pt)
+      if (!pt.expanded) {
+        pt.expanded = true
+        ReftoolDB.topics.update(pt)
+      }
       if (pt.parentTopic.isEmpty) pt = null else pt = pt.parentTopic.head
     }
   }
@@ -309,7 +301,6 @@ class TopicsTreeView extends GenericView("topicsview") {
       tlast = revealTopic
     tv.selectionModel.value.clearSelection()
     // remove all treeitems!
-    debug("  clear all items...")
     if (tv.root.value != null) {
       tv.root.value.setExpanded(false) // speedup!
       def removeRec(ti: TreeItem[Topic]): Unit = {
@@ -320,11 +311,9 @@ class TopicsTreeView extends GenericView("topicsview") {
       tv.root = null
     }
 
-    debug("  add items...")
     inTransaction {
       if (tlast != null) expandAllParents(tlast) // expand topic to be revealed
       troot = ReftoolDB.rootTopic
-      debug(s"ttv: root topic=$troot where expanded=${troot.expanded}")
       tiroot = new MyTreeItem(troot, this)
       tv.root = tiroot
       tiroot.setExpanded(true)
@@ -351,7 +340,6 @@ class TopicsTreeView extends GenericView("topicsview") {
       assert(found, "Error finding treeitem for topic " + tlast + " id=" + tlast.id)
     }
 
-    debug("ttv: loadtopics done!")
   }
 
   val aAddArticle: MyAction = new MyAction("Topic", "Add empty article") {
@@ -373,14 +361,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     image = new Image(getClass.getResource("/images/addtsk_tsk.gif").toExternalForm)
     tooltipString = "Add topic below selected topic, shift+click to add root topic"
     def addNewTopic(parendID: Long) = {
-      val t2 = new Topic(title = "new topic", parent = parendID)
-      inTransaction {
-        ReftoolDB.topics.insert(t2)
-        val pt = ReftoolDB.topics.get(parendID)
-        pt.expanded = true
-        ReftoolDB.topics.update(pt)
-        debug(" add topic " + t2 + "  id=" + t2.id)
-      }
+      val t2 = inTransaction { ReftoolDB.topics.insert(new Topic(title = "new topic", parent = parendID, expanded = searchActive)) }
       loadTopics(revealLastTopic = false, revealTopic = t2, editTopic = true)
     }
     action = (m) => {
@@ -444,8 +425,9 @@ class TopicsTreeView extends GenericView("topicsview") {
       val t = tv.getSelectionModel.getSelectedItem.getValue
       inTransaction {
         if (t.childrenTopics.nonEmpty) {
-          ApplicationController.showNotification("Topic has children, cannot delete")
+          new Alert(AlertType.Error, "Topic has children, cannot delete").showAndWait()
         } else {
+          val pt = if (t.parentTopic.head == ReftoolDB.rootTopic) null else t.parentTopic.head
           var doit = true
           if (t.articles.nonEmpty) {
             val res = new Alert(AlertType.Confirmation, "Topic contains articles, they might become orphans if topic is removed.").showAndWait()
@@ -458,7 +440,8 @@ class TopicsTreeView extends GenericView("topicsview") {
             t.articles.dissociateAll
             ReftoolDB.topics.delete(t.id)
           }
-          loadTopics(revealLastTopic = false)
+
+          loadTopics(revealLastTopic = false, revealTopic = pt)
         }
       }
     }
@@ -493,14 +476,12 @@ class TopicsTreeView extends GenericView("topicsview") {
     promptText = "search..."
     onAction = (ae: ActionEvent) => {
       if (text.value.trim != "") inTransaction {
-        debug("initiate search...")
         collapseAllTopics()
         ReftoolDB.topics.where(t => upper(t.title) like s"%${text.value.toUpperCase}%").foreach(t => {
           t.expanded = true // also for leaves if in search!
           ReftoolDB.topics.update(t)
           expandAllParents(t)
         })
-        debug("finished initiate search search...")
         btClearSearch.disable = false
       } else loadTopics(clearSearch = true)
 

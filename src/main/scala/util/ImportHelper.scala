@@ -213,7 +213,7 @@ object ImportHelper extends Logging {
       info("import document NOT executed because already running...")
       return false
     }
-    debug(s"!!!!!!!!!!! importDocument: topic=$topic article=$article sourceFile=$sourceFile")
+    debug(s"importDocument: topic=$topic article=$article sourceFile=$sourceFile")
     assert(!((article != null) && (topic != null))) // both must not be given!
 
     // check if file is below datadir -> reveal article

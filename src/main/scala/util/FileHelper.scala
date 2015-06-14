@@ -124,7 +124,6 @@ object FileHelper extends Logging {
     val ifolders = pdfpath.listFiles(new io.FileFilter {
       override def accept(pathname: io.File): Boolean = pathname.getName.startsWith(AppStorage.config.importfolderprefix)
     })
-    debug("import folders:\n" + ifolders.mkString("\n"))
     var lastfolder: MFile = if (ifolders.isEmpty)
       new MFile(AppStorage.getImportFolder(1))
     else
@@ -164,7 +163,7 @@ object FileHelper extends Logging {
 
   def openURL(url: String) = {
     import java.awt.Desktop
-    if (Desktop.isDesktopSupported) {
+    if (Desktop.isDesktopSupported && url != "") {
       val desktop = Desktop.getDesktop
       if (desktop.isSupported(Desktop.Action.BROWSE)) {
         desktop.browse(new URI(url))
