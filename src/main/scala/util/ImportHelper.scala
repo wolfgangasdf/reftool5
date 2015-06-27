@@ -221,7 +221,7 @@ object ImportHelper extends Logging {
       inTransaction {
         val res = ReftoolDB.articles.where(a => upper(a.pdflink) like s"%${relp.toUpperCase}%")
         if (res.nonEmpty) {
-          ApplicationController.submitShowArticlesList(res.toList, s"Search [$relp]")
+          ApplicationController.submitShowArticlesList(res.toList, "Dropped:")
         }
       }
       backgroundImportRunning.set(false)
