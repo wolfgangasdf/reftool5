@@ -352,7 +352,7 @@ object ImportHelper extends Logging {
         s = latexPrinter.print(latexObjects)
       }
     }
-    s
+    s.trim
   }
 
   private def parseBibtex(bibtexentry: String): (Key, BibTeXEntry) = {
@@ -375,7 +375,7 @@ object ImportHelper extends Logging {
       // only update these if not present
       if (a.bibtexid == "") a.bibtexid = btentry.getKey.getValue
       // update these always!
-      a.entrytype = btentry.getType.getValue.toLowerCase
+      a.entrytype = btentry.getType.getValue.toLowerCase.trim
       a.title = getPlainTextField(btentry, a.title, BibTeXEntry.KEY_TITLE)
       a.authors = getPlainTextField(btentry, a.authors, BibTeXEntry.KEY_AUTHOR)
       a.journal = getPlainTextField(btentry, a.journal, BibTeXEntry.KEY_JOURNAL)
