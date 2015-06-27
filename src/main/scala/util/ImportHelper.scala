@@ -181,6 +181,7 @@ object ImportHelper extends Logging {
         updateMessage("save article...")
         Helpers.runUIwait {
           inTransaction {
+            a = ReftoolDB.renameDocuments(a)
             ReftoolDB.articles.insertOrUpdate(a)
             if (topic != null) a.topics.associate(topic)
           }
