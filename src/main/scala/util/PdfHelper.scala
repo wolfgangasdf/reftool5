@@ -40,22 +40,25 @@ object PdfHelper extends Logging {
         val doc = pdf.getDocument
         val pdoc = new PDDocument(doc)
         val pstrip = new PDFTextStripper()
-        pstrip.setStartPage(1)
-        pstrip.setEndPage(1)
-        val text = pstrip.getText(pdoc)
-        debug("search first page for doi link...")
-        // debug("first page:\n" + text)
-        doi = doire.findFirstIn(text).getOrElse("")
-        if (doi == "") {
-          val text2 = text.replaceAll( """[\r\n]""", "")
-          debug("found no doi, check for vertical arxiv id...")
-          //debug("first page without line ends:\n" + text2)
-          val re2 = """.*arXiv:(.*/\d+|\d+\.\d+)(?:v\d+)\s.*""".r
-          text2 match {
-            case re2(aaa) =>
-              debug("  found arxiv id: " + aaa)
-              doi = "arxiv:" + aaa
-            case _ => debug("could not find doi on first pdf page!")
+        for (iii <- 1 to 3) if (doi == "") {
+          pstrip.setStartPage(iii)
+          pstrip.setEndPage(iii)
+          val text = pstrip.getText(pdoc)
+          debug("search first page for doi link...")
+          // debug("first page:\n" + text)
+          doi = doire.findFirstIn(text).getOrElse("")
+          if (doi == "") {
+            val text2 = text.replaceAll( """[\r\n]""", "")
+            debug("found no doi, check for vertical arxiv id...")
+            //debug("first page without line ends:\n" + text2)
+            val re2 =
+              """.*arXiv:(.*/\d+|\d+\.\d+)(?:v\d+)\s.*""".r
+            text2 match {
+              case re2(aaa) =>
+                debug("  found arxiv id: " + aaa)
+                doi = "arxiv:" + aaa
+              case _ => debug(s"could not find doi on pdf page $iii!")
+            }
           }
         }
       }
