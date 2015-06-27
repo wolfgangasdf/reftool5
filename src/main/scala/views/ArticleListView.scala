@@ -129,6 +129,7 @@ class ArticleListView extends GenericView("articlelistview") {
         a.topics.associate(ReftoolDB.stackTopic)
         ApplicationController.submitArticleChanged(a)
       })
+      ApplicationController.showNotification(s"Moved ${as.length} articles to stack!")
       Helpers.runUIdelayed(alv.requestFocus())
     }
   }
@@ -141,6 +142,7 @@ class ArticleListView extends GenericView("articlelistview") {
         a.topics.associate(ReftoolDB.stackTopic)
         ApplicationController.submitArticleChanged(a)
       })
+      ApplicationController.showNotification(s"Copied ${as.length} articles to stack!")
     }
   }
   val aStackMoveHere = new MyAction("Article", "Move stack articles here") {
@@ -152,6 +154,7 @@ class ArticleListView extends GenericView("articlelistview") {
         a.topics.associate(currentTopic)
         ApplicationController.submitArticleChanged(a)
       })
+      ApplicationController.showNotification(s"Moved articles from stack!")
       setArticlesTopic(currentTopic)
     }
   }
@@ -163,6 +166,7 @@ class ArticleListView extends GenericView("articlelistview") {
         a.topics.associate(currentTopic)
         ApplicationController.submitArticleChanged(a)
       } )
+      ApplicationController.showNotification(s"Copied articles from stack!")
       setArticlesTopic(currentTopic)
     }
   }
@@ -208,6 +212,7 @@ class ArticleListView extends GenericView("articlelistview") {
         a.topics.dissociate(currentTopic)
         ApplicationController.submitArticleChanged(a)
       })
+      ApplicationController.showNotification(s"Removed ${as.length} articles from topic [$currentTopic]!")
       Helpers.runUIdelayed(alv.requestFocus())
     }
   }
@@ -248,6 +253,7 @@ class ArticleListView extends GenericView("articlelistview") {
         putString(res)
       }
       clipboard.setContent(content)
+      ApplicationController.showNotification(s"Copied article URLs to clipboard!")
     }
   }
 
@@ -275,6 +281,7 @@ class ArticleListView extends GenericView("articlelistview") {
         ReftoolDB.articles.update(aa)
         ApplicationController.submitArticleChanged(aa)
       })
+      ApplicationController.showNotification(s"Updated document filenames of ${as.length} articles!")
     }
   }
 

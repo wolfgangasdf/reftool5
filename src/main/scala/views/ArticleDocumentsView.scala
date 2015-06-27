@@ -85,6 +85,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
             getDocumentFileAbs(dd.docPath).delete()
             lv.getItems.remove(dd)
           })
+          ApplicationController.showNotification(s"Document deleted!")
           updateArticle()
           setArticle(article)
         case _ =>

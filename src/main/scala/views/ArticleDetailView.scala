@@ -153,7 +153,10 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     tooltipString = "Save changes to current article"
     image = new Image(getClass.getResource("/images/save_edit.gif").toExternalForm)
     accelerator = KeyCombination.keyCombination("shortcut +S")
-    action = (_) => saveArticle()
+    action = (_) => {
+      saveArticle()
+      ApplicationController.showNotification("Saved article!")
+    }
   }
 
   val aUpdateFromBibtex = new MyAction("Article", "Update from bibtex") {
@@ -164,6 +167,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
       inTransaction {
         ReftoolDB.articles.update(newa)
       }
+      ApplicationController.showNotification(s"Updated article from bibtex!")
       ApplicationController.submitArticleChanged(newa)
       setArticle(newa)
     }
@@ -178,13 +182,14 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   }
 
   val aCreateBibtex = new MyAction("Article", "Create bibtex entry") {
-    tooltipString = "Create the article's bibtex entry from article fields"
+    tooltipString = "(Re-)create the article's bibtex entry from article fields"
     image = new Image(getClass.getResource("/images/article2bib.png").toExternalForm)
     action = (_) => {
       val newa = ImportHelper.createBibtexFromArticle(article)
       inTransaction {
         ReftoolDB.articles.update(newa)
       }
+      ApplicationController.showNotification(s"(Re-)created bibtex entry!")
       ApplicationController.submitArticleChanged(newa)
       setArticle(newa)
     }
