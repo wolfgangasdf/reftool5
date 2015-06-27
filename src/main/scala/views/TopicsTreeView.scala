@@ -340,7 +340,7 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   }
 
-  val aAddArticle: MyAction = new MyAction("Topic", "Add empty article") {
+  val aAddArticle: MyAction = new MyAction("Topic", "Add new article") {
     image = new Image(getClass.getResource("/images/new_con.gif").toExternalForm)
     tooltipString = "Create new article in current topic"
     action = (_) => {
@@ -374,19 +374,24 @@ class TopicsTreeView extends GenericView("topicsview") {
   }
   val aExportBibtex: MyAction = new MyAction("Topic", "Export to bibtex") {
     image = new Image(getClass.getResource("/images/export2bib.png").toExternalForm)
-    tooltipString = "Export all articles in current topic to bibtex file"
-    action = (_) => {
+    tooltipString = "Export all articles in current topic to bibtex file\n" +
+      "shift: overwrite last export filename"
+    action = (m) => {
       val t = tv.getSelectionModel.getSelectedItem.getValue
-      val fc = new FileChooser() {
-        title = "Select bibtex export file"
-        extensionFilters += new ExtensionFilter("bibtex files", "*.bib")
-        if (t.exportfn != "") {
-          val oldef = new MFile(t.exportfn)
-          initialFileName = oldef.getName
-          initialDirectory = oldef.getParent.toFile
-        } else initialFileName = "articles.bib"
+      val fn = if (m == MyAction.MSHIFT && new MFile(t.exportfn).exists) {
+        new MFile(t.exportfn)
+      } else {
+        val fc = new FileChooser() {
+          title = "Select bibtex export file"
+          extensionFilters += new ExtensionFilter("bibtex files", "*.bib")
+          if (t.exportfn != "") {
+            val oldef = new MFile(t.exportfn)
+            initialFileName = oldef.getName
+            initialDirectory = oldef.getParent.toFile
+          } else initialFileName = "articles.bib"
+        }
+        MFile(fc.showSaveDialog(toolbarButton.getParent.getScene.getWindow))
       }
-      val fn = MFile(fc.showSaveDialog(toolbarButton.getParent.getScene.getWindow))
       if (fn != null) inTransaction {
         if (t.exportfn != fn.getPath) {
           t.exportfn = fn.getPath
@@ -395,6 +400,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         val pw = new io.PrintWriter(new io.FileOutputStream(fn.toFile, false))
         t.articles.foreach( a => pw.write(a.bibtexentry) )
         pw.close()
+        ApplicationController.showNotification(s"Exported articles in topic to bibtex!")
       }
     }
   }

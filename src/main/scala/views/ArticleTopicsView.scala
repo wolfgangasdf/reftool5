@@ -33,6 +33,7 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
       lv.selectionModel.value.getSelectedItems.foreach( t => {
         article.topics.dissociate(t)
       })
+      ApplicationController.showNotification(s"Removed article from topic!")
       setArticle(article)
       ApplicationController.submitArticleChanged(article)
     }
