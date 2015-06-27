@@ -50,7 +50,7 @@ object PdfHelper extends Logging {
           val text2 = text.replaceAll( """[\r\n]""", "")
           debug("found no doi, check for vertical arxiv id...")
           //debug("first page without line ends:\n" + text2)
-          val re2 = """.*arXiv:(\d+\.\d+)(?:v\d+)*\s.*""".r
+          val re2 = """.*arXiv:(.*/\d+|\d+\.\d+)(?:v\d+)\s.*""".r
           text2 match {
             case re2(aaa) =>
               debug("  found arxiv id: " + aaa)

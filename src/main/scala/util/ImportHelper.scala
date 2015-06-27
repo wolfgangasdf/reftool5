@@ -54,7 +54,7 @@ object ImportHelper extends Logging {
     val tfArxiv = new TextField {
       hgrow = Priority.Always
       onAction = (ae: ActionEvent) => {
-        val re2 = """(\d+\.\d+)(?:v\d+)?""".r
+        val re2 = """(?:arXiv:)?(.*/\d+|\d+\.\d+)(?:v\d+).*""".r
         text.value.trim match {
           case re2(aid) =>
             doi = "arxiv:" + aid
@@ -309,7 +309,7 @@ object ImportHelper extends Logging {
   private def updateBibtexFromArxiv(article: Article, aid: String): Article = {
     import scalaj.http._
     var a = article
-    val resp1 = Http("http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:" + aid).timeout(3000, 5000).asString
+    val resp1 = Http("http://esoads.eso.org/cgi-bin/bib_query?arXiv:" + aid).timeout(3000, 5000).asString
     if (resp1.code == 200) {
       val re1 = """(?s).*<a href="(.*)">Bibtex entry for this abstract</a>.*""".r
       resp1.body match {
