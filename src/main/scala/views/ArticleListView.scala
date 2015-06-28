@@ -359,8 +359,10 @@ class ArticleListView extends GenericView("articlelistview") {
 
   def revealArticle(a: Article) = {
     if (articles.contains(a)) {
-      alv.getSelectionModel.select(a)
-      alv.scrollTo(alv.getSelectionModel.getSelectedIndex)
+      Helpers.runUI {
+        alv.getSelectionModel.select(a)
+        alv.scrollTo(alv.getSelectionModel.getSelectedIndex)
+      }
     }
   }
 
@@ -395,6 +397,7 @@ class ArticleListView extends GenericView("articlelistview") {
     articles -= a
   })
 
+  var firstRun = true
   def setArticles(al: List[Article], title: String, topic: Topic): Unit = {
     logCall(s"num=${al.length} topic=$topic")
     currentTopic = topic
@@ -408,6 +411,10 @@ class ArticleListView extends GenericView("articlelistview") {
     aOpenPDF.enabled = false // req selection
     aRemoveFromTopic.enabled = false // req selection
     aRemoveArticle.enabled = false // req selection
+    if (firstRun) {
+      ReftoolDB.getSetting(ReftoolDB.SLASTARTICLEID) foreach(s => revealArticleByID(s.value.toLong))
+      firstRun = false
+    }
   }
 
   def setArticlesTopic(topic: Topic) {
@@ -438,7 +445,6 @@ class ArticleListView extends GenericView("articlelistview") {
     if (s1.length == 1 && s1(0).contains(",")) {
       s1(0).split(",").zipWithIndex.foreach { case (s: String, i: Int) => if (alv.columns.length > i) alv.columns(i).setPrefWidth(s.toDouble) }
     }
-    ReftoolDB.getSetting(ReftoolDB.SLASTARTICLEID) foreach(s => Helpers.runUIdelayed(revealArticleByID(s.value.toLong), 1500))
     // alv.delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY) // TODO waitforfix does not work in combi with setPrefWidth
   }
 
