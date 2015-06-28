@@ -163,8 +163,9 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     tooltipString = "Update article fields from bibtex (not overwriting review!)"
     image = new Image(getClass.getResource("/images/bib2article.png").toExternalForm)
     action = (_) => {
-      val newa = ImportHelper.updateArticleFromBibtex(article)
+      var newa = ImportHelper.updateArticleFromBibtex(article)
       inTransaction {
+        newa = ReftoolDB.renameDocuments(newa)
         ReftoolDB.articles.update(newa)
       }
       ApplicationController.showNotification(s"Updated article from bibtex!")
