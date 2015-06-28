@@ -295,6 +295,8 @@ object ApplicationController extends Logging {
     import scala.collection.JavaConversions._
     ManagementFactory.getRuntimeMXBean.getInputArguments.foreach( s => info("jvm runtime parm: " + s))
 
+    debug("main ui thread: " + Thread.currentThread.getId + " isUI:" + scalafx.application.Platform.isFxApplicationThread)
+
     Main.mainScene.window.value.onCloseRequest = (we: WindowEvent) => {
       if (!ApplicationController.canClose)
         we.consume()
@@ -325,43 +327,43 @@ object ApplicationController extends Logging {
   val articleChangedListeners = new ArrayBuffer[(Article) => Unit]()
   def submitArticleChanged(a: Article): Unit = {
     logCall("aChanged " + a)
-    articleChangedListeners.foreach( acl => acl(a) )
+    articleChangedListeners.foreach( acl => Helpers.runUI(acl(a)) )
   }
 
   val articleRemovedListeners = new ArrayBuffer[(Article) => Unit]()
   def submitArticleRemoved(a: Article): Unit = {
     logCall("aRemoved " + a)
-    articleRemovedListeners.foreach( acl => acl(a) )
+    articleRemovedListeners.foreach( acl => Helpers.runUI(acl(a)) )
   }
 
   val showArticleListeners = new ArrayBuffer[(Article) => Unit]()
   def submitShowArticle(a: Article): Unit = {
     logCall("aShow " + a)
-    showArticleListeners.foreach( acl => acl(a) )
+    showArticleListeners.foreach( acl => Helpers.runUI(acl(a)) )
   }
 
   val showArticlesListListeners = new ArrayBuffer[(List[Article], String) => Unit]()
   def submitShowArticlesList(al: List[Article], text: String): Unit = {
     logCall("aShowAList ")
-    showArticlesListListeners.foreach( acl => acl(al, text) )
+    showArticlesListListeners.foreach( acl => Helpers.runUI(acl(al, text)) )
   }
 
   val showArticlesFromTopicListeners = new ArrayBuffer[(Topic) => Unit]()
   def submitShowArticlesFromTopic(t: Topic): Unit = {
     logCall("aShowFromTopic " + t)
-    showArticlesFromTopicListeners.foreach( acl => acl(t) )
+    showArticlesFromTopicListeners.foreach( acl => Helpers.runUI(acl(t)) )
   }
 
   val revealArticleInListListeners = new ArrayBuffer[(Article) => Unit]()
   def submitRevealArticleInList(a: Article) = {
     logCall("aRevealInList " + a)
-    revealArticleInListListeners.foreach( acl => acl(a) )
+    revealArticleInListListeners.foreach( acl => Helpers.runUI(acl(a)) )
   }
 
   val revealTopicListener = new ArrayBuffer[(Topic) => Unit]()
   def submitRevealTopic(t: Topic): Unit = {
     logCall("aRevealTopic " + t)
-    revealTopicListener.foreach( rtl => rtl(t) )
+    revealTopicListener.foreach( rtl => Helpers.runUI(rtl(t)) )
   }
 
   val notificationTimer = new java.util.Timer()

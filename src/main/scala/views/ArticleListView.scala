@@ -392,7 +392,6 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   })
   ApplicationController.articleRemovedListeners += ( (a: Article) => {
-    val oldselidx = alv.getSelectionModel.getSelectedIndices.headOption
     articles -= a
   })
 
@@ -439,7 +438,7 @@ class ArticleListView extends GenericView("articlelistview") {
     if (s1.length == 1 && s1(0).contains(",")) {
       s1(0).split(",").zipWithIndex.foreach { case (s: String, i: Int) => if (alv.columns.length > i) alv.columns(i).setPrefWidth(s.toDouble) }
     }
-    ReftoolDB.getSetting(ReftoolDB.SLASTARTICLEID) foreach(s => revealArticleByID(s.value.toLong))
+    ReftoolDB.getSetting(ReftoolDB.SLASTARTICLEID) foreach(s => Helpers.runUIdelayed(revealArticleByID(s.value.toLong), 1500))
     // alv.delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY) // TODO waitforfix does not work in combi with setPrefWidth
   }
 
