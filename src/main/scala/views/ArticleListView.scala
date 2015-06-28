@@ -269,6 +269,7 @@ class ArticleListView extends GenericView("articlelistview") {
           val f = FileHelper.getDocumentFileAbs(a.getFirstDocRelative)
           MFile.copy(f, new MFile(res.getPath + "/" + f.getName))
         } )
+        ApplicationController.showNotification(s"Copied documents to folder!")
       }
     }
   }
