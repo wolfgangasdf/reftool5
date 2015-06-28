@@ -316,7 +316,7 @@ object ImportHelper extends Logging {
       resp1.body match {
         case re1(biblink) =>
           debug("found biblink: " + biblink)
-          val resp2 = Http(biblink).asString
+          val resp2 = Http(biblink).timeout(3000, 8000).asString
           if (resp2.code == 200) {
             if (resp2.body.contains("@")) {
               val be = resp2.body.substring(resp2.body.indexOf("@"))

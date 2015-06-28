@@ -532,7 +532,7 @@ class TopicsTreeView extends GenericView("topicsview") {
   }
 
   override def setUIsettings(s: String): Unit = {
-    ReftoolDB.getSetting(ReftoolDB.SLASTTOPICID) foreach(s => loadTopicsShowID(s.value.toLong))
+    ReftoolDB.getSetting(ReftoolDB.SLASTTOPICID) foreach(s => Helpers.runUI(loadTopicsShowID(s.value.toLong)))
   }
 
   override val uisettingsID: String = "ttv"
