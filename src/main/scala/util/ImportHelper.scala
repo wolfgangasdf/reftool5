@@ -337,6 +337,10 @@ object ImportHelper extends Logging {
     // debug(s"""curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
     if (response.code == 200) {
       a = generateUpdateBibtexID(response.body, a)
+    } else {
+      debug("updatebibtexfromdoi: resp = " + response)
+      Helpers.runUI { new Alert(AlertType.Error, "Error retrieving metadata from crossref. Probably the article is not yet in their database?\n" +
+          "You have to paste the bibtex entry manually, or retry later (update metadata from pdf).").showAndWait() }
     }
     a
   }
