@@ -54,7 +54,7 @@ object ImportHelper extends Logging {
     val tfArxiv = new TextField {
       hgrow = Priority.Always
       onAction = (ae: ActionEvent) => {
-        val re2 = """(?:arXiv:)?(.*/\d+|\d+\.\d+)(?:v\d+).*""".r
+        val re2 = """(?:arXiv:)?(.*/\d+|\d+\.\d+)(?:v\d+)*.*""".r
         text.value.trim match {
           case re2(aid) =>
             doi = "arxiv:" + aid
@@ -288,7 +288,7 @@ object ImportHelper extends Logging {
   }
 
   def generateUpdateBibtexID(be: String, a: Article, resetBibtexID: Boolean = false): Article = {
-    if (a.bibtexentry.trim != "") {
+    if (be.trim != "") {
       a.bibtexentry = be.replaceAllLiterally("~", " ") // tilde in author name gives trouble
       val (_, btentry) = parseBibtex(a.bibtexentry)
       a.bibtexentry = bibtexFromBtentry(btentry) // update to nice format
@@ -365,7 +365,7 @@ object ImportHelper extends Logging {
     val btparser = new org.jbibtex.BibTeXParser
     val btdb = btparser.parse(new io.StringReader(bibtexentry))
     val btentries = btdb.getEntries
-    if (btentries.size() == 1)
+    if (btentries.size == 1)
       btentries.head
     else {
       warn("error parsing bibtex for bibtexentry=\n" + bibtexentry)
