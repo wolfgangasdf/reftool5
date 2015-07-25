@@ -28,6 +28,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     text = if (isDirty.value) title + " *" else title
     aSave.enabled = isDirty.value
     aUpdateFromBibtex.enabled = !isDirty.value
+    aGenerateBibtexID.enabled = !isDirty.value
     aCreateBibtex.enabled = !isDirty.value
     aUpdateMetadatafromPDF.enabled = !isDirty.value
   })
@@ -64,6 +65,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     if (doit) {
       if (aa == null) {
         lines.foreach( ll => ll.tf.disable = true )
+        Seq(aSave, aUpdateFromBibtex, aGenerateBibtexID, aCreateBibtex, aUpdateMetadatafromPDF).foreach(_.enabled = false)
       } else {
         lines.foreach( ll => { ll.tf.disable = false ; ll.tf.editable = true } )
         val a = aa
@@ -79,6 +81,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
         lLinkURL.tf.text = a.linkurl
         lDOI.tf.text = a.doi
         lBibtexentry.tf.text = a.bibtexentry
+        Seq(aUpdateFromBibtex, aGenerateBibtexID, aCreateBibtex, aUpdateMetadatafromPDF).foreach(_.enabled = true)
       }
       isDirty.value = false
     }
@@ -160,7 +163,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   }
 
   val aUpdateFromBibtex = new MyAction("Article", "Update from bibtex") {
-    tooltipString = "Update article fields from bibtex (not overwriting review!)"
+    tooltipString = "Update article fields from bibtex, not overwriting review"
     image = new Image(getClass.getResource("/images/bib2article.png").toExternalForm)
     action = (_) => {
       var newa = ImportHelper.updateArticleFromBibtex(article)
@@ -169,6 +172,21 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
         ReftoolDB.articles.update(newa)
       }
       ApplicationController.showNotification(s"Updated article from bibtex!")
+      ApplicationController.submitArticleChanged(newa)
+      setArticle(newa)
+    }
+  }
+
+  val aGenerateBibtexID = new MyAction("Article", "Generate bibtex ID") {
+    tooltipString = "Generate new bibtex ID\n<last name><year><alphabeticically incrementing counter>"
+    image = new Image(getClass.getResource("/images/genbibid.png").toExternalForm)
+    action = (_) => {
+      var newa = ImportHelper.generateUpdateBibtexID(article.bibtexentry, article, resetBibtexID = true)
+      inTransaction {
+        newa = ReftoolDB.renameDocuments(newa)
+        ReftoolDB.articles.update(newa)
+      }
+      ApplicationController.showNotification(s"Generated new bibtex ID!")
       ApplicationController.submitArticleChanged(newa)
       setArticle(newa)
     }
@@ -196,7 +214,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
-  toolbaritems ++= Seq(lbCurrentArticle, aSave.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateMetadatafromPDF.toolbarButton, aCreateBibtex.toolbarButton)
+  toolbaritems ++= Seq(lbCurrentArticle, aSave.toolbarButton, aGenerateBibtexID.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateMetadatafromPDF.toolbarButton, aCreateBibtex.toolbarButton)
 
   ApplicationController.showArticleListeners += ( (a: Article) => {
     setArticle(a)

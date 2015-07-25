@@ -285,8 +285,8 @@ object ReftoolDB extends Schema with Logging {
         DBupgrades.upgrade4to5()
         dbSetSchemaVersion(1)
       }
-      assert(new MFile(AppStorage.config.dbpath).exists)
-      assert(pp.exists)
+      assert(new MFile(AppStorage.config.dbpath).exists, "Cannot find database path below data directory!")
+      assert(pp.exists, "Cannot find pdf path below data directory")
       // upgrade DB schema if needed
       while (dbGetSchemaVersion != lastschemaversion) dbSetSchemaVersion(DBupgrades.upgradeSchema(dbGetSchemaVersion))
     }
