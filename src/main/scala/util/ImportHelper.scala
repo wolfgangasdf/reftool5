@@ -119,9 +119,8 @@ object ImportHelper extends Logging {
   }
 
   private def importDocument2(updateMetadata: Boolean, article: Article, sourceFile: MFile,
-                              doFileAction: Boolean, lastfolder: MFile, copyIt: Boolean, topic: Topic,
+                              doFileAction: Boolean, copyIt: Boolean, topic: Topic,
                               interactive: Boolean = true, parsePdf: Boolean = true) = {
-    debug(s"id2: $updateMetadata $article ${sourceFile.getName} $interactive")
     new javafx.concurrent.Task[Unit] {
       override def call(): Unit = {
         var a = if (article == null) new Article(title = sourceFile.getName) else article
@@ -161,7 +160,7 @@ object ImportHelper extends Logging {
         if (doFileAction) {
           val newdoc = new Document(if (article == null) Document.NMAIN else Document.NOTHER, "")
 
-          val newFile1 = FileHelper.getUniqueDocFile(lastfolder, a, newdoc.docName, sourceFile.getName)
+          val newFile1 = FileHelper.getUniqueDocFile(FileHelper.getLastImportFolder, a, newdoc.docName, sourceFile.getName)
 
           newdoc.docPath = FileHelper.getDocumentPathRelative(newFile1)
 
@@ -201,7 +200,7 @@ object ImportHelper extends Logging {
       info("import document NOT executed because already running...")
       false
     } else {
-      val task = importDocument2(updateMetadata = true, article, sourceFile, doFileAction = false, null, copyIt = false, null, parsePdf = parsePdf)
+      val task = importDocument2(updateMetadata = true, article, sourceFile, doFileAction = false, copyIt = false, null, parsePdf = parsePdf)
       new MyWorker( "Update metadata...", task, () => { backgroundImportRunning.set(false) } ).runInBackground()
       true
     }
@@ -229,8 +228,6 @@ object ImportHelper extends Logging {
       return false
     })
 
-    val lastfolder = FileHelper.getLastImportFolder
-
     // check if move or copy file
     val copyIt = if (copyFile.isEmpty) Helpers.runUIwait {
       val BtCopy = new ButtonType("Copy")
@@ -248,7 +245,7 @@ object ImportHelper extends Logging {
       }
     } else copyFile.get
 
-    val task = importDocument2(!isAdditionalDoc, article, sourceFile, doFileAction = true, lastfolder, copyIt = copyIt, topic, interactive)
+    val task = importDocument2(!isAdditionalDoc, article, sourceFile, doFileAction = true, copyIt = copyIt, topic, interactive)
       new MyWorker("Import document", task, () => { backgroundImportRunning.set(false) } ).runInBackground()
 
     true
@@ -290,19 +287,23 @@ object ImportHelper extends Logging {
     }
   }
 
-  def generateUpdateBibtexID(be: String, a: Article): Article = {
-    a.bibtexentry = be.replaceAllLiterally("~", " ") // tilde in author name gives trouble
-    val (_, btentry) = parseBibtex(a.bibtexentry)
-    a.bibtexentry = bibtexFromBtentry(btentry) // update to nice format
-    val bidorig = btentry.getKey.getValue
-    if (a.bibtexid == "") { // article has no bibtexid, generate one...
-      val bid = getFirstAuthorLastName(getPlainTextField(btentry, "", BibTeXEntry.KEY_AUTHOR)) +
-        getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
-      val bid2 = getUniqueBibtexID(bid)
-      a.bibtexid = bid2
-      a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, bid2)
-    } else { // if bibtexid was set before, just update bibtexentry with this
-      a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, a.bibtexid)
+  def generateUpdateBibtexID(be: String, a: Article, resetBibtexID: Boolean = false): Article = {
+    if (a.bibtexentry.trim != "") {
+      a.bibtexentry = be.replaceAllLiterally("~", " ") // tilde in author name gives trouble
+      val (_, btentry) = parseBibtex(a.bibtexentry)
+      a.bibtexentry = bibtexFromBtentry(btentry) // update to nice format
+      val bidorig = btentry.getKey.getValue
+      if (a.bibtexid == "" || resetBibtexID) {
+        // article has no bibtexid, generate one...
+        val bid = getFirstAuthorLastName(getPlainTextField(btentry, "", BibTeXEntry.KEY_AUTHOR)) +
+          getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
+        val bid2 = getUniqueBibtexID(bid)
+        a.bibtexid = bid2
+        a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, bid2)
+      } else {
+        // if bibtexid was set before, just update bibtexentry with this
+        a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, a.bibtexid)
+      }
     }
     a
   }
