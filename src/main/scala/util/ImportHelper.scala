@@ -334,10 +334,11 @@ object ImportHelper extends Logging {
     import scalaj.http._ // or probably use better http://www.bigbeeconsultants.co.uk/content/bee-client ? but has deps
     var a = article
     val response = Http("http://dx.doi.org/" + doi).
-        header("Accept", "text/bibliography; style=bibtex").option(HttpOptions.followRedirects(shouldFollow = true)).asString
-    // debug(s"""curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
+        header("Accept", "text/bibliography; style=bibtex; locale=en-US.UTF-8").option(HttpOptions.followRedirects(shouldFollow = true)).asBytes
+    debug(s"""# curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
     if (response.code == 200) {
-      a = generateUpdateBibtexID(response.body, a)
+      val rb = new String(response.body, "UTF-8")
+      a = generateUpdateBibtexID(rb, a)
     } else {
       debug("updatebibtexfromdoi: resp = " + response)
       Helpers.runUI { new Alert(AlertType.Error, "Error retrieving metadata from crossref. Probably the article is not yet in their database?\n" +
