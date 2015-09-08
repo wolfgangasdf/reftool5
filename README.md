@@ -8,8 +8,8 @@ constantly improved because I use it daily. The code is pretty clean and you can
 
 Why do I not use Zotero? I would like to but: (i) Too slow for 10,000 articles. (ii) No unique bibtex ids. 
 (iii) Daily work needs too many clicks, it doesn't fit my workflow. This appears to be design-based to me and can't 
-be solved easily (also because I am not good in XUL programming and there is no IDE comparable to IntelliJ). Further, 
-scala is a beautiful language worth learning and cross-platform thanks to the Java VM!
+be solved easily (also because of XUL...). Further, 
+scala is a beautiful language worth learning; and it's cross-platform thanks to the Java VM!
 
 Some key specs & features (not complete):
 
@@ -23,11 +23,11 @@ Some key specs & features (not complete):
 * An article has, amongst others, a comment/review field, and a bibtex entry allowing for full flexibility.
 * PDFs can be imported easily, it searches for DOI (or arxiv ID) in the PDF and then uses crossref.org to find the 
   metadata. Works via drag'n'drap, a single-click Google Chrome extension, or by watching an auto-import folder.
-* Bibtex export for papers: just create a topic containing all needed references. The export file path is cached for each topic.
+* Bibtex export for papers: just create a topic containing all needed references and export it as bibtex database. The export file path is cached for each topic.
 * Copy selected articles' URLs to clipboard.
 * Copy selected articles' PDFs to a folder.
 * There is a `stack` topic with its own buttons to easily move / copy articles around or collect them.
-* There is an `ORPHANED` topic for articles not belonging to any topic. Don't misuse this as an "read later" folder, see below!
+* There is an `ORPHANED` topic for articles not belonging to any topic. Don't misuse this as an "read later" folder.
 * Tools view: Extensive database information, checking for missing / orphaned document files, etc.
 * topics and documents are sorted alphanumerically, just use numbers to order them (000-first, 00-second, 01-third etc.).  
 
@@ -36,25 +36,26 @@ Reftool is/can not:
 * A collaborative thing. 
     * Reftool is a single-user application. In my opinion, references are personal, you exchange PDFs or links with collaborators. 
       My experience tells me that you should not import any articles into a reference manager 
-      without having read at least the abstract, you'll never have time to read them later in nearly all 
-      cases!
+      without having read at least the abstract, you'll never have time to read them later!
     * Reftool contains tools to make this exchange easy (copy article links, copy pdfs)
 * Tag-based. I tried it and find that you'll quickly have to many, so they must be arranged in a tree, which I call `topics`. 
 * Full-text search through all documents. However, since most have a desktop search engine running you can use this 
   and reverse-lookup articles by drag'n'drop into Reftool.
 
 Import / export possibilities:
+
 * You can import a tree-like folder structure containing PDFs.
 * You can export a bibtex database.
-* If you need more, create an issue or just write your own routine!
+* If you need more, create an issue on bitbucketor just write your own routine!
 
-Key hints:
+Hints:
 
 * Don't use a "read later" folder. You'll never do.
 
 ### How to run ###
+
 * Get Java JRE >= 8u40
-* Download the zip for Mac or (Windows, Linux), extract it somewhere and double-click the app (Mac) or 
+* [Download the zip](https://bitbucket.org/wolfgang/reftool5/downloads) for Mac or (Windows, Linux), extract it somewhere and double-click the app (Mac) or 
   jar file (Windows, Linux).
 
 Everything should be self-explanatory (watch out for tooltips) and if you create a new "reftool data dir", the 
@@ -68,6 +69,7 @@ database is populated with a few demo topics and articles.
 plugin for development, just import the project to get started. 
 
 Run Reftool from terminal and package it:
+
 * Install the [Scala Build Tool](http://www.scala-sbt.org/)
 * Compile and run manually: `sbt run`
 * Package for all platforms: `sbt dist`. The resulting files are in `target/`
