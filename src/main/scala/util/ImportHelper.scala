@@ -6,6 +6,7 @@ import db.{Article, Document, ReftoolDB, Topic}
 import framework.{ApplicationController, Helpers, Logging, MyWorker}
 import org.jbibtex._
 import org.squeryl.PrimitiveTypeMode._
+import util.bibtex.AuthorNamesExtractor
 
 import scala.collection.JavaConversions._
 import scalafx.Includes._
@@ -278,15 +279,6 @@ object ImportHelper extends Logging {
     bid3
   }
 
-  private def getFirstAuthorLastName(s: String): String = {
-    if (s.contains(","))
-      s.substring(0, s.indexOf(","))
-    else {
-      debug("error parsing first author last name!")
-      "unknown"
-    }
-  }
-
   def generateUpdateBibtexID(be: String, a: Article, resetBibtexID: Boolean = false): Article = {
     if (be.trim != "") {
       a.bibtexentry = be.replaceAllLiterally("~", " ") // tilde in author name gives trouble
@@ -295,8 +287,9 @@ object ImportHelper extends Logging {
       val bidorig = btentry.getKey.getValue
       if (a.bibtexid == "" || resetBibtexID) {
         // article has no bibtexid, generate one...
-        val bid = getFirstAuthorLastName(getPlainTextField(btentry, "", BibTeXEntry.KEY_AUTHOR)) +
-          getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
+        val authors = AuthorNamesExtractor.toList(getPlainTextField(btentry, "", BibTeXEntry.KEY_AUTHOR))
+        val lastau = if (authors.nonEmpty) authors.head.last.head.toString else "unknown"
+        val bid = lastau + getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
         val bid2 = getUniqueBibtexID(bid)
         a.bibtexid = bid2
         a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, bid2)
