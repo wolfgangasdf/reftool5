@@ -111,7 +111,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     ApplicationController.submitArticleChanged(article)
   }
 
-  class MyLine(gpRow: Int, labelText: String, rows: Int = 1) extends MyInputTextArea(gpRow, labelText, rows, "", "") {
+  class MyLine(gpRow: Int, labelText: String, rows: Int = 1, disableEnter: Boolean = false) extends MyInputTextArea(gpRow, labelText, rows, "", "", disableEnter) {
     val lineidx = lines.size
     onchange = () => { isDirty.value = true }
     lines += this
@@ -125,17 +125,17 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     columnConstraints += new ColumnConstraints { hgrow = Priority.Always }
   }
 
-  val lTitle = new MyLine(0, "Title", 2)
-  val lAuthors = new MyLine(1, "Authors", 2)
-  val lPubdate = new MyLine(2, "Pubdate")
-  val lBibtexid = new MyLine(3, "Bibtex ID")
-  val lJournal = new MyLine(4, "Journal")
+  val lTitle = new MyLine(0, "Title", 2, disableEnter = true)
+  val lAuthors = new MyLine(1, "Authors", 2, disableEnter = true)
+  val lPubdate = new MyLine(2, "Pubdate", disableEnter = true)
+  val lBibtexid = new MyLine(3, "Bibtex ID", disableEnter = true)
+  val lJournal = new MyLine(4, "Journal", disableEnter = true)
 
   val lReview = new MyLine(0, "Review", 10)
 
-  val lEntryType = new MyLine(0, "Entry type")
-  val lLinkURL = new MyLine(2, "Link URL")
-  val lDOI = new MyLine(3, "DOI")
+  val lEntryType = new MyLine(0, "Entry type", disableEnter = true)
+  val lLinkURL = new MyLine(2, "Link URL", disableEnter = true)
+  val lDOI = new MyLine(3, "DOI", disableEnter = true)
   val lBibtexentry = new MyLine(4, "Bibtex entry", 10)
 
   val grid1 = new MyGridPane {

@@ -15,7 +15,7 @@ import scalafx.geometry.Pos
 import scalafx.scene.control.Tab._
 import scalafx.scene.control._
 import scalafx.scene.image.{Image, ImageView}
-import scalafx.scene.input.{MouseEvent, KeyCombination}
+import scalafx.scene.input.{KeyCode, KeyEvent, MouseEvent, KeyCombination}
 import scalafx.scene.layout.{GridPane, HBox, Pane, VBox}
 import scalafx.scene.{Group, Node}
 import scalafx.stage.{DirectoryChooser, WindowEvent}
@@ -193,7 +193,7 @@ class MyInputDirchooser(gpRow: Int, labelText: String, iniText: String, helpStri
   override def content: Seq[scene.Node] = Seq(label, tf, bt)
 }
 
-class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String, helpString: String) extends MyFlexInput(gpRow, labelText, rows, helpString) {
+class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String, helpString: String, disableEnter: Boolean) extends MyFlexInput(gpRow, labelText, rows, helpString) {
   val tf = new TextArea() {
     text = iniText
     prefRowCount = rows - 1
@@ -201,6 +201,11 @@ class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String,
     alignmentInParent = Pos.BaselineLeft
     editable = true
     wrapText = true
+  }
+  if (disableEnter) {
+    tf.filterEvent(KeyEvent.KeyPressed) {
+      (ke: KeyEvent) => if (ke.code == KeyCode.ENTER) ke.consume()
+    }
   }
   tf.text.onChange(onchange())
   GridPane.setConstraints(tf, 1, gpRow, 2, 1)
