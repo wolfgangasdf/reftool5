@@ -14,6 +14,7 @@
     "persistent": false
   },
   "permissions": [
-    "activeTab" //, "tabs", "http://*/*", "https://*/*"
+    "activeTab", // to access current webpage or url of it
+    "downloads" // to use chrome's download API
   ]
 }
