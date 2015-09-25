@@ -1,9 +1,10 @@
 package views
 
-import db.ReftoolDB
+import db.{Article, ReftoolDB}
 import framework.{ApplicationController, GenericView}
 
 import org.squeryl.PrimitiveTypeMode._
+import org.squeryl.Queryable
 
 import scalafx.Includes._
 import scalafx.event.ActionEvent
@@ -18,12 +19,9 @@ class SearchView extends GenericView("searchview") {
 
   val tfSearch = new TextField {
     hgrow = Priority.Always
+    tooltip = new Tooltip { text = "Enter space-separated search terms, articles matching all of these (in any fields) are returned!" }
     this.promptText = "Enter search string"
-    onAction = (ae: ActionEvent) => {
-      val sstr = text.value.toUpperCase
-      inTransaction {
-        val maxSize = 1000
-        val res = ReftoolDB.articles.where(a =>
+    def dynamicWhere(q: Queryable[Article], sstr: String) = q.where(a =>
           (upper(a.title) like s"%$sstr%".inhibitWhen(!cbTitle.selected.value))
           or (upper(a.authors) like s"%$sstr%".inhibitWhen(!cbAuthors.selected.value))
           or (upper(a.review) like s"%$sstr%".inhibitWhen(!cbReview.selected.value))
@@ -34,6 +32,12 @@ class SearchView extends GenericView("searchview") {
           or (upper(a.doi) like s"%$sstr%".inhibitWhen(!cbDOI.selected.value))
           or (upper(a.pdflink) like s"%$sstr%".inhibitWhen(!cbDocuments.selected.value))
         )
+    onAction = (ae: ActionEvent) => {
+      inTransaction {
+        val maxSize = 1000
+        val terms = text.value.trim.toUpperCase.split(" ")
+        var res = dynamicWhere(ReftoolDB.articles, terms(0))
+        for (i <- 1 to terms.length - 1) res = dynamicWhere(res, terms(i))
         if (res.isEmpty)
           ApplicationController.showNotification("Search returned no results!")
         else {

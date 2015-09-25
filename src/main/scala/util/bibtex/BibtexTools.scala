@@ -38,6 +38,9 @@ object bibtex {
 
 object StringUtils {
 
+  import scala.language.reflectiveCalls
+  import scala.language.implicitConversions
+
   implicit def char2testable(c: Char) = new {
     def isAlphaNumeric = c.toString.matches("[a-zA-Z0-9]")
     def isBibTeXLower =
@@ -287,7 +290,7 @@ object AuthorNameExtractor {
         word, "\\s+".r) ^^ {
         case l @ some :: tail =>
           // the lastname part contains at least the last word
-          var lastname = l.last
+          val lastname = l.last
           // remaining word, removing at least the last one which is in the lastname part
           val remaining = l.dropRight(1)
           // the von part (if any) is anything between the first lower case
