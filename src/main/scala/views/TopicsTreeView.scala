@@ -480,23 +480,27 @@ class TopicsTreeView extends GenericView("topicsview") {
     hgrow = Priority.Always
     promptText = "search..."
     tooltip = new Tooltip { text = "enter space-separated search terms, topics matching all terms are listed" }
-    def dynamicWhere(q: Queryable[Topic], s: String) = q.where(t => upper(t.title) like s"%${s}%")
+    def dynamicWhere(q: Queryable[Topic], s: String) = q.where(t => upper(t.title) like s"%$s%")
     onAction = (ae: ActionEvent) => {
       if (text.value.trim != "") inTransaction {
-        collapseAllTopics()
-        val terms = text.value.trim.toUpperCase.split(" ")
-        var rest = dynamicWhere(ReftoolDB.topics, terms(0))
-        for (i <- 1 to terms.length - 1) rest = dynamicWhere(rest, terms(i))
-        rest.foreach(t => {
-          t.expanded = true // also for leaves if in search!
-          ReftoolDB.topics.update(t)
-          expandAllParents(t)
-        })
+        val terms = text.value.trim.toUpperCase.split(" ").sortWith(_.length < _.length).reverse // longest first!
+        if (terms.exists(_.length > 2)) {
+          collapseAllTopics()
+          var rest = dynamicWhere(ReftoolDB.topics, terms(0))
+          for (i <- 1 to terms.length - 1) rest = dynamicWhere(rest, terms(i))
+          rest.foreach(t => {
+            t.expanded = true // also for leaves if in search!
+            ReftoolDB.topics.update(t)
+            expandAllParents(t)
+          })
+        } else {
+          ApplicationController.showNotification("Enter at least one search term >= 3 characters long!")
+        }
         btClearSearch.disable = false
-      } else loadTopics(clearSearch = true)
-
-      searchActive = true
-      loadTopics(revealLastTopic = false)
+        searchActive = true
+        loadTopics(revealLastTopic = false)
+      } else
+        loadTopics(clearSearch = true)
     }
   }
 
