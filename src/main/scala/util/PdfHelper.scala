@@ -12,6 +12,7 @@ object PdfHelper extends Logging {
   // doi syntax: http://www.doi.org/doi_handbook/2_Numbering.html#2.2
   // regex from http://stackoverflow.com/questions/27910/finding-a-doi-in-a-document-or-page
   val doire = """\b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b""".r
+  val arxivre = """\barXiv:(.*/\d+|\d+\.\d+)(?:v\d+)?\b""".r
 
   def getDOI(file: MFile) = {
     var doi = ""
@@ -51,12 +52,10 @@ object PdfHelper extends Logging {
             val text2 = text.replaceAll( """[\r\n]""", "")
             debug("found no doi, check for vertical arxiv id...")
             //debug("first page without line ends:\n" + text2)
-            val re2 =
-              """.*arXiv:(.*/\d+|\d+\.\d+)(?:v\d+)\s.*""".r
             text2 match {
-              case re2(aaa) =>
+              case arxivre.unanchored(aaa) =>
                 debug("  found arxiv id: " + aaa)
-                doi = "arxiv:" + aaa
+                doi = "arXiv:" + aaa
               case _ => debug(s"could not find doi on pdf page $iii!")
             }
           }

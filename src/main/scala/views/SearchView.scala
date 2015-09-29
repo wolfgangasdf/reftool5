@@ -35,18 +35,22 @@ class SearchView extends GenericView("searchview") {
     onAction = (ae: ActionEvent) => {
       inTransaction {
         val maxSize = 1000
-        val terms = text.value.trim.toUpperCase.split(" ")
-        var res = dynamicWhere(ReftoolDB.articles, terms(0))
-        for (i <- 1 to terms.length - 1) res = dynamicWhere(res, terms(i))
-        if (res.isEmpty)
-          ApplicationController.showNotification("Search returned no results!")
-        else {
-          ApplicationController.showNotification(s"Search returned ${res.size} results!")
-          val res2 = if (res.size > maxSize) {
-            new Alert(AlertType.Warning, s"Showing only the first $maxSize of ${res.size} results!", ButtonType.OK).showAndWait()
-            res.page(0, maxSize)
-          } else res
-          ApplicationController.submitShowArticlesList(res2.toList, s"Search [${text.value}]")
+        val terms = text.value.trim.toUpperCase.split(" ").sortWith(_.length < _.length).reverse // longest first!
+        if (terms.exists(_.length > 2)) {
+          var res = dynamicWhere(ReftoolDB.articles, terms(0))
+          for (i <- 1 to terms.length - 1) res = dynamicWhere(res, terms(i))
+          if (res.isEmpty)
+            ApplicationController.showNotification("Search returned no results!")
+          else {
+            ApplicationController.showNotification(s"Search returned ${res.size} results!")
+            val res2 = if (res.size > maxSize) {
+              new Alert(AlertType.Warning, s"Showing only the first $maxSize of ${res.size} results!", ButtonType.OK).showAndWait()
+              res.page(0, maxSize)
+            } else res
+            ApplicationController.submitShowArticlesList(res2.toList, s"Search [${text.value}]")
+          }
+        } else {
+          ApplicationController.showNotification("Enter at least one search term >= 3 characters long!")
         }
       }
     }

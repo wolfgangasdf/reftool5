@@ -47,7 +47,7 @@ object ImportHelper extends Logging {
     val tfDOI = new TextField {
       hgrow = Priority.Always
       onAction = (ae: ActionEvent) => {
-        doi = text.value.replaceAll("http://dx.doi.org/", "")
+        doi = text.value.trim.replaceAll("http://dx.doi.org/", "")
         scene.value.getWindow.asInstanceOf[javafx.stage.Stage].close()
       }
     }
@@ -135,20 +135,20 @@ object ImportHelper extends Logging {
             if (doi == "" && interactive) Helpers.runUIwait {
               doi = getDOImanually(sourceFile.getName, sourceFile.getPath)
             }
-            if (doi != "") {
-              updateProgress(30, 100)
-              if (doi.startsWith("arxiv:")) {
+            updateProgress(30, 100)
+            doi match {
+              case PdfHelper.arxivre(aid) =>
                 updateMessage("retrieve bibtex from arxiv ID...")
-                val arxivid = doi.replaceAllLiterally("arxiv:", "")
+                val arxivid = doi.replaceAllLiterally("arXiv:", "")
                 a.linkurl = "http://arxiv.org/abs/" + arxivid
                 a = updateBibtexFromArxiv(a, arxivid)
-              } else {
+                a = updateArticleFromBibtex(a)
+              case PdfHelper.doire(did) =>
                 a.doi = doi
                 updateMessage("retrieve bibtex from DOI...")
                 a = updateBibtexFromDoi(a, doi)
-              }
-              updateMessage("update document data from bibtex...")
-              a = updateArticleFromBibtex(a)
+                a = updateArticleFromBibtex(a)
+              case _ =>
             }
           }
         } catch {
@@ -304,6 +304,7 @@ object ImportHelper extends Logging {
   private def updateBibtexFromArxiv(article: Article, aid: String): Article = {
     import scalaj.http._
     var a = article
+    debug("getting http://esoads.eso.org/cgi-bin/bib_query?arXiv:" + aid)
     val resp1 = Http("http://esoads.eso.org/cgi-bin/bib_query?arXiv:" + aid).timeout(3000, 5000).asString
     if (resp1.code == 200) {
       val re1 = """(?s).*<a href="(.*)">Bibtex entry for this abstract</a>.*""".r
