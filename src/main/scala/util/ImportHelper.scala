@@ -1,6 +1,7 @@
 package util
 
 import java.io
+import java.net.SocketTimeoutException
 
 import db.{Article, Document, ReftoolDB, Topic}
 import framework.{ApplicationController, Helpers, Logging, MyWorker}
@@ -327,16 +328,30 @@ object ImportHelper extends Logging {
     // http://labs.crossref.org/citation-formatting-service/
     import scalaj.http._ // or probably use better http://www.bigbeeconsultants.co.uk/content/bee-client ? but has deps
     var a = article
-    val response = Http("http://dx.doi.org/" + doi).
-        header("Accept", "text/bibliography; style=bibtex; locale=en-US.UTF-8").option(HttpOptions.followRedirects(shouldFollow = true)).asBytes
     debug(s"""# curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
-    if (response.code == 200) {
-      val rb = new String(response.body, "UTF-8")
-      a = generateUpdateBibtexID(rb, a)
-    } else {
-      debug("updatebibtexfromdoi: resp = " + response)
-      Helpers.runUI { new Alert(AlertType.Error, "Error retrieving metadata from crossref. Probably the article is not yet in their database?\n" +
+    def tryhttp: Option[HttpResponse[Array[Byte]]] = {
+      try {
+        Some(Http("http://dx.doi.org/" + doi).timeout(connTimeoutMs = 1000, readTimeoutMs = 5000).
+          header("Accept", "text/bibliography; style=bibtex; locale=en-US.UTF-8").option(HttpOptions.followRedirects(shouldFollow = true)).asBytes)
+      } catch {
+        case e: SocketTimeoutException =>
+          debug("tryhttp: got SocketTimeoutException...")
+          None
+      }
+    }
+    var responseo = tryhttp
+    if (responseo.isEmpty) responseo = tryhttp // retry
+    if (responseo.isDefined) {
+      val response = responseo.get
+      debug("reponse.code: " + response.code)
+      if (response.code == 200) {
+        val rb = new String(response.body, "UTF-8")
+        a = generateUpdateBibtexID(rb, a)
+      } else {
+        debug("updatebibtexfromdoi: resp = " + response)
+        Helpers.runUI { new Alert(AlertType.Error, "Error retrieving metadata from crossref. Probably the article is not yet in their database?\n" +
           "You have to paste the bibtex entry manually, or retry later (update metadata from pdf).").showAndWait() }
+      }
     }
     a
   }
