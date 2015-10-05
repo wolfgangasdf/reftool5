@@ -166,6 +166,7 @@ object ReftoolDB extends Schema with Logging {
 
   var rootTopic: Topic = null
   var stackTopic: Topic = null
+  var orphanTopic: Topic = null
 
 //  throw new Exception("huhu")
   /*
@@ -319,6 +320,7 @@ object ReftoolDB extends Schema with Logging {
       if (topics.where(t => t.title === TDBSTATS).isEmpty) topics.insert(new Topic(TDBSTATS, rootTopic.id, false))
 
       stackTopic = topics.where(t => t.title === TSTACK).head
+      orphanTopic = topics.where(t => t.title === TORPHANS).head
 
       if (startwithempty) addDemoContent(rootTopic)
     }
