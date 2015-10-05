@@ -11,8 +11,8 @@ object PdfHelper extends Logging {
 
   // doi syntax: http://www.doi.org/doi_handbook/2_Numbering.html#2.2
   // regex from http://stackoverflow.com/questions/27910/finding-a-doi-in-a-document-or-page
-  val doire = """\b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)\b""".r
-  val arxivre = """\barXiv:(.*/\d+|\d+\.\d+)(?:v\d+)?\b""".r
+  val doire = """(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)""".r
+  val arxivre = """arXiv:([A-Za-z\-]+/\d+|\d+\.\d+)(?:v\d+)?""".r
 
   def getDOI(file: MFile) = {
     var doi = ""
@@ -38,8 +38,7 @@ object PdfHelper extends Logging {
       if (doi == "") {
         // parse for doi in first pdf page (not checking hyperlinks as it may be a reference link!)
         debug("still no doi, get first pdf page...")
-        val doc = pdf.getDocument
-        val pdoc = new PDDocument(doc)
+        val pdoc = new PDDocument(pdf.getDocument)
         val pstrip = new PDFTextStripper()
         for (iii <- 1 to 3) if (doi == "") {
           pstrip.setStartPage(iii)
@@ -47,18 +46,17 @@ object PdfHelper extends Logging {
           val text = pstrip.getText(pdoc)
           debug("search first page for doi link...")
           // debug("first page:\n" + text)
-          doi = doire.findFirstIn(text).getOrElse("")
-          if (doi == "") {
-            val text2 = text.replaceAll( """[\r\n]""", "")
+          doi = doire.findFirstIn(text).getOrElse({
             debug("found no doi, check for vertical arxiv id...")
-            //debug("first page without line ends:\n" + text2)
-            text2 match {
+            text.replaceAll( """[\r\n]""", "") match {
               case arxivre.unanchored(aaa) =>
                 debug("  found arxiv id: " + aaa)
-                doi = "arXiv:" + aaa
-              case _ => debug(s"could not find doi on pdf page $iii!")
+                "arXiv:" + aaa
+              case _ =>
+                debug(s"could not find doi on pdf page $iii!")
+                ""
             }
-          }
+          })
         }
       }
     }

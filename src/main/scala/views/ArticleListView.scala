@@ -419,13 +419,13 @@ class ArticleListView extends GenericView("articlelistview") {
   }
 
   def setArticlesTopic(topic: Topic) {
-    inTransaction {
+    if (topic != null) inTransaction {
       if (topic.title == ReftoolDB.TORPHANS) {
         val q =
           ReftoolDB.articles.where(a =>
             a.id notIn from(ReftoolDB.topics2articles)(t2a => select(t2a.ARTICLE))
           )
-        setArticles(q.toList, "Orphaned articles", null)
+        setArticles(q.toList ++ ReftoolDB.orphanTopic.articles.toList, "Orphaned articles", null)
       } else
         setArticles(topic.articles.toList, s"Articles in [${topic.title}]  ", topic)
     }
