@@ -55,11 +55,11 @@ object ImportHelper extends Logging {
 
     val tfArxiv = new TextField {
       hgrow = Priority.Always
+      text = "arXiv:"
       onAction = (ae: ActionEvent) => {
-        val re2 = """(?:arXiv:)?(.*/\d+|\d+\.\d+)(?:v\d+)*.*""".r
         text.value.trim match {
-          case re2(aid) =>
-            doi = "arxiv:" + aid
+          case PdfHelper.arxivre(aid) =>
+            doi = "arXiv:" + aid
             scene.value.getWindow.asInstanceOf[javafx.stage.Stage].close()
           case _ => new Alert(AlertType.Error, "Cannot recognize arxiv id <" + text.value.trim + ">").showAndWait()
         }
