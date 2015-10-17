@@ -5,6 +5,7 @@ import framework.{ApplicationController, GenericView}
 
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.Queryable
+import util.SearchUtil
 
 import scalafx.Includes._
 import scalafx.event.ActionEvent
@@ -19,7 +20,7 @@ class SearchView extends GenericView("searchview") {
 
   val tfSearch = new TextField {
     hgrow = Priority.Always
-    tooltip = new Tooltip { text = "Enter space-separated search terms, articles matching all of these (in any fields) are returned!" }
+    tooltip = new Tooltip { text = "Enter space-separated search terms (group with single quote), articles matching all terms are returned!" }
     this.promptText = "Enter search string"
     def dynamicWhere(q: Queryable[Article], sstr: String) = q.where(a =>
           (upper(a.title) like s"%$sstr%".inhibitWhen(!cbTitle.selected.value))
@@ -35,7 +36,7 @@ class SearchView extends GenericView("searchview") {
     onAction = (ae: ActionEvent) => {
       inTransaction {
         val maxSize = 1000
-        val terms = text.value.trim.toUpperCase.split(" ").sortWith(_.length < _.length).reverse // longest first!
+        val terms = SearchUtil.getSearchTerms(text.value)
         if (terms.exists(_.length > 2)) {
           var res = dynamicWhere(ReftoolDB.articles, terms(0))
           for (i <- 1 to terms.length - 1) res = dynamicWhere(res, terms(i))

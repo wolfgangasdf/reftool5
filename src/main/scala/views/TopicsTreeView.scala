@@ -7,7 +7,7 @@ import db.{Article, ReftoolDB, Topic}
 import framework._
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.Queryable
-import util.{MFile, AppStorage, DnDHelper, ImportHelper}
+import util._
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -479,11 +479,11 @@ class TopicsTreeView extends GenericView("topicsview") {
   val tfSearch = new TextField {
     hgrow = Priority.Always
     promptText = "search..."
-    tooltip = new Tooltip { text = "enter space-separated search terms, topics matching all terms are listed" }
+    tooltip = new Tooltip { text = "enter space-separated search terms (group with single quote), topics matching all terms are listed" }
     def dynamicWhere(q: Queryable[Topic], s: String) = q.where(t => upper(t.title) like s"%$s%")
     onAction = (ae: ActionEvent) => {
       if (text.value.trim != "") inTransaction {
-        val terms = text.value.trim.toUpperCase.split(" ").sortWith(_.length < _.length).reverse // longest first!
+        val terms = SearchUtil.getSearchTerms(text.value)
         if (terms.exists(_.length > 2)) {
           collapseAllTopics()
           var rest = dynamicWhere(ReftoolDB.topics, terms(0))
