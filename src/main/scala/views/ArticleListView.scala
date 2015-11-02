@@ -267,7 +267,8 @@ class ArticleListView extends GenericView("articlelistview") {
       if (res != null) {
         alv.selectionModel.value.getSelectedItems.foreach( a => {
           val f = FileHelper.getDocumentFileAbs(a.getFirstDocRelative)
-          MFile.copy(f, new MFile(res.getPath + "/" + f.getName))
+          MFile.copy(f, new MFile(res.getPath + "/" + f.getName), copyAttrs = true)
+          // TODO handle existing files. list & ask to overwrite?
         } )
         ApplicationController.showNotification(s"Copied documents to folder!")
       }

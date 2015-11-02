@@ -1,11 +1,15 @@
 package util
 
 import java.io
+import java.io.{FileInputStream, BufferedInputStream}
 import java.net.URI
+import java.nio.file.StandardCopyOption
+import java.nio.file.StandardCopyOption._
 
 import db.Article
 import framework.{Logging, Helpers}
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 // wrap everything that returns a java.io.File into util.MFile!
@@ -42,7 +46,7 @@ class MFile(file: io.File) extends Logging {
   }
 
   def appendString(s: String) = {
-    java.nio.file.Files.write(java.nio.file.Paths.get(getPath),s.getBytes(MFile.filecharset),java.nio.file.StandardOpenOption.APPEND)
+    java.nio.file.Files.write(java.nio.file.Paths.get(getPath),s.getBytes(MFile.filecharset), java.nio.file.StandardOpenOption.APPEND)
   }
 
   override def toString: String = getPath
@@ -54,10 +58,30 @@ object MFile {
   def apply(f: io.File) = if (f == null) null else new MFile(f.getAbsolutePath)
   def apply(filepath: String) = if (filepath == null) null else new MFile(filepath)
   def createTempFile(prefix: String, suffix: String) = MFile(io.File.createTempFile(prefix, suffix))
-  def move(oldFile: MFile, newFile: MFile) = java.nio.file.Files.move(oldFile.toPath, newFile.toPath)
-  def copy(oldFile: MFile, newFile: MFile) = java.nio.file.Files.copy(oldFile.toPath, newFile.toPath)
+  def move(source: MFile, dest: MFile) = java.nio.file.Files.move(source.toPath, dest.toPath)
+  def copy(source: MFile, dest: MFile, replaceExisting: Boolean = false, copyAttrs: Boolean = false) = {
+    val opts = new ArrayBuffer[StandardCopyOption]()
+    if (copyAttrs) opts += COPY_ATTRIBUTES
+    if (replaceExisting) opts += REPLACE_EXISTING
+    java.nio.file.Files.copy(source.toPath, dest.toPath, opts:_*)
+  }
   def createDirectories(mf: MFile): Unit = {
     java.nio.file.Files.createDirectories(java.nio.file.Paths.get(mf.getPath))
+  }
+  def compare(f1: MFile, f2: MFile): Boolean = {
+    if (f1.toFile.length != f1.toFile.length) return false
+    val in1 =new BufferedInputStream(new FileInputStream(f1.toFile))
+    val in2 =new BufferedInputStream(new FileInputStream(f2.toFile))
+    var (res1, res2) = (0, 0)
+    do {
+      //since we're buffered read() isn't expensive
+      res1 = in1.read()
+      res2 = in2.read()
+      if(res1 != res2) { in1.close(); in2.close(); return false }
+    } while(res1 >= 0)
+    in1.close()
+    in2.close()
+    true
   }
   // implicit def mfileToFile(mf: MFile): io.File = mf.file
 }
@@ -109,14 +133,17 @@ object FileHelper extends Logging {
     file.getPath.substring( new MFile(AppStorage.config.pdfpath).getPath.length + 1 )
   }
 
-  def openDocument(relPath: String) = {
+  def openDocument(file: MFile): Unit = {
     import java.awt.Desktop
     if (Desktop.isDesktopSupported) {
       val desktop = Desktop.getDesktop
       if (desktop.isSupported(Desktop.Action.OPEN)) {
-        desktop.open(getDocumentFileAbs(relPath).toFile)
+        desktop.open(file.toFile)
       }
     }
+  }
+  def openDocument(relPath: String): Unit = {
+    openDocument(getDocumentFileAbs(relPath))
   }
 
   def getLastImportFolder: MFile = {

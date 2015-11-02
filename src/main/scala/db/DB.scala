@@ -119,24 +119,8 @@ class Topic(var title: String = "", var parent: Long = 0, var expanded: Boolean 
   lazy val childrenTopics = ReftoolDB.topics.where( t => t.parent === id)
   lazy val parentTopic = ReftoolDB.topics.where( t => t.id === parent)
 
-  def AlphaNumStringSorter(str1: String, str2: String): Boolean = {
-    val reNum = """(\d+)(.*)""".r
-    val string1 = str1.toLowerCase
-    val string2 = str2.toLowerCase
-    (string1, string2) match {
-      case (reNum(n1, s1), reNum(n2, s2)) =>
-        if (n1.toInt == n2.toInt) {
-          if (n1.length != n2.length)
-            n1.length > n2.length
-          else
-            s1 < s2
-        } else n1.toInt < n2.toInt
-      case _ => string1 < string2
-    }
-  }
-
   def orderedChilds = inTransaction {
-    childrenTopics.toList.sortWith( (s1, s2) => AlphaNumStringSorter(s1.title, s2.title))
+    childrenTopics.toList.sortWith( (s1, s2) => StringHelper.AlphaNumStringSorter(s1.title, s2.title))
   }
   override def toString: String = title
 

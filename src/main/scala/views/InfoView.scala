@@ -6,9 +6,10 @@ import java.util.Date
 import db.{Topic, Article, ReftoolDB}
 import framework._
 import org.squeryl.PrimitiveTypeMode._
-import util.{MFile, ImportHelper, AppStorage, FileHelper}
+import util._
 
 import scala.collection.mutable.ArrayBuffer
+import scalafx.Includes._
 import scalafx.geometry.Insets
 import scalafx.scene.control._
 import scalafx.scene.image.Image
@@ -141,6 +142,13 @@ class InfoView extends GenericView("toolview") {
     enabled = true
   }
 
+  val aUpdatePDFs: MyAction = new MyAction("Tools", "Update PDFs") {
+    image = new Image(getClass.getResource("/images/updatepdfs.png").toExternalForm)
+    tooltipString = "Update pdfs from a folder.\nFilename must not be changed in reftool or outside, or you have to do update them manually!"
+    action = (_) => UpdatePdfs.updatePdfs(taInfo, toolbarButton.getScene.getWindow())
+    enabled = true
+  }
+
   val aMemory: MyAction = new MyAction("Tools", "Memory info") {
     image = new Image(getClass.getResource("/images/meminfo.png").toExternalForm)
     tooltipString = "Memory cleanup and statistics"
@@ -166,7 +174,7 @@ class InfoView extends GenericView("toolview") {
     enabled = true
   }
 
-  toolbaritems ++= Seq(aDBstats.toolbarButton, aCheckArticleDocs.toolbarButton, aFindOrphanedPDFs.toolbarButton, aMemory.toolbarButton, aClear.toolbarButton)
+  toolbaritems ++= Seq(aUpdatePDFs.toolbarButton, aDBstats.toolbarButton, aCheckArticleDocs.toolbarButton, aFindOrphanedPDFs.toolbarButton, aMemory.toolbarButton, aClear.toolbarButton)
 
   content = new BorderPane {
     margin = Insets(5.0)
