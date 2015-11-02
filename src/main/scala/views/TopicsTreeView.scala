@@ -399,7 +399,8 @@ class TopicsTreeView extends GenericView("topicsview") {
           ReftoolDB.topics.update(t)
         }
         val pw = new io.PrintWriter(new io.FileOutputStream(fn.toFile, false))
-        t.articles.foreach( a => pw.write(a.bibtexentry) )
+        t.articles.toList.sortWith{(a,b) => a.bibtexid.compareTo(b.bibtexid) < 0}// alphabetically!
+          .foreach( a => pw.write(a.bibtexentry + "\n") )
         pw.close()
         ApplicationController.showNotification(s"Exported articles in topic to bibtex!")
       }
