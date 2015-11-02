@@ -11,6 +11,7 @@ import util._
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
 import scalafx.event.ActionEvent
 import scalafx.scene.control.Alert.AlertType
@@ -477,19 +478,69 @@ class TopicsTreeView extends GenericView("topicsview") {
     disable = true
     onAction = (ae: ActionEvent) => loadTopics(clearSearch = true)
   }
+  //  val tfSearch = new TextField {
+  //    hgrow = Priority.Always
+  //    promptText = "search..."
+  //    tooltip = new Tooltip { text = "enter space-separated search terms (group with single quote), topics matching all terms are listed" }
+  //    def dynamicWhere(q: Queryable[Topic], s: String) = q.where(t => upper(t.title) like s"%$s%")
+  //    onAction = (ae: ActionEvent) => {
+  //      if (text.value.trim != "") inTransaction {
+  //        val terms = SearchUtil.getSearchTerms(text.value)
+  //        if (terms.exists(_.length > 2)) {
+  //          collapseAllTopics()
+  //          var rest = dynamicWhere(ReftoolDB.topics, terms(0))
+  //          for (i <- 1 to terms.length - 1) rest = dynamicWhere(rest, terms(i))
+  //          rest.foreach(t => {
+  //            t.expanded = true // also for leaves if in search!
+  //            ReftoolDB.topics.update(t)
+  //            expandAllParents(t)
+  //          })
+  //        } else {
+  //          ApplicationController.showNotification("Enter at least one search term >= 3 characters long!")
+  //        }
+  //        btClearSearch.disable = false
+  //        searchActive = true
+  //        loadTopics(revealLastTopic = false)
+  //      } else
+  //        loadTopics(clearSearch = true)
+  //    }
+  //  }
+
+  def findSql(terms: Array[String]): Array[Topic] = {
+    def dynamicWhere(q: Queryable[Topic], s: String) = q.where(t => upper(t.title) like s"%$s%")
+    var rest = dynamicWhere(ReftoolDB.topics, terms(0))
+    for (i <- 1 to terms.length - 1) rest = dynamicWhere(rest, terms(i))
+    rest.toArray
+  }
+
+  // search matching full topic path, slow (how to do with squeryl?)
+  def findRecursive(terms: Array[String]): Array[Topic] = {
+    collapseAllTopics()
+    val found = new ArrayBuffer[Topic]
+    def recSearch(path: String, topic: Topic): Unit = {
+      topic.childrenTopics.foreach(ct => {
+        val p2 = path + topic.title.toUpperCase
+        if (terms.forall(t => p2.contains(t))) // found
+          found += ct
+        else
+          recSearch(p2, ct)
+      })
+    }
+    recSearch("", ReftoolDB.rootTopic)
+    found.toArray
+  }
   val tfSearch = new TextField {
     hgrow = Priority.Always
     promptText = "search..."
-    tooltip = new Tooltip { text = "enter space-separated search terms (group with single quote), topics matching all terms are listed" }
-    def dynamicWhere(q: Queryable[Topic], s: String) = q.where(t => upper(t.title) like s"%$s%")
-    onAction = (ae: ActionEvent) => {
+    tooltip = new Tooltip { text = "enter space-separated search terms (group with single quote), topics matching all terms are listed.\nmeta+enter: match full topic path (slow!)" }
+    onKeyPressed = (e: KeyEvent) => if (e.code == KeyCode.ENTER) {
       if (text.value.trim != "") inTransaction {
         val terms = SearchUtil.getSearchTerms(text.value)
         if (terms.exists(_.length > 2)) {
-          collapseAllTopics()
-          var rest = dynamicWhere(ReftoolDB.topics, terms(0))
-          for (i <- 1 to terms.length - 1) rest = dynamicWhere(rest, terms(i))
-          rest.foreach(t => {
+
+          val found = if (e.metaDown) findRecursive(terms) else findSql(terms)
+
+          found.foreach(t => {
             t.expanded = true // also for leaves if in search!
             ReftoolDB.topics.update(t)
             expandAllParents(t)
