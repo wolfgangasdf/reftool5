@@ -299,6 +299,8 @@ class TopicsTreeView extends GenericView("topicsview") {
       tv.selectionModel.value.getSelectedItems.headOption.foreach(t => tlast = t.getValue)
     else if (revealTopic != null)
       tlast = revealTopic
+
+//    tv.setRoot(null) // TODO doesn't work
     tv.selectionModel.value.clearSelection()
     // remove all treeitems!
     if (tv.root.value != null) {
@@ -519,7 +521,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     val found = new ArrayBuffer[Topic]
     def recSearch(path: String, topic: Topic): Unit = {
       topic.childrenTopics.foreach(ct => {
-        val p2 = path + topic.title.toUpperCase
+        val p2 = path + " " + ct.title.toUpperCase
         if (terms.forall(t => p2.contains(t))) // found
           found += ct
         else
@@ -533,26 +535,32 @@ class TopicsTreeView extends GenericView("topicsview") {
     hgrow = Priority.Always
     promptText = "search..."
     tooltip = new Tooltip { text = "enter space-separated search terms (group with single quote), topics matching all terms are listed.\nmeta+enter: match full topic path (slow!)" }
+    var success = false
     onKeyPressed = (e: KeyEvent) => if (e.code == KeyCode.ENTER) {
       if (text.value.trim != "") inTransaction {
         val terms = SearchUtil.getSearchTerms(text.value)
         if (terms.exists(_.length > 2)) {
-
+          ApplicationController.showNotification("Searching...")
+          // TODO wrap in worker
           val found = if (e.metaDown) findRecursive(terms) else findSql(terms)
-
-          found.foreach(t => {
-            t.expanded = true // also for leaves if in search!
-            ReftoolDB.topics.update(t)
-            expandAllParents(t)
-          })
+          ApplicationController.showNotification("Search done, found " + found.length + " topics.")
+          if (found.length > 0) {
+            collapseAllTopics()
+            found.foreach(t => {
+              t.expanded = true // also for leaves if in search!
+              ReftoolDB.topics.update(t)
+              expandAllParents(t)
+            })
+            btClearSearch.disable = false
+            searchActive = true
+            loadTopics(revealLastTopic = false)
+            success = true
+          }
         } else {
           ApplicationController.showNotification("Enter at least one search term >= 3 characters long!")
         }
-        btClearSearch.disable = false
-        searchActive = true
-        loadTopics(revealLastTopic = false)
-      } else
-        loadTopics(clearSearch = true)
+      }
+      if (!success) loadTopics(clearSearch = true)
     }
   }
 
