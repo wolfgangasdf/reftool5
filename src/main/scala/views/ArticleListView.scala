@@ -20,6 +20,8 @@ import scalafx.scene.layout._
 import scalafx.scene.input.ClipboardContent._
 import scalafx.scene.paint.Color
 import scalafx.stage.DirectoryChooser
+import scalafx.scene.control.TableColumn._
+
 
 // see https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/SimpleTableViewSorted.scala
 //https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/TableWithCustomCellDemo.scala
@@ -48,38 +50,39 @@ class ArticleListView extends GenericView("articlelistview") {
 
   val cTitle = new TableColumn[Article, String] {
     text = "Title"
-    cellValueFactory = (a) => new StringProperty(a.value.title)
-    cellFactory = (tc) => new MyTableCell
+    cellValueFactory = (a) => new StringProperty(a.value.title.trim.replaceAll("((\r\n)|\r|\n)+", " "))
+    cellFactory.value  = { _ => new MyTableCell }
+
   }
   val cPubdate = new TableColumn[Article, String] {
     text = "Date"
     cellValueFactory = (a) => new StringProperty(a.value.pubdate)
-    cellFactory = (tc) => new MyTableCell
+    cellFactory.value  = { _ => new MyTableCell }
   }
   val cEntrytype = new TableColumn[Article, String] {
     text = "Type"
     cellValueFactory = (a) => new StringProperty(a.value.entrytype)
-    cellFactory = (tc) => new MyTableCell
+    cellFactory.value  = { _ => new MyTableCell }
   }
   val cAuthors = new TableColumn[Article, String] {
     text = "Authors"
-    cellValueFactory = (a) => new StringProperty(a.value.authors)
-    cellFactory = (tc) => new MyTableCell
+    cellValueFactory = (a) => new StringProperty(a.value.authors.trim.replaceAll("((\r\n)|\r|\n)+", " "))
+    cellFactory.value  = { _ => new MyTableCell }
   }
   val cJournal = new TableColumn[Article, String] {
     text = "Journal"
     cellValueFactory = (a) => new StringProperty(a.value.journal)
-    cellFactory = (tc) => new MyTableCell
+    cellFactory.value  = { _ => new MyTableCell }
   }
   val cReview = new TableColumn[Article, String] {
     text = "Review"
     cellValueFactory = (a) => new StringProperty(StringHelper.headString(a.value.review.trim.replaceAll("((\r\n)|\r|\n)+", "|"), 50))
-    cellFactory = (tc) => new MyTableCell
+    cellFactory.value  = { _ => new MyTableCell }
   }
   val cBibtexid = new TableColumn[Article, String] {
     text = "BibtexID"
     cellValueFactory = (a) => new StringProperty(a.value.bibtexid)
-    cellFactory = (tc) => new MyTableCell
+    cellFactory.value  = { _ => new MyTableCell }
   }
 
   val articles = new ObservableBuffer[Article]()
@@ -224,7 +227,6 @@ class ArticleListView extends GenericView("articlelistview") {
         alv.selectionModel.value.getSelectedItems.mkString("\n"), Seq(ButtonType.Yes, ButtonType.No))
       res match {
         case Some(ButtonType.Yes) =>
-          val oldidx = alv.selectionModel.value.getSelectedIndices.headOption
           val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
           as.foreach( a => {
             for (t <- a.topics.toList)
