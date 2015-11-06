@@ -382,7 +382,7 @@ object ApplicationController extends Logging {
   }
 
 
-
+  // see ttv for better example
   def testLongAction() = {
     new MyWorker("titlechen", new javafx.concurrent.Task[Unit] {
       override def call() = {
