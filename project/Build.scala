@@ -1,12 +1,8 @@
-import java.time.{ZonedDateTime, LocalDateTime}
+import java.time.ZonedDateTime
 
 import sbt._
 import sbt.Keys._
 import sbtbuildinfo.Plugin._
-//import de.sciss.sbt.appbundle.AppBundlePlugin._
-
-//import no.vedaadata.sbtjavafx.JavaFXPlugin
-//import no.vedaadata.sbtjavafx.JavaFXPlugin.JFX
 
 object Build extends Build {
   lazy val myBuildInfoSettings = Seq(
@@ -29,16 +25,16 @@ object Build extends Build {
       organization := "com.reftool5",
       version := "0.1-SNAPSHOT",
       javaOptions ++= Seq("-Xms100m", "-Xmx300m"),
-      scalaVersion := "2.11.6",
+      scalaVersion := "2.11.7",
       scalacOptions ++= Seq("-feature", "-unchecked", "-deprecation", "-encoding", "UTF-8"),
       libraryDependencies ++= Seq(
-        "org.scalafx" %% "scalafx" % "8.0.40-R8",
-        "com.typesafe.akka" %% "akka-actor" % "2.3.9",
-        "org.apache.derby" % "derby" % "10.11.1.1",
+        "org.scalafx" %% "scalafx" % "8.0.60-R9",
+        "com.typesafe.akka" %% "akka-actor" % "2.4.0",
+        "org.apache.derby" % "derby" % "10.12.1.1",
         "org.squeryl" %% "squeryl" % "0.9.5-7" withSources() withJavadoc(),
-        "org.apache.pdfbox" % "pdfbox" % "1.8.9",
+        "org.apache.pdfbox" % "pdfbox" % "1.8.10",
         "org.jbibtex" % "jbibtex" % "1.0.15",
-        "org.scalaj" %% "scalaj-http" % "1.1.4"
+        "org.scalaj" %% "scalaj-http" % "1.1.6"
       )
     ) ++ buildInfoSettings ++ myBuildInfoSettings
   )
