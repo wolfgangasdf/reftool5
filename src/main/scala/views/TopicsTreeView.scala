@@ -510,28 +510,40 @@ class TopicsTreeView extends GenericView("topicsview") {
     promptText = "search..."
     tooltip = new Tooltip { text = "enter space-separated search terms (group with single quote), topics matching all terms are listed.\nmeta+enter: match full topic path (slow!)" }
     onKeyPressed = (e: KeyEvent) => if (e.code == KeyCode.ENTER) {
-      if (text.value.trim != "") inTransaction {
+      if (text.value.trim != "") {
         val terms = SearchUtil.getSearchTerms(text.value)
         if (terms.exists(_.length > 2)) {
           ApplicationController.showNotification("Searching...")
-          // TODO wrap in worker
-          val found = if (e.metaDown) findRecursive(terms) else findSql(terms)
-          ApplicationController.showNotification("Search done, found " + found.length + " topics.")
-          if (found.length > 0) {
-            collapseAllTopics()
-            found.foreach(t => {
-              t.expanded = true // also for leaves if in search!
-              ReftoolDB.topics.update(t)
-              expandAllParents(t)
-            })
-            btClearSearch.disable = false
-            searchActive = true
-            loadTopics(revealLastTopic = false)
-          }
+
+          new MyWorker( "Searching...",
+            atask = new javafx.concurrent.Task[Unit] {
+              override def call(): Unit = {
+                val found = inTransaction {
+                  if (e.metaDown) findRecursive(terms) else findSql(terms)
+                }
+                Helpers.runUI {
+                  ApplicationController.showNotification("Search done, found " + found.length + " topics.")
+                  if (found.length > 0) inTransaction {
+                    collapseAllTopics()
+                    found.foreach(t => {
+                      t.expanded = true // also for leaves if in search!
+                      ReftoolDB.topics.update(t)
+                      expandAllParents(t)
+                    })
+                    searchActive = true
+                    loadTopics(revealLastTopic = false)
+                  }
+                }
+              }
+            },
+            cleanup = () => {}
+          ).runInBackground()
+
         } else {
           ApplicationController.showNotification("Enter at least one search term >= 3 characters long!")
         }
-      }
+        btClearSearch.disable = false
+      } else btClearSearch.disable = true
     }
   }
 
