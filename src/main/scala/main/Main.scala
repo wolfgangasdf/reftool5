@@ -213,8 +213,8 @@ object Main extends JFXApp with Logging {
 
   def getAppIcons: List[Image] = List(
     new Image(getClass.getResource("/icons/Icon-16.png").toExternalForm),
-    new Image(getClass.getResource("/icons/Icon-32.png").toExternalForm),
-    new Image(getClass.getResource("/icons/Icon-128.png").toExternalForm)
+    new Image(getClass.getResource("/icons/Icon-32.png").toExternalForm)
+//    new Image(getClass.getResource("/icons/Icon-128.png").toExternalForm)
   )
 
   var mainScene: MainScene = null
@@ -241,6 +241,7 @@ object Main extends JFXApp with Logging {
         ApplicationController.afterShown()
       }
       // }
+      tryit { getAppIcons.foreach(i => icons += i) }
     }
   }
 
