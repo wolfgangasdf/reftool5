@@ -263,7 +263,8 @@ object ImportHelper extends Logging {
       newds(oi)
     })
   }
-  def getUniqueBibtexID(bibtexid: String): String = {
+  // article is ignored while searching for unique bibtex id!
+  def getUniqueBibtexID(bibtexid: String, article: Article): String = {
     val replist = List(("ä", "ae"), ("ü", "ue"), ("ö", "oe"), ("ß", "ss"))
     var bid2 = bibtexid.toLowerCase
     replist.foreach { case (s1, s2) => bid2 = bid2.replaceAllLiterally(s1, s2) }
@@ -272,7 +273,7 @@ object ImportHelper extends Logging {
     var bid3 = bid2
     var iii = 1
     inTransaction { // add numbers if bibtexid exist...
-      while (ReftoolDB.articles.where(a => a.bibtexid === bid3).nonEmpty) {
+      while (ReftoolDB.articles.where(a => a.bibtexid === bid3 and a.id <> article.id).nonEmpty) {
         bid3 = bid2 + numberToAlphabetSequence(iii)
         iii += 1
       }
@@ -291,7 +292,7 @@ object ImportHelper extends Logging {
         val authors = AuthorNamesExtractor.toList(getPlainTextField(btentry, "", BibTeXEntry.KEY_AUTHOR))
         val lastau = if (authors.nonEmpty) authors.head.last.head.toString else "unknown"
         val bid = lastau + getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
-        val bid2 = getUniqueBibtexID(bid)
+        val bid2 = getUniqueBibtexID(bid, a)
         a.bibtexid = bid2
         a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, bid2)
       } else {

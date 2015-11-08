@@ -94,7 +94,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     article.bibtexentry = lBibtexentry.tf.getText
     if (lBibtexid.tf.getText.trim != "") {
       if (article.bibtexid != lBibtexid.tf.getText) {
-        val newbid = ImportHelper.getUniqueBibtexID(lBibtexid.tf.getText)
+        val newbid = ImportHelper.getUniqueBibtexID(lBibtexid.tf.getText, article)
         article.updateBibtexID(newbid)
       }
     } else article.bibtexid = ""
