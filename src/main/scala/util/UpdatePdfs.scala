@@ -148,4 +148,103 @@ object UpdatePdfs extends Logging {
     }
   }
 
+  // exports article files, returns new export folder or null
+  def exportPdfs(articles: List[Article], folder: MFile, window: Window): MFile = {
+    val res = MFile(new DirectoryChooser {
+      title = "Select folder for copying documents"
+      if (folder != null) if (folder.exists) initialDirectory = folder.toFile
+    }.showDialog(window))
+    if (res != null) {
+      val entries = new ObservableBuffer[UEntry]()
+      articles.foreach(a => {
+        val file = FileHelper.getDocumentFileAbs(a.getFirstDocRelative)
+        val newf = new MFile(res.getPath + "/" + file.getName)
+        if (newf.exists) {
+          if (MFile.compare(file, newf)) info("equal file: " + newf.getPath)
+          else {
+            info("different file: " + newf.getPath)
+            entries += new UEntry(newf, file, a)
+          }
+        } else {
+          info("target doesn't exist, copy: " + newf)
+          MFile.copy(file, newf, copyAttrs = true)
+        }
+      } )
+
+      ApplicationController.showNotification(s"Copied documents to folder!")
+
+      // present results
+      entries.foreach(e => debug("changed: " + e.toString + "\n"))
+      if (entries.nonEmpty) {
+        val dialog = new Dialog[ButtonType]() {
+          title = "Export PDFs"
+          headerText = "Export PDFs: existing target files"
+          resizable = true
+          width = 800
+        }
+        val tcRemove = new TableColumn[UEntry, java.lang.Boolean] {
+          text = "Remove"
+          cellValueFactory = { x => new BooleanProperty(x, " - ", false) {
+            onChange((_, oldValue, newValue) => entries.remove(x.value))
+          }.delegate
+          }
+          prefWidth = 50
+        }
+        tcRemove.setCellFactory(CheckBoxTableCell.forTableColumn(tcRemove))
+
+        val tcOpenboth = new TableColumn[UEntry, java.lang.Boolean] {
+          text = "Open"
+          cellValueFactory = { x => new BooleanProperty(x, "open both", false) {
+            onChange((_, oldValue, newValue) => {
+              FileHelper.openDocument(x.value.newFile)
+              FileHelper.openDocument(x.value.oldFile)
+            })
+          }.delegate
+          }
+          prefWidth = 50
+        }
+        tcOpenboth.setCellFactory(CheckBoxTableCell.forTableColumn(tcOpenboth))
+
+        val tableview = new TableView[UEntry](entries) {
+          editable = true
+          columns ++= List(
+            new TableColumn[UEntry, String] {
+              text = "filename"
+              cellValueFactory = { x => new StringProperty(x.value.newFile.getName) }
+              prefWidth = 400
+            },
+            new TableColumn[UEntry, String]() {
+              text = "old Date"
+              cellValueFactory = { x => new StringProperty(sdf.format(x.value.oldFile.toFile.lastModified())) }
+              prefWidth = 150
+            },
+            new TableColumn[UEntry, String]() {
+              text = "new Date"
+              cellValueFactory = { x => new StringProperty(sdf.format(x.value.newFile.toFile.lastModified())) }
+              prefWidth = 150
+            },
+            tcRemove,
+            tcOpenboth
+          )
+        }
+
+        dialog.dialogPane().buttonTypes = Seq(ButtonType.OK, ButtonType.Cancel)
+        dialog.dialogPane().content = tableview
+
+        dialog.showAndWait() match {
+          case Some(ButtonType.OK) =>
+            debug("syncing pdfs...")
+
+            entries.foreach(e => {
+              debug("copying " + e.newFile.getPath + " -> " + e.oldFile.getPath)
+              MFile.copy(e.newFile, e.oldFile, replaceExisting = true, copyAttrs = true)
+            })
+          case _ => debug("cancel: ")
+        }
+      }
+      ApplicationController.showNotification(s"Finished export PDFs!")
+      FileHelper.revealFile(res)
+    }
+    res
+  }
 }

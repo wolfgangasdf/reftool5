@@ -300,7 +300,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     else if (revealTopic != null)
       tlast = revealTopic
 
-//    tv.setRoot(null) // TODO doesn't work
+//    tv.setRoot(null) // TODO doesn't work, many little triangles remain!
     tv.selectionModel.value.clearSelection()
     // remove all treeitems!
     if (tv.root.value != null) {
@@ -409,6 +409,20 @@ class TopicsTreeView extends GenericView("topicsview") {
       }
     }
   }
+  val aExportTopicPDFs: MyAction = new MyAction("Topic", "Export documents") {
+    image = new Image(getClass.getResource("/images/copypdfs.png").toExternalForm)
+    tooltipString = "Export documents of all articles in current topic to folder\n" +
+      "If duplicate, compare files and ask user."
+    action = (m) => {
+      val t = tv.getSelectionModel.getSelectedItem.getValue
+      val articles = inTransaction { t.articles.toList }
+      val newfolder = UpdatePdfs.exportPdfs(articles, new MFile(t.exportfn), toolbarButton.getParent.getScene.getWindow)
+      if (newfolder != null) inTransaction {
+        t.exportfn = newfolder.getPath
+        ReftoolDB.topics.update(t)
+      }
+    }
+  }
 
   def collapseAllTopics() = {
     update(ReftoolDB.topics)(t =>
@@ -423,7 +437,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     action = (m) => {
       if (m != MyAction.MSHIFT) tiroot.expanded = false
       inTransaction { collapseAllTopics() }
-      loadTopics()
+      loadTopics(clearSearch = true)
     }
     enabled = true
   }
@@ -458,7 +472,7 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   ApplicationController.revealTopicListener += ( (t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t, clearSearch = true) )
 
-  toolbaritems ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton,
+  toolbaritems ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aExportTopicPDFs.toolbarButton,
     aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton
   )
 
@@ -469,6 +483,7 @@ class TopicsTreeView extends GenericView("topicsview") {
       aAddArticle.enabled = true
       aAddTopic.enabled = true
       aExportBibtex.enabled = true
+      aExportTopicPDFs.enabled = true
       aRemoveTopic.enabled = true
     }
   }}

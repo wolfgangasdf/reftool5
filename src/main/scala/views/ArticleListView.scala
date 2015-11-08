@@ -4,7 +4,7 @@ package views
 import db.{Article, ReftoolDB, Topic}
 import framework.{Helpers, ApplicationController, GenericView, MyAction}
 import org.squeryl.PrimitiveTypeMode._
-import util.{MFile, DnDHelper, FileHelper, StringHelper}
+import util._
 
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
@@ -19,12 +19,9 @@ import scalafx.scene.input._
 import scalafx.scene.layout._
 import scalafx.scene.input.ClipboardContent._
 import scalafx.scene.paint.Color
-import scalafx.stage.DirectoryChooser
 import scalafx.scene.control.TableColumn._
 
 
-// see https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/SimpleTableViewSorted.scala
-//https://code.google.com/p/scalafx/source/browse/scalafx-demos/src/main/scala/scalafx/controls/tableview/TableWithCustomCellDemo.scala
 class ArticleListView extends GenericView("articlelistview") {
 
   var currentTopic: Topic = null
@@ -263,17 +260,7 @@ class ArticleListView extends GenericView("articlelistview") {
     tooltipString = "Copy documents of articles somewhere"
     image = new Image(getClass.getResource("/images/copypdfs.png").toExternalForm)
     action = (_) => {
-      val res = MFile(new DirectoryChooser {
-        title = "Select folder for copying documents"
-      }.showDialog(toolbarButton.getParent.getScene.getWindow))
-      if (res != null) {
-        alv.selectionModel.value.getSelectedItems.foreach( a => {
-          val f = FileHelper.getDocumentFileAbs(a.getFirstDocRelative)
-          MFile.copy(f, new MFile(res.getPath + "/" + f.getName), copyAttrs = true)
-          // TODO handle existing files. list & ask to overwrite?
-        } )
-        ApplicationController.showNotification(s"Copied documents to folder!")
-      }
+      UpdatePdfs.exportPdfs(alv.selectionModel.value.getSelectedItems.toList, null, toolbarButton.getParent.getScene.getWindow)
     }
   }
   val aUpdateDocumentFilenames = new MyAction("Article", "Update document filenames") {
