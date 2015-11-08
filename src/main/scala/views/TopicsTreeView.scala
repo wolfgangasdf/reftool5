@@ -1,6 +1,5 @@
 package views
 
-import java.io
 import javafx.scene.{control => jfxsc}
 
 import db.{Article, ReftoolDB, Topic}
@@ -186,10 +185,10 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
         dropOk = true
         for (a <- DnDHelper.articles) {
           if (de.transferMode == TransferMode.COPY) {
-            a.topics.associate(treeItem.value.getValue)
+            if (!a.topics.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue)
           } else {
             a.topics.dissociate(DnDHelper.articlesTopic)
-            a.topics.associate(treeItem.value.getValue)
+            if (!a.topics.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue)
             ApplicationController.submitShowArticlesFromTopic(DnDHelper.articlesTopic)
           }
           ApplicationController.submitArticleChanged(a)
@@ -401,7 +400,7 @@ class TopicsTreeView extends GenericView("topicsview") {
           t.exportfn = fn.getPath
           ReftoolDB.topics.update(t)
         }
-        val pw = new io.PrintWriter(new io.FileOutputStream(fn.toFile, false))
+        val pw = new java.io.PrintWriter(new java.io.FileOutputStream(fn.toFile, false))
         t.articles.toList.sortWith{(a,b) => a.bibtexid.compareTo(b.bibtexid) < 0}// alphabetically!
           .foreach( a => pw.write(a.bibtexentry + "\n") )
         pw.close()
@@ -576,7 +575,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         val aid = AppStorage.config.autoimportdir
         if (aid != "") {
           val aidf = new MFile(aid)
-          val res = aidf.listFiles(new io.FilenameFilter() {
+          val res = aidf.listFiles(new java.io.FilenameFilter() {
             override def accept(dir: java.io.File, name: String): Boolean = name.startsWith("reftool5import") && name.endsWith(".pdf")
           })
           if (res.nonEmpty) {
