@@ -6,6 +6,7 @@ import framework.{Helpers, ApplicationController, GenericView, MyAction}
 import org.squeryl.PrimitiveTypeMode._
 import util._
 
+import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
 import scalafx.beans.property.StringProperty
@@ -126,7 +127,7 @@ class ArticleListView extends GenericView("articlelistview") {
       val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
       as.foreach( a => {
         a.topics.dissociate(currentTopic)
-        a.topics.associate(ReftoolDB.stackTopic)
+        if (!a.topics.contains(ReftoolDB.stackTopic)) a.topics.associate(ReftoolDB.stackTopic)
         ApplicationController.submitArticleChanged(a)
       })
       ApplicationController.showNotification(s"Moved ${as.length} articles to stack!")
@@ -139,7 +140,7 @@ class ArticleListView extends GenericView("articlelistview") {
     action = (_) => inTransaction {
       val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
       as.foreach( a => {
-        a.topics.associate(ReftoolDB.stackTopic)
+        if (!a.topics.contains(ReftoolDB.stackTopic)) a.topics.associate(ReftoolDB.stackTopic)
         ApplicationController.submitArticleChanged(a)
       })
       ApplicationController.showNotification(s"Copied ${as.length} articles to stack!")
@@ -151,7 +152,7 @@ class ArticleListView extends GenericView("articlelistview") {
     action = (_) => inTransaction {
       ReftoolDB.stackTopic.articles.foreach( a => {
         a.topics.dissociate(ReftoolDB.stackTopic)
-        a.topics.associate(currentTopic)
+        if (!a.topics.contains(currentTopic)) a.topics.associate(currentTopic)
         ApplicationController.submitArticleChanged(a)
       })
       ApplicationController.showNotification(s"Moved articles from stack!")
@@ -163,7 +164,7 @@ class ArticleListView extends GenericView("articlelistview") {
     image = new Image(getClass.getResource("/images/stackcopytohere.gif").toExternalForm)
     action = (_) => inTransaction {
       ReftoolDB.stackTopic.articles.foreach( a => {
-        a.topics.associate(currentTopic)
+        if (!a.topics.contains(currentTopic)) a.topics.associate(currentTopic)
         ApplicationController.submitArticleChanged(a)
       } )
       ApplicationController.showNotification(s"Copied articles from stack!")
