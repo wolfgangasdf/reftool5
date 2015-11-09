@@ -16,9 +16,8 @@ import scalafx.geometry.Insets
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control._
 import scalafx.scene.image.Image
-import scalafx.scene.input._
-import scalafx.scene.layout._
-import scalafx.scene.input.ClipboardContent._
+import scalafx.scene.input.{TransferMode, MouseEvent, ClipboardContent, Clipboard}
+import scalafx.scene.layout.{BackgroundFill, CornerRadii, Background, BorderPane}
 import scalafx.scene.paint.Color
 import scalafx.scene.control.TableColumn._
 
@@ -33,54 +32,52 @@ class ArticleListView extends GenericView("articlelistview") {
   var onSelectionChangedDoAction = true
 
   // for coloring of cells.
-  class MyTableCell extends javafx.scene.control.TableCell[Article, String] {
-    override def updateItem(item: String, empty: Boolean): Unit = {
-      setBackground(Background.EMPTY)
-      super.updateItem(item, empty)
-      if (item != null) setText(item.replaceAll("(\\r|\\n)", " ")) else setText(item) // display single line only!
-      if (getIndex > -1 && getIndex < alv.getItems.length && getTableColumn == cTitle.delegate) {
-        val a = alv.getItems.get(getIndex)
-        val col = inTransaction { a.color(currentTopic) }
-        if (col != 0) setBackground(new javafx.scene.layout.Background(new javafx.scene.layout.BackgroundFill(colorsn(col), new CornerRadii(12.0), Insets(2.0, 0.0, 2.0, 0.0))))
+  class MyTableCell extends TableCell[Article, String] {
+    item.onChange { (a, b, c) => {
+      val idx = index.value
+      background = new Background(Array[BackgroundFill]()) // remove old background
+      if (b != null && c == null) text = "" // cells are re-used, need to clear old text
+      if (c != null) {
+        text = c
+        // not needed? if (idx > -1 && idx < alv.getItems.length) {
+        val a = alv.getItems.get(idx)
+        val col = inTransaction {
+          a.color(currentTopic)
+        }
+        if (col != 0) background = new Background(Array(new BackgroundFill(colorsn(col), new CornerRadii(12.0), Insets(2.0, 0.0, 2.0, 0.0))))
+        // } else       debug(s"XXXXXXXX idx=$idx b=$b c=$c")
       }
-    }
+    } }
   }
 
   val cTitle = new TableColumn[Article, String] {
     text = "Title"
     cellValueFactory = (a) => new StringProperty(a.value.title.trim.replaceAll("((\r\n)|\r|\n)+", " "))
-    cellFactory.value  = { _ => new MyTableCell }
-
+    cellFactory = { (_: TableColumn[Article, String]) => new MyTableCell }
   }
   val cPubdate = new TableColumn[Article, String] {
     text = "Date"
     cellValueFactory = (a) => new StringProperty(a.value.pubdate)
-    cellFactory.value  = { _ => new MyTableCell }
   }
   val cEntrytype = new TableColumn[Article, String] {
     text = "Type"
     cellValueFactory = (a) => new StringProperty(a.value.entrytype)
-    cellFactory.value  = { _ => new MyTableCell }
   }
   val cAuthors = new TableColumn[Article, String] {
     text = "Authors"
     cellValueFactory = (a) => new StringProperty(a.value.authors.trim.replaceAll("((\r\n)|\r|\n)+", " "))
-    cellFactory.value  = { _ => new MyTableCell }
   }
   val cJournal = new TableColumn[Article, String] {
     text = "Journal"
     cellValueFactory = (a) => new StringProperty(a.value.journal)
-    cellFactory.value  = { _ => new MyTableCell }
   }
   val cReview = new TableColumn[Article, String] {
     text = "Review"
     cellValueFactory = (a) => new StringProperty(StringHelper.headString(a.value.review.trim.replaceAll("((\r\n)|\r|\n)+", "|"), 50))
-    cellFactory.value  = { _ => new MyTableCell }
   }
   val cBibtexid = new TableColumn[Article, String] {
     text = "BibtexID"
     cellValueFactory = (a) => new StringProperty(a.value.bibtexid)
-    cellFactory.value  = { _ => new MyTableCell }
   }
 
   val articles = new ObservableBuffer[Article]()
