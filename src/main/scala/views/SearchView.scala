@@ -20,7 +20,7 @@ class SearchView extends GenericView("searchview") {
 
   val tfSearch = new TextField {
     hgrow = Priority.Always
-    tooltip = new Tooltip { text = "Enter space-separated search terms (group with single quote), articles matching all terms are returned!" }
+    tooltip = new Tooltip { text = "Sspace-separated search terms (group with single quote), articles matching all terms are returned if you press Enter!" }
     this.promptText = "Enter search string"
     def dynamicWhere(q: Queryable[Article], sstr: String) = q.where(a =>
           (upper(a.title) like s"%$sstr%".inhibitWhen(!cbTitle.selected.value))
@@ -39,7 +39,7 @@ class SearchView extends GenericView("searchview") {
         val terms = SearchUtil.getSearchTerms(text.value)
         if (terms.exists(_.length > 2)) {
           var res = dynamicWhere(ReftoolDB.articles, terms(0))
-          for (i <- 1 to terms.length - 1) res = dynamicWhere(res, terms(i))
+          for (i <- 1 until terms.length) res = dynamicWhere(res, terms(i))
           if (res.isEmpty)
             ApplicationController.showNotification("Search returned no results!")
           else {
@@ -66,7 +66,19 @@ class SearchView extends GenericView("searchview") {
   val cbJournal = new CheckBox("Journal") { selected = true }
   val cbDOI = new CheckBox("DOI") { selected = true }
   val cbDocuments = new CheckBox("Document filenames") { selected = false }
-
+  val selAll = List(cbTitle, cbAuthors, cbReview, cbBibtexID, cbBibtex, cbPubdate, cbJournal, cbDOI, cbDocuments)
+  val selNotDefault = Seq(cbBibtex, cbPubdate, cbDOI, cbDocuments)
+  val btSelectDefault = new Button("Select default") {
+    onAction = (ae: ActionEvent) => {
+      selAll.foreach( _.selected = true)
+      selNotDefault.foreach( _.selected = false)
+    }
+  }
+  val btSelectNone = new Button("Select none") {
+    onAction = (ae: ActionEvent) => {
+      selAll.foreach( _.selected = false)
+    }
+  }
   content = new BorderPane {
     margin = Insets(5.0)
     top = new HBox { children = List(
@@ -75,7 +87,10 @@ class SearchView extends GenericView("searchview") {
     )}
     center = new VBox {
       spacing = 5.0
-      children = List(cbTitle, cbAuthors, cbReview, cbBibtexID, cbBibtex, cbPubdate, cbJournal, cbDOI, cbDocuments)
+      children = List(
+        cbTitle, cbAuthors, cbReview, cbBibtexID, cbBibtex, cbPubdate, cbJournal, cbDOI, cbDocuments,
+        new HBox { children = List(btSelectDefault, btSelectNone)}
+      )
     }
   }
 
