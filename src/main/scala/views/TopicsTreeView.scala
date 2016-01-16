@@ -209,16 +209,9 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
 
   onDragDone = (de: DragEvent) => clearDnDFormatting()
 
-  onMouseClicked = (me: MouseEvent) => { // a single click updates alv if not just done by selectionChanged
-    if (!MyTreeCell.selectionJustChanged && me.clickCount == 1)
-      ApplicationController.submitShowArticlesFromTopic(item.value)
-    MyTreeCell.selectionJustChanged = false
-  }
 }
 object MyTreeCell {
   var lastDragoverCell: TreeCell[Topic] = null
-  var selectionJustChanged: Boolean = false
-
   val effectDropshadow = new DropShadow(5.0, 0.0, -3.0, Color.web("#666666"))
   val effectInnershadow = new InnerShadow()
   effectInnershadow.setOffsetX(1.0)
@@ -471,13 +464,16 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   ApplicationController.revealTopicListener += ( (t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t, clearSearch = true) )
 
+  ApplicationController.showArticleListeners += ( (_) => tv.getSelectionModel.clearSelection() )
+  ApplicationController.showArticlesListListeners += ( (_, _) => tv.getSelectionModel.clearSelection() )
+
   toolbaritems ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aExportTopicPDFs.toolbarButton,
     aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton
   )
 
   tv.selectionModel().selectedItem.onChange { (_, oldVal, newVal) => {
-    MyTreeCell.selectionJustChanged = true // disable reload on next mouseclick
     if (newVal != null) {
+      debug("XXXXX: selch")
       ApplicationController.submitShowArticlesFromTopic(newVal.getValue)
       aAddArticle.enabled = true
       aAddTopic.enabled = true
@@ -499,7 +495,7 @@ class TopicsTreeView extends GenericView("topicsview") {
   def findSql(terms: Array[String]): Array[Topic] = {
     def dynamicWhere(q: Queryable[Topic], s: String) = q.where(t => upper(t.title) like s"%$s%")
     var rest = dynamicWhere(ReftoolDB.topics, terms(0))
-    for (i <- 1 to terms.length - 1) rest = dynamicWhere(rest, terms(i))
+    for (i <- 1 until terms.length) rest = dynamicWhere(rest, terms(i))
     rest.toArray
   }
 
