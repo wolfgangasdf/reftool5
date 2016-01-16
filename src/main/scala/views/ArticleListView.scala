@@ -362,13 +362,13 @@ class ArticleListView extends GenericView("articlelistview") {
     center = alv
   }
 
-  def revealArticleByID(id: Long) = {
+  def selectRevealArticleByID(id: Long) = {
     inTransaction {
-      ReftoolDB.articles.lookup(id) foreach(a => revealArticle(a))
+      ReftoolDB.articles.lookup(id) foreach(a => selectRevealArticle(a))
     }
   }
 
-  def revealArticle(a: Article) = {
+  def selectRevealArticle(a: Article) = {
     if (articles.contains(a)) {
       Helpers.runUI {
         alv.getSelectionModel.select(a)
@@ -385,7 +385,7 @@ class ArticleListView extends GenericView("articlelistview") {
 
   ApplicationController.showArticlesListListeners += ( (al: List[Article], title: String) => setArticles(al, title, null) )
   ApplicationController.showArticlesFromTopicListeners += ( (t: Topic) => setArticlesTopic(t) )
-  ApplicationController.revealArticleInListListeners += revealArticle
+  ApplicationController.revealArticleInListListeners += ( (a: Article) => selectRevealArticle(a) )
   ApplicationController.articleChangedListeners += ( (a: Article) => {
     if (currentTopic != null) {
       val oldsel = alv.getSelectionModel.getSelectedItems.headOption
@@ -394,7 +394,7 @@ class ArticleListView extends GenericView("articlelistview") {
       if (oldsel.nonEmpty) {
         val founda = articles.find(a => a.id == oldsel.get.id)
         if (founda.nonEmpty) {
-          alv.getSelectionModel.select(founda.get)
+          selectRevealArticle(founda.get)
         } else {
           safeSelect(oldselidx.get)
         }
@@ -423,7 +423,7 @@ class ArticleListView extends GenericView("articlelistview") {
     aRemoveFromTopic.enabled = false // req selection
     aRemoveArticle.enabled = false // req selection
     if (firstRun) {
-      ReftoolDB.getSetting(ReftoolDB.SLASTARTICLEID) foreach(s => revealArticleByID(s.value.toLong))
+      ReftoolDB.getSetting(ReftoolDB.SLASTARTICLEID) foreach(s => selectRevealArticleByID(s.value.toLong) )
       firstRun = false
     }
   }

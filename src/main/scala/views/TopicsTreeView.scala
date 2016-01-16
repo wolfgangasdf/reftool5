@@ -464,7 +464,6 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   ApplicationController.revealTopicListener += ( (t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t, clearSearch = true) )
 
-  ApplicationController.showArticleListeners += ( (_) => tv.getSelectionModel.clearSelection() )
   ApplicationController.showArticlesListListeners += ( (_, _) => tv.getSelectionModel.clearSelection() )
 
   toolbaritems ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aExportTopicPDFs.toolbarButton,
