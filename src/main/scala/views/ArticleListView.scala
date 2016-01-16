@@ -25,6 +25,7 @@ import scalafx.scene.control.TableColumn._
 class ArticleListView extends GenericView("articlelistview") {
 
   var currentTopic: Topic = null
+  val topicHistory = new ArrayBuffer[Long]()
 
   val colors = List("-fx-background-color: white", "-fx-background-color: red", "-fx-background-color: LightSalmon", "-fx-background-color: LightGreen")
   val colorsn = List(Color.White, Color.Salmon, Color.LightSalmon, Color.LightGreen)
@@ -45,7 +46,6 @@ class ArticleListView extends GenericView("articlelistview") {
           a.color(currentTopic)
         }
         if (col != 0) background = new Background(Array(new BackgroundFill(colorsn(col), new CornerRadii(12.0), Insets(2.0, 0.0, 2.0, 0.0))))
-        // } else       debug(s"XXXXXXXX idx=$idx b=$b c=$c")
       }
     } }
   }
@@ -96,6 +96,28 @@ class ArticleListView extends GenericView("articlelistview") {
   text = "Article list"
 
   val lbCurrentTitle = new Label("<title>")
+
+  val aPreviousTopic = new MyAction("Article", "Go to previous topic") {
+    tooltipString = "Go to previous topic in history without changing topic view"
+    image = new Image(getClass.getResource("/images/backward_nav.gif").toExternalForm)
+    action = (_) => {
+      val tid = if (topicHistory.nonEmpty) {
+        if (currentTopic != null && currentTopic.id == topicHistory.last) { // need topic before
+          if (topicHistory.size >= 2) {
+            topicHistory.remove(topicHistory.size - 1)
+            Some(topicHistory.remove(topicHistory.size - 1))
+          } else None
+        } else {
+          Some(topicHistory.remove(topicHistory.size - 1))
+        }
+      } else None
+      if (tid.nonEmpty) inTransaction {
+        ReftoolDB.topics.lookup(tid.get) foreach (t => setArticlesTopic(t))
+      } else
+        ApplicationController.showNotification(s"Topic history is empty!")
+    }
+    enabled = true
+  }
 
   val aSetColor = new MyAction("Article", "Cycle article color") {
     tooltipString = "Cycle article color for article in this topic"
@@ -332,7 +354,7 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   }
 
-  toolbaritems ++= Seq( lbCurrentTitle, aSetColor.toolbarButton, aShowStack.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
+  toolbaritems ++= Seq( lbCurrentTitle, aPreviousTopic.toolbarButton, aSetColor.toolbarButton, aShowStack.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
     aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveFromTopic.toolbarButton, aRemoveArticle.toolbarButton, aRevealPDF.toolbarButton,
     aCopyURLs.toolbarButton, aCopyPDFs.toolbarButton, aOpenURL.toolbarButton)
 
@@ -408,6 +430,8 @@ class ArticleListView extends GenericView("articlelistview") {
 
   def setArticlesTopic(topic: Topic) {
     if (topic != null) inTransaction {
+      if (topicHistory.isEmpty || topicHistory.last != topic.id)
+        topicHistory += topic.id
       if (topic.title == ReftoolDB.TORPHANS) {
         val q =
           ReftoolDB.articles.where(a =>

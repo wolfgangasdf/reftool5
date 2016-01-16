@@ -473,7 +473,6 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   tv.selectionModel().selectedItem.onChange { (_, oldVal, newVal) => {
     if (newVal != null) {
-      debug("XXXXX: selch")
       ApplicationController.submitShowArticlesFromTopic(newVal.getValue)
       aAddArticle.enabled = true
       aAddTopic.enabled = true
