@@ -147,6 +147,7 @@ object ReftoolDB extends Schema with Logging {
   val SSCHEMAVERSION = "schemaversion"
   val SLASTTOPICID = "lasttopicid"
   val SLASTARTICLEID = "lastarticleid"
+  val SBOOKMARKS = "bookmarks"
 
   var rootTopic: Topic = null
   var stackTopic: Topic = null
@@ -199,8 +200,9 @@ object ReftoolDB extends Schema with Logging {
   )
 
   // helpers
-  def getSetting(key: String): Option[Setting] = inTransaction {
-    settings.lookup(key)
+  def getSetting(key: String): Option[String] = inTransaction {
+    val s = settings.lookup(key)
+    if (s.isDefined) Option(s.get.value) else None
   }
   def setSetting(key: String, value: String) = inTransaction {
     val sett = settings.lookup(key).getOrElse(new Setting(key, value))

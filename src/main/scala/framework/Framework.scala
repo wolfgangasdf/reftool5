@@ -36,6 +36,8 @@ abstract class GenericView(id: String) extends Tab with HasUISettings with Loggi
 
   val toolbaritems = new ArrayBuffer[Node]
 
+  closable = false
+
   def canClose: Boolean
 
   def activateThisTab() = {

@@ -423,7 +423,7 @@ class ArticleListView extends GenericView("articlelistview") {
     aRemoveFromTopic.enabled = false // req selection
     aRemoveArticle.enabled = false // req selection
     if (firstRun) {
-      ReftoolDB.getSetting(ReftoolDB.SLASTARTICLEID) foreach(s => selectRevealArticleByID(s.value.toLong) )
+      ReftoolDB.getSetting(ReftoolDB.SLASTARTICLEID) foreach(s => selectRevealArticleByID(s.toLong) )
       firstRun = false
     }
   }
