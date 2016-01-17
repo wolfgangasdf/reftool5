@@ -98,15 +98,25 @@ class MainScene(stage: Stage) extends Scene with Logging {
   }
 
   val topicTreeView = tryit { new TopicsTreeView }
+  val bookmarksView = tryit { new BookmarksView }
 
-  val lefttabs = new ViewContainer {
+  val toplefttabs = new ViewContainer {
     addView(topicTreeView)
+  }
+  val bottomlefttabs = new ViewContainer {
+    addView(bookmarksView)
   }
 
   val articleListView = tryit { new ArticleListView }
 
   val toptabs = new ViewContainer {
     addView(articleListView)
+  }
+
+  val spleft = new SplitPane {
+    orientation = Orientation.VERTICAL
+    dividerPositions = 0.5
+    items += (toplefttabs, bottomlefttabs)
   }
 
   val spbottomright = new SplitPane {
@@ -128,7 +138,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
   val sph = new SplitPane {
     orientation = Orientation.HORIZONTAL
     dividerPositions = 0.15
-    items +=(lefttabs, spv)
+    items +=(spleft, spv)
   }
 
   val statusBarLabel = new Label("") { hgrow = Priority.Always }
@@ -158,7 +168,8 @@ class MainScene(stage: Stage) extends Scene with Logging {
       sph.dividerPositions.head,
       spv.dividerPositions.head,
       spbottom.dividerPositions.head,
-      spbottomright.dividerPositions.head
+      spbottomright.dividerPositions.head,
+      spleft.dividerPositions.head
     )
     vals.mkString(";")
   }
@@ -176,6 +187,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
       spv.dividerPositions = it.next().toDouble
       spbottom.dividerPositions = it.next().toDouble
       spbottomright.dividerPositions = it.next().toDouble
+      spleft.dividerPositions = it.next().toDouble
     }
   }
 
