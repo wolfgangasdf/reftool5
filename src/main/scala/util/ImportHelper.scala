@@ -290,7 +290,7 @@ object ImportHelper extends Logging {
       if (a.bibtexid == "" || resetBibtexID) {
         // article has no bibtexid, generate one...
         val authors = AuthorNamesExtractor.toList(getPlainTextField(btentry, "", BibTeXEntry.KEY_AUTHOR))
-        val lastau = if (authors.nonEmpty) authors.head.last.head.toString else "unknown"
+        val lastau = if (authors.nonEmpty) authors.head.last.map(_.toString).mkString("") else "unknown"
         val bid = lastau + getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
         val bid2 = getUniqueBibtexID(bid, a)
         a.bibtexid = bid2
