@@ -41,7 +41,10 @@ class BookmarksView extends GenericView("bookmarksview") {
     }
   }
 
-  def updateList() = lv.items = new ObservableBuffer[Topic]() ++ folders(currentFolderIdx).topics
+  def updateList() = {
+    lv.items.get().clear()
+    lv.items = new ObservableBuffer[Topic]() ++ folders(currentFolderIdx).topics
+  }
 
   val cbfolder = new ChoiceBox[Folder] {
     maxWidth = 1000
@@ -140,18 +143,27 @@ class BookmarksView extends GenericView("bookmarksview") {
 
   ApplicationController.showArticlesFromTopicListeners += ( (t: Topic) => {
     currentTopic = t
-  } )
+  })
+
+  ApplicationController.topicChangedListeners += ( (tid: Long) => {
+    storeSettings()
+    restoreSettings()
+    selectCurrent()
+    updateList()
+  })
+
+  ApplicationController.topicRemovedListeners += ((tid: Long) => {
+    storeSettings()
+    restoreSettings()
+    selectCurrent()
+    updateList()
+  })
 
   content = new VBox {
     children ++= Seq(cbfolder, lv)
   }
 
   override def canClose: Boolean = true
-
-  override def getUIsettings: String = {
-    storeSettings()
-    ""
-  }
 
   def storeSettings(): Unit = {
     var s = ""
@@ -165,9 +177,8 @@ class BookmarksView extends GenericView("bookmarksview") {
     ReftoolDB.setSetting(ReftoolDB.SBOOKMARKS, s)
   }
 
-  override def setUIsettings(s: String): Unit = {
+  def restoreSettings(): Unit = {
     ReftoolDB.getSetting(ReftoolDB.SBOOKMARKS).foreach(s => {
-      debug("bookmarks: restoring " + s)
       folders.clear()
       val lines = s.split("\r\n")
       lines.foreach(line => {
@@ -186,8 +197,16 @@ class BookmarksView extends GenericView("bookmarksview") {
         }
       })
       checkFolders()
-      cbfolder.getSelectionModel.select(0)
     })
+  }
+
+  override def getUIsettings: String = {
+    storeSettings()
+    ""
+  }
+  override def setUIsettings(s: String): Unit = {
+    restoreSettings()
+    cbfolder.getSelectionModel.select(0)
   }
 
   override val uisettingsID: String = "bmv"
