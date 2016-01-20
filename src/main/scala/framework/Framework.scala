@@ -373,6 +373,18 @@ object ApplicationController extends Logging {
     revealTopicListener.foreach( rtl => Helpers.runUI(rtl(t)) )
   }
 
+  val topicChangedListeners = new ArrayBuffer[(Long) => Unit]()
+  def submitTopicChanged(tid: Long): Unit = {
+    logCall("aTopicChanged " + tid)
+    topicChangedListeners.foreach( rtl => Helpers.runUI(rtl(tid)) )
+  }
+
+  val topicRemovedListeners = new ArrayBuffer[(Long) => Unit]()
+  def submitTopicRemoved(tid: Long): Unit = {
+    logCall("aTopicRemoved " + tid)
+    topicRemovedListeners.foreach(rtl => Helpers.runUI(rtl(tid)) )
+  }
+
   val notificationTimer = new java.util.Timer()
   def showNotification(string: String): Unit = {
     Main.mainScene.statusBarLabel.text = string

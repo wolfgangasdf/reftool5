@@ -250,6 +250,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     onEditCommit = (ee: TreeView.EditEvent[Topic]) => {
       inTransaction {
         ReftoolDB.topics.update(ee.newValue)
+        ApplicationController.submitTopicChanged(ee.newValue.id)
         loadTopics(revealLastTopic = true)
       }
     }
@@ -454,6 +455,7 @@ class TopicsTreeView extends GenericView("topicsview") {
           if (doit) {
             t.articles.dissociateAll
             ReftoolDB.topics.delete(t.id)
+            ApplicationController.submitTopicRemoved(t.id)
           }
 
           loadTopics(revealLastTopic = false, revealTopic = pt)
