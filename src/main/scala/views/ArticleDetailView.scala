@@ -211,6 +211,10 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
       ApplicationController.showNotification(s"(Re-)created bibtex entry!")
       ApplicationController.submitArticleChanged(newa)
       setArticle(newa)
+      if (article.bibtexid == "unknown") {
+        info("bibtex id unknown, try to generate...")
+        aGenerateBibtexID.action("")
+      }
     }
   }
 

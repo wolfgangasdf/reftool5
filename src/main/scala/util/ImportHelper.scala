@@ -421,15 +421,16 @@ object ImportHelper extends Logging {
   }
 
   def createBibtexFromArticle(a: Article): Article = {
+    if (a.bibtexid.trim == "") a.bibtexid = "unknown"
     val be = new BibTeXEntry(new Key(a.entrytype), new Key(a.bibtexid))
     be.addField(BibTeXEntry.KEY_TITLE, new StringValue(a.title, StringValue.Style.BRACED))
     be.addField(BibTeXEntry.KEY_AUTHOR, new StringValue(a.authors, StringValue.Style.BRACED))
     be.addField(BibTeXEntry.KEY_JOURNAL, new StringValue(a.journal, StringValue.Style.BRACED))
     be.addField(BibTeXEntry.KEY_DOI, new StringValue(a.doi, StringValue.Style.BRACED))
     if (a.pubdate.length >= 4) {
-      be.addField(BibTeXEntry.KEY_YEAR, new StringValue(a.pubdate.substring(0, 3), StringValue.Style.BRACED))
+      be.addField(BibTeXEntry.KEY_YEAR, new StringValue(a.pubdate.substring(0, 4), StringValue.Style.BRACED))
       if (a.pubdate.length >= 6)
-        be.addField(BibTeXEntry.KEY_MONTH, new StringValue(months(a.pubdate.substring(4,5).toInt), StringValue.Style.BRACED))
+        be.addField(BibTeXEntry.KEY_MONTH, new StringValue(months(a.pubdate.substring(4,6).toInt - 1), StringValue.Style.BRACED))
     }
     a.bibtexentry = bibtexFromBtentry(be)
     a
