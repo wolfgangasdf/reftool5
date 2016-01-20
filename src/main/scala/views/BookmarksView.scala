@@ -68,6 +68,7 @@ class BookmarksView extends GenericView("bookmarksview") {
       folders.remove(currentFolderIdx)
       checkFolders()
       cbfolder.getSelectionModel.select(0)
+      storeSettings()
     }
     enabled = true
   }
@@ -79,6 +80,7 @@ class BookmarksView extends GenericView("bookmarksview") {
       val newf = new Folder { name = "New Folder" }
       folders += newf
       cbfolder.getSelectionModel.select(newf)
+      storeSettings()
     }
     enabled = true
   }
@@ -100,6 +102,7 @@ class BookmarksView extends GenericView("bookmarksview") {
           selectCurrent()
         case None =>
       }
+      storeSettings()
     }
     enabled = true
   }
@@ -113,6 +116,7 @@ class BookmarksView extends GenericView("bookmarksview") {
       f.topics --= tt
       folders(currentFolderIdx) = f
       selectCurrent()
+      storeSettings()
     }
     enabled = true
   }
@@ -126,6 +130,7 @@ class BookmarksView extends GenericView("bookmarksview") {
         f.topics += currentTopic
         folders(currentFolderIdx) = f
         selectCurrent()
+        storeSettings()
       }
     }
     enabled = true
@@ -144,6 +149,11 @@ class BookmarksView extends GenericView("bookmarksview") {
   override def canClose: Boolean = true
 
   override def getUIsettings: String = {
+    storeSettings()
+    ""
+  }
+
+  def storeSettings(): Unit = {
     var s = ""
     folders.foreach(f => {
       s += f.name + "\t"
@@ -152,9 +162,7 @@ class BookmarksView extends GenericView("bookmarksview") {
       })
       s += "\r\n"
     })
-    debug("bookmarks: storing " + s)
     ReftoolDB.setSetting(ReftoolDB.SBOOKMARKS, s)
-    ""
   }
 
   override def setUIsettings(s: String): Unit = {
