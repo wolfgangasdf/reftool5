@@ -4,18 +4,19 @@ import db.{ReftoolDB, Topic}
 import framework.{ApplicationController, GenericView, MyAction}
 
 import org.squeryl.PrimitiveTypeMode._
+import util.StringHelper
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
 import scalafx.collections.ObservableBuffer
 import scalafx.event.ActionEvent
 import scalafx.scene.control._
 import scalafx.scene.image.Image
-import scalafx.scene.input.MouseEvent
+import scalafx.scene.input.{KeyCode, KeyEvent, MouseEvent}
 import scalafx.scene.layout.{Priority, VBox}
 
 class BookmarksView extends GenericView("bookmarksview") {
 
-  text = "B"
+  text = "Bookmarks"
 
   var currentFolderIdx = -1
 
@@ -31,15 +32,7 @@ class BookmarksView extends GenericView("bookmarksview") {
   var folders = new ObservableBuffer[Folder]()
   folders += new Folder { name = "New folder" }
 
-  val lv = new ListView[Topic] {
-    onMouseClicked = (me: MouseEvent) => {
-      if (me.clickCount == 2) {
-        if (selectionModel.value.getSelectedItems.length > 0) {
-          ApplicationController.submitRevealTopic(selectionModel.value.getSelectedItems.head)
-        }
-      }
-    }
-  }
+  val lv = new ListView[Topic]()
 
   def updateList() = {
     lv.items.get().clear()
@@ -52,7 +45,7 @@ class BookmarksView extends GenericView("bookmarksview") {
     onAction = (ae: ActionEvent) => {
       if (value.value != null) {
         currentFolderIdx = selectionModel.value.getSelectedIndex
-        updateList()
+        if (currentFolderIdx > -1) updateList()
       }
     }
     items = folders
@@ -63,6 +56,45 @@ class BookmarksView extends GenericView("bookmarksview") {
   def selectCurrent() = cbfolder.getSelectionModel.select(currentFolderIdx)
 
   def checkFolders() = if (folders.isEmpty) folders += new Folder { name = "New Folder" }
+
+
+  lv.onMouseClicked = (me: MouseEvent) => {
+    if (me.clickCount == 2) {
+      if (lv.getSelectionModel.getSelectedItems.length > 0) {
+        ApplicationController.submitRevealTopic(lv.getSelectionModel.getSelectedItems.head)
+      }
+    }
+  }
+  lv.onKeyPressed = (ke: KeyEvent) => {
+    val ct = lv.getSelectionModel.getSelectedItem
+    var action = 0
+    if (ct != null && ke.shiftDown) {
+      if (ke.code == KeyCode.DOWN)
+        action = +1
+      else if (ke.code == KeyCode.UP)
+        action = -1
+      else 0
+    }
+    if (action != 0) {
+      val f = folders(currentFolderIdx)
+      val oldidx = f.topics.indexOf(ct)
+      if (action == +1 && oldidx < f.topics.size - 1) {
+        f.topics(oldidx) = f.topics(oldidx + 1)
+        f.topics(oldidx + 1) = ct
+      } else if (action == -1 && oldidx > 0) {
+        f.topics(oldidx) = f.topics(oldidx - 1)
+        f.topics(oldidx - 1) = ct
+      }
+      folders(currentFolderIdx) = f
+      ke.consume()
+      storeSettings()
+      restoreSettings()
+      selectCurrent()
+      updateList()
+      lv.getSelectionModel.select(ct)
+    }
+  }
+
 
   val aRemoveFolder = new MyAction("Bookmarks", "Remove folder") {
     tooltipString = "Remove whole bookmarks folder"
@@ -102,10 +134,12 @@ class BookmarksView extends GenericView("bookmarksview") {
           val cf = folders(currentFolderIdx)
           cf.name = name
           folders(currentFolderIdx) = cf
+          storeSettings()
+          restoreSettings()
+          currentFolderIdx = folders.indexWhere(f => f.name == cf.name)
           selectCurrent()
         case None =>
       }
-      storeSettings()
     }
     enabled = true
   }
@@ -169,33 +203,35 @@ class BookmarksView extends GenericView("bookmarksview") {
     var s = ""
     folders.foreach(f => {
       s += f.name + "\t"
-      f.topics.foreach(t => {
-        s += t.id + ","
-      })
+      f.topics.foreach(t => s += t.id + ",")
       s += "\r\n"
     })
+    // debug("store:\n" + s)
     ReftoolDB.setSetting(ReftoolDB.SBOOKMARKS, s)
   }
 
   def restoreSettings(): Unit = {
     ReftoolDB.getSetting(ReftoolDB.SBOOKMARKS).foreach(s => {
-      folders.clear()
+      // debug("restore:\n" + s)
+      var fs = new ObservableBuffer[Folder]()
       val lines = s.split("\r\n")
       lines.foreach(line => {
         val s1 = line.split("\t")
+        val newf = new Folder {
+          name = s1(0)
+        }
         if (s1.size == 2) {
-          val newf = new Folder {
-            name = s1(0)
-          }
           val ts = s1(1).split(",")
           inTransaction {
             ts.foreach(s2 => {
               ReftoolDB.topics.lookup(s2.toLong).foreach(newt => newf.topics += newt )
             })
           }
-          folders += newf
         }
+        fs += newf
       })
+      folders.clear()
+      folders ++= fs.sortWith( (t1, t2) => StringHelper.AlphaNumStringSorter(t1.name, t2.name))
       checkFolders()
     })
   }
