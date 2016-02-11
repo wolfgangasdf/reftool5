@@ -88,27 +88,34 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   }
 
   def saveArticle(): Unit = {
-    article.title = lTitle.tf.getText
-    article.authors = lAuthors.tf.getText
-    article.pubdate = lPubdate.tf.getText
-    article.bibtexentry = lBibtexentry.tf.getText
-    if (lBibtexid.tf.getText.trim != "") {
-      if (article.bibtexid != lBibtexid.tf.getText) {
-        val newbid = ImportHelper.getUniqueBibtexID(lBibtexid.tf.getText, article)
-        article.updateBibtexID(newbid)
+    try {
+      article.title = lTitle.tf.getText
+      article.authors = lAuthors.tf.getText
+      article.pubdate = lPubdate.tf.getText
+      article.bibtexentry = lBibtexentry.tf.getText
+      if (lBibtexid.tf.getText.trim != "") {
+        if (article.bibtexid != lBibtexid.tf.getText) {
+          val newbid = ImportHelper.getUniqueBibtexID(lBibtexid.tf.getText, article)
+          article.updateBibtexID(newbid)
+        }
+      } else article.bibtexid = ""
+      article.journal = lJournal.tf.getText
+      article.review = lReview.tf.getText
+      article.entrytype = lEntryType.tf.getText
+      article.linkurl = lLinkURL.tf.getText
+      article.doi = lDOI.tf.getText
+      transaction {
+        article = ReftoolDB.renameDocuments(article)
+        ReftoolDB.articles.update(article)
       }
-    } else article.bibtexid = ""
-    article.journal = lJournal.tf.getText
-    article.review = lReview.tf.getText
-    article.entrytype = lEntryType.tf.getText
-    article.linkurl = lLinkURL.tf.getText
-    article.doi = lDOI.tf.getText
-    inTransaction {
-      article = ReftoolDB.renameDocuments(article)
-      ReftoolDB.articles.update(article)
+      isDirty.value = false
+      ApplicationController.submitArticleChanged(article)
+    } catch {
+      case e: Exception =>
+        Helpers.showExceptionAlert("Exception during save article, see below. Did you enter excessive amount of text?\nI will revert to previous state... be patient.", e)
+        isDirty.value = false
+        ApplicationController.submitArticleChanged(article) // important to notify alv to reload articles!
     }
-    isDirty.value = false
-    ApplicationController.submitArticleChanged(article)
   }
 
   class MyLine(gpRow: Int, labelText: String, rows: Int = 1, disableEnter: Boolean = false) extends MyInputTextArea(gpRow, labelText, rows, "", "", disableEnter) {
