@@ -383,8 +383,10 @@ class TopicsTreeView extends GenericView("topicsview") {
           extensionFilters += new ExtensionFilter("bibtex files", "*.bib")
           if (t.exportfn != "") {
             val oldef = new MFile(t.exportfn)
-            initialFileName = oldef.getName
-            initialDirectory = oldef.getParent.toFile
+            if (oldef.exists) {
+              initialFileName = oldef.getName
+              initialDirectory = oldef.getParent.toFile
+            }
           } else initialFileName = "articles.bib"
         }
         MFile(fc.showSaveDialog(toolbarButton.getParent.getScene.getWindow))
