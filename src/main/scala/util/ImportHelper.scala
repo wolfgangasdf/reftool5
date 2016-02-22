@@ -341,7 +341,10 @@ object ImportHelper extends Logging {
       }
     }
     var responseo = tryhttp
-    if (responseo.isEmpty) responseo = tryhttp // retry
+    if (responseo.isEmpty) { // retry
+      warn("updateBibtesFromDoi: retrying http!")
+      responseo = tryhttp
+    }
     if (responseo.isDefined) {
       val response = responseo.get
       debug("reponse.code: " + response.code)

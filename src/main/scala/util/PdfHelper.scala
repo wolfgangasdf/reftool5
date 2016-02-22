@@ -11,7 +11,7 @@ object PdfHelper extends Logging {
 
   // doi syntax: http://www.doi.org/doi_handbook/2_Numbering.html#2.2
   // regex from http://stackoverflow.com/questions/27910/finding-a-doi-in-a-document-or-page
-  val doire = """(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)""".r
+  val doire = """(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'])\S)+)""".r
   val arxivre = """arXiv:([A-Za-z\-]+/\d+|\d+\.\d+)(?:v\d+)?""".r
 
   def getDOI(file: MFile) = {
