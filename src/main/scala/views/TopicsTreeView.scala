@@ -472,19 +472,29 @@ class TopicsTreeView extends GenericView("topicsview") {
     aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton
   )
 
+
+  def updateButtons() = {
+    val sel = tv.getSelectionModel.getSelectedItems.nonEmpty
+    aAddArticle.enabled = sel
+    aAddTopic.enabled = sel
+    aExportBibtex.enabled = sel
+    aExportTopicPDFs.enabled = sel
+    aRemoveTopic.enabled = sel
+  }
+
   tv.onMouseClicked = (me: MouseEvent) => {
     if (me.clickCount == 1) {
       val newVal = tv.getSelectionModel.getSelectedItem
       if (newVal != null) {
         ApplicationController.submitShowArticlesFromTopic(newVal.getValue)
-        aAddArticle.enabled = true
-        aAddTopic.enabled = true
-        aExportBibtex.enabled = true
-        aExportTopicPDFs.enabled = true
-        aRemoveTopic.enabled = true
       }
     }
   }
+
+  tv.selectionModel().selectedItem.onChange { (_, oldVal, newVal) => {
+    updateButtons()
+  } }
+
 
   text = "Topics"
 
