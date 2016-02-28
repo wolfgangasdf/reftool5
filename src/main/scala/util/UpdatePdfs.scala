@@ -27,6 +27,49 @@ object UpdatePdfs extends Logging {
       "external: " + sdf.format(fExternal.toFile.lastModified())
   }
 
+  class MyTableView(items: ObservableBuffer[UEntry]) extends TableView[UEntry](items) {
+    val tcRemove = new TableColumn[UEntry, java.lang.Boolean] {
+      text = "Remove"
+      cellValueFactory = { x => new BooleanProperty(x, " - ", false) {
+        onChange( (_, oldValue, newValue) => items.remove(x.value) )
+      }.delegate }
+      prefWidth = 80
+    }
+    tcRemove.setCellFactory(CheckBoxTableCell.forTableColumn(tcRemove))
+
+    val tcOpenboth = new TableColumn[UEntry, java.lang.Boolean] {
+      text = "Open"
+      cellValueFactory = { x => new BooleanProperty(x, "open both", false) {
+        onChange( (_, oldValue, newValue) => {
+          FileHelper.openDocument(x.value.fReftool)
+          FileHelper.openDocument(x.value.fExternal)
+        } )
+      }.delegate }
+      prefWidth = 80
+    }
+    tcOpenboth.setCellFactory(CheckBoxTableCell.forTableColumn(tcOpenboth))
+    editable = true
+    columns ++= List(
+      new TableColumn[UEntry, String] {
+        text = "Filename"
+        cellValueFactory = { x => new StringProperty(x.value.fReftool.getName) }
+        prefWidth = 400
+      },
+      new TableColumn[UEntry, String]() {
+        text = "Reftool"
+        cellValueFactory = { x => new StringProperty(sdf.format(x.value.fReftool.toFile.lastModified())) }
+        prefWidth = 150
+      },
+      new TableColumn[UEntry, String]() {
+        text = "External"
+        cellValueFactory = { x => new StringProperty(sdf.format(x.value.fExternal.toFile.lastModified())) }
+        prefWidth = 150
+      },
+      tcRemove,
+      tcOpenboth
+    )
+  }
+
   def updatePdfs(taInfo: TextArea, window: Window): Unit = {
     taInfo.text = "Update pdfs output:\n"
     val res = MFile(new DirectoryChooser {
@@ -73,50 +116,8 @@ object UpdatePdfs extends Logging {
         resizable = true
         width = 800
       }
-      val tcRemove = new TableColumn[UEntry, java.lang.Boolean] {
-        text = "Remove"
-        cellValueFactory = { x => new BooleanProperty(x, " - ", false) {
-          onChange( (_, oldValue, newValue) => entries.remove(x.value) )
-        }.delegate }
-        prefWidth = 80
-      }
-      tcRemove.setCellFactory(CheckBoxTableCell.forTableColumn(tcRemove))
 
-      val tcOpenboth = new TableColumn[UEntry, java.lang.Boolean] {
-        text = "Open"
-        cellValueFactory = { x => new BooleanProperty(x, "open both", false) {
-          onChange( (_, oldValue, newValue) => {
-            FileHelper.openDocument(x.value.fReftool)
-            FileHelper.openDocument(x.value.fExternal)
-          } )
-        }.delegate }
-        prefWidth = 80
-      }
-      tcOpenboth.setCellFactory(CheckBoxTableCell.forTableColumn(tcOpenboth))
-
-
-      val tableview = new TableView[UEntry](entries) {
-        editable = true
-        columns ++= List(
-          new TableColumn[UEntry, String] {
-            text = "filename"
-            cellValueFactory = { x => new StringProperty(x.value.fReftool.getName) }
-            prefWidth = 400
-          },
-          new TableColumn[UEntry, String]() {
-            text = "Reftool"
-            cellValueFactory = { x => new StringProperty(sdf.format(x.value.fReftool.toFile.lastModified())) }
-            prefWidth = 150
-          },
-          new TableColumn[UEntry, String]() {
-            text = "External"
-            cellValueFactory = { x => new StringProperty(sdf.format(x.value.fExternal.toFile.lastModified())) }
-            prefWidth = 150
-          },
-          tcRemove,
-          tcOpenboth
-        )
-      }
+      val tableview = new MyTableView(entries)
 
       val cbRemoveAfter = new CheckBox("Remove imported documents after copy") {
         selected = true
@@ -183,51 +184,8 @@ object UpdatePdfs extends Logging {
           resizable = true
           width = 800
         }
-        val tcRemove = new TableColumn[UEntry, java.lang.Boolean] {
-          text = "Remove"
-          cellValueFactory = { x => new BooleanProperty(x, " - ", false) {
-            onChange((_, oldValue, newValue) => entries.remove(x.value))
-          }.delegate
-          }
-          prefWidth = 80
-        }
-        tcRemove.setCellFactory(CheckBoxTableCell.forTableColumn(tcRemove))
 
-        val tcOpenboth = new TableColumn[UEntry, java.lang.Boolean] {
-          text = "Open"
-          cellValueFactory = { x => new BooleanProperty(x, "open both", false) {
-            onChange((_, oldValue, newValue) => {
-              FileHelper.openDocument(x.value.fReftool)
-              FileHelper.openDocument(x.value.fExternal)
-            })
-          }.delegate
-          }
-          prefWidth = 80
-        }
-        tcOpenboth.setCellFactory(CheckBoxTableCell.forTableColumn(tcOpenboth))
-
-        val tableview = new TableView[UEntry](entries) {
-          editable = true
-          columns ++= List(
-            new TableColumn[UEntry, String] {
-              text = "filename"
-              cellValueFactory = { x => new StringProperty(x.value.fReftool.getName) }
-              prefWidth = 400
-            },
-            new TableColumn[UEntry, String]() {
-              text = "Reftool"
-              cellValueFactory = { x => new StringProperty(sdf.format(x.value.fReftool.toFile.lastModified())) }
-              prefWidth = 150
-            },
-            new TableColumn[UEntry, String]() {
-              text = "External"
-              cellValueFactory = { x => new StringProperty(sdf.format(x.value.fExternal.toFile.lastModified())) }
-              prefWidth = 150
-            },
-            tcRemove,
-            tcOpenboth
-          )
-        }
+        val tableview = new MyTableView(entries)
 
         dialog.dialogPane().buttonTypes = Seq(ButtonType.OK, ButtonType.Cancel)
         dialog.dialogPane().content = tableview
