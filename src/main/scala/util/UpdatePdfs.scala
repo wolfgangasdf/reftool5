@@ -20,11 +20,11 @@ object UpdatePdfs extends Logging {
 
   val sdf = new SimpleDateFormat("yyyyMMdd HH:mm:ss")
 
-  class UEntry(val oldFile: MFile, val newFile: MFile, val article: Article) {
+  class UEntry(val fReftool: MFile, val fExternal: MFile, val article: Article) {
 
-    override def toString: String = s"[${newFile.getName}: " +
-      sdf.format(oldFile.toFile.lastModified()) + " -> " +
-      sdf.format(newFile.toFile.lastModified())
+    override def toString: String = s"[${fReftool.getName}: " +
+      "reftool: " + sdf.format(fReftool.toFile.lastModified()) + " <> " +
+      "external: " + sdf.format(fExternal.toFile.lastModified())
   }
 
   def updatePdfs(taInfo: TextArea, window: Window): Unit = {
@@ -45,18 +45,18 @@ object UpdatePdfs extends Logging {
       val updfs = walkThroughAll(res)
 
       // find article & local file & compare
-      updfs.foreach { file =>
+      updfs.foreach { fileExternal =>
         inTransaction {
-          val ares = ReftoolDB.articles.where(a => a.pdflink like s"%/${file.getName}%")
+          val ares = ReftoolDB.articles.where(a => a.pdflink like s"%/${fileExternal.getName}%")
           ares.size match {
             case 1 =>
-              val oldf = FileHelper.getDocumentFileAbs(ares.head.getDocuments.filter(doc => doc.docPath.endsWith(file.getName)).head.docPath)
-              if (MFile.compare(oldf, file))
-                equalFiles += file
+              val fileReftool = FileHelper.getDocumentFileAbs(ares.head.getDocuments.filter(doc => doc.docPath.endsWith(fileExternal.getName)).head.docPath)
+              if (MFile.compare(fileReftool, fileExternal))
+                equalFiles += fileExternal
               else
-                entries += new UEntry(oldf, file, ares.head)
-            case 0 => newFiles += file
-            case _ => taInfo.appendText("Error: multiple articles with same pdf filename: " + file.getName + "\n")
+                entries += new UEntry(fileReftool, fileExternal, ares.head)
+            case 0 => newFiles += fileExternal
+            case _ => taInfo.appendText("Error: multiple articles with same pdf filename: " + fileExternal.getName + "\n")
           }
         }
       }
@@ -68,7 +68,8 @@ object UpdatePdfs extends Logging {
 
       val dialog = new Dialog[ButtonType]() {
         title = "Update PDFs"
-        headerText = "Update PDFs"
+        headerText = "Update PDFs: Modified files.\nInspect and remove those which should not be imported into reftool!\n" +
+          "Modified articles will be shown in the article list."
         resizable = true
         width = 800
       }
@@ -77,7 +78,7 @@ object UpdatePdfs extends Logging {
         cellValueFactory = { x => new BooleanProperty(x, " - ", false) {
           onChange( (_, oldValue, newValue) => entries.remove(x.value) )
         }.delegate }
-        prefWidth = 50
+        prefWidth = 80
       }
       tcRemove.setCellFactory(CheckBoxTableCell.forTableColumn(tcRemove))
 
@@ -85,11 +86,11 @@ object UpdatePdfs extends Logging {
         text = "Open"
         cellValueFactory = { x => new BooleanProperty(x, "open both", false) {
           onChange( (_, oldValue, newValue) => {
-            FileHelper.openDocument(x.value.newFile)
-            FileHelper.openDocument(x.value.oldFile)
+            FileHelper.openDocument(x.value.fReftool)
+            FileHelper.openDocument(x.value.fExternal)
           } )
         }.delegate }
-        prefWidth = 50
+        prefWidth = 80
       }
       tcOpenboth.setCellFactory(CheckBoxTableCell.forTableColumn(tcOpenboth))
 
@@ -99,17 +100,17 @@ object UpdatePdfs extends Logging {
         columns ++= List(
           new TableColumn[UEntry, String] {
             text = "filename"
-            cellValueFactory = { x => new StringProperty(x.value.newFile.getName) }
+            cellValueFactory = { x => new StringProperty(x.value.fReftool.getName) }
             prefWidth = 400
           },
           new TableColumn[UEntry, String]() {
-            text = "old Date"
-            cellValueFactory = { x => new StringProperty(sdf.format(x.value.oldFile.toFile.lastModified())) }
+            text = "Reftool"
+            cellValueFactory = { x => new StringProperty(sdf.format(x.value.fReftool.toFile.lastModified())) }
             prefWidth = 150
           },
           new TableColumn[UEntry, String]() {
-            text = "new Date"
-            cellValueFactory = { x => new StringProperty(sdf.format(x.value.newFile.toFile.lastModified())) }
+            text = "External"
+            cellValueFactory = { x => new StringProperty(sdf.format(x.value.fExternal.toFile.lastModified())) }
             prefWidth = 150
           },
           tcRemove,
@@ -128,15 +129,15 @@ object UpdatePdfs extends Logging {
 
       dialog.showAndWait() match {
         case Some(ButtonType.OK) =>
-          debug("syncing pdfs...")
+          info("syncing pdfs...")
 
           val changedArticles = entries.map(e => {
-            debug("copying " + e.newFile.getPath + " -> " + e.oldFile.getPath)
-            MFile.copy(e.newFile, e.oldFile, replaceExisting = true, copyAttrs = true)
+            info("copying " + e.fExternal.getPath + " -> " + e.fReftool.getPath)
+            MFile.copy(e.fExternal, e.fReftool, replaceExisting = true, copyAttrs = true)
             taInfo.appendText("copied: " + e.toString + "\n")
             if (cbRemoveAfter.selected.value) {
-              debug("remove file: " + e.newFile.getPath)
-              e.newFile.delete()
+              debug("remove file: " + e.fExternal.getPath)
+              e.fExternal.delete()
             }
             e.article
           } )
@@ -157,17 +158,17 @@ object UpdatePdfs extends Logging {
     if (res != null) {
       val entries = new ObservableBuffer[UEntry]()
       articles.foreach(a => {
-        val file = FileHelper.getDocumentFileAbs(a.getFirstDocRelative)
-        val newf = new MFile(res.getPath + "/" + file.getName)
-        if (newf.exists) {
-          if (MFile.compare(file, newf)) info("equal file: " + newf.getPath)
+        val fileReftool = FileHelper.getDocumentFileAbs(a.getFirstDocRelative)
+        val fileExternal = new MFile(res.getPath + "/" + fileReftool.getName)
+        if (fileExternal.exists) {
+          if (MFile.compare(fileReftool, fileExternal)) info("equal file: " + fileExternal.getPath)
           else {
-            info("different file: " + newf.getPath)
-            entries += new UEntry(newf, file, a)
+            info("different file: " + fileExternal.getPath)
+            entries += new UEntry(fileReftool, fileExternal, a)
           }
         } else {
-          info("target doesn't exist, copy: " + newf)
-          MFile.copy(file, newf, copyAttrs = true)
+          info("target doesn't exist, copy: " + fileExternal)
+          MFile.copy(fileReftool, fileExternal, copyAttrs = true)
         }
       } )
 
@@ -178,7 +179,7 @@ object UpdatePdfs extends Logging {
       if (entries.nonEmpty) {
         val dialog = new Dialog[ButtonType]() {
           title = "Export PDFs"
-          headerText = "Export PDFs: existing target files"
+          headerText = "Export PDFs: existing but unequal target files.\nRemove those which should not be overwritten!"
           resizable = true
           width = 800
         }
@@ -188,7 +189,7 @@ object UpdatePdfs extends Logging {
             onChange((_, oldValue, newValue) => entries.remove(x.value))
           }.delegate
           }
-          prefWidth = 50
+          prefWidth = 80
         }
         tcRemove.setCellFactory(CheckBoxTableCell.forTableColumn(tcRemove))
 
@@ -196,12 +197,12 @@ object UpdatePdfs extends Logging {
           text = "Open"
           cellValueFactory = { x => new BooleanProperty(x, "open both", false) {
             onChange((_, oldValue, newValue) => {
-              FileHelper.openDocument(x.value.newFile)
-              FileHelper.openDocument(x.value.oldFile)
+              FileHelper.openDocument(x.value.fReftool)
+              FileHelper.openDocument(x.value.fExternal)
             })
           }.delegate
           }
-          prefWidth = 50
+          prefWidth = 80
         }
         tcOpenboth.setCellFactory(CheckBoxTableCell.forTableColumn(tcOpenboth))
 
@@ -210,17 +211,17 @@ object UpdatePdfs extends Logging {
           columns ++= List(
             new TableColumn[UEntry, String] {
               text = "filename"
-              cellValueFactory = { x => new StringProperty(x.value.newFile.getName) }
+              cellValueFactory = { x => new StringProperty(x.value.fReftool.getName) }
               prefWidth = 400
             },
             new TableColumn[UEntry, String]() {
-              text = "old Date"
-              cellValueFactory = { x => new StringProperty(sdf.format(x.value.oldFile.toFile.lastModified())) }
+              text = "Reftool"
+              cellValueFactory = { x => new StringProperty(sdf.format(x.value.fReftool.toFile.lastModified())) }
               prefWidth = 150
             },
             new TableColumn[UEntry, String]() {
-              text = "new Date"
-              cellValueFactory = { x => new StringProperty(sdf.format(x.value.newFile.toFile.lastModified())) }
+              text = "External"
+              cellValueFactory = { x => new StringProperty(sdf.format(x.value.fExternal.toFile.lastModified())) }
               prefWidth = 150
             },
             tcRemove,
@@ -233,11 +234,11 @@ object UpdatePdfs extends Logging {
 
         dialog.showAndWait() match {
           case Some(ButtonType.OK) =>
-            debug("syncing pdfs...")
+            info("syncing pdfs...")
 
             entries.foreach(e => {
-              debug("copying " + e.newFile.getPath + " -> " + e.oldFile.getPath)
-              MFile.copy(e.newFile, e.oldFile, replaceExisting = true, copyAttrs = true)
+              info("copying " + e.fReftool.getPath + " -> " + e.fExternal.getPath)
+              MFile.copy(e.fReftool, e.fExternal, replaceExisting = true, copyAttrs = true)
             })
           case _ => debug("cancel: ")
         }
