@@ -189,6 +189,9 @@ object ImportHelper extends Logging {
           ApplicationController.submitArticleChanged(a)
           ApplicationController.showNotification("import successful of " + a)
           debug(" import successful of " + sourceFile.getName)
+          // show article
+          ApplicationController.submitRevealTopic(topic)
+          ApplicationController.submitRevealArticleInList(a)
         }
         if (!backgroundImportRunning.compareAndSet(true, false)) {
           throw new Exception("illegal state: backgroundImportRunning was false!")

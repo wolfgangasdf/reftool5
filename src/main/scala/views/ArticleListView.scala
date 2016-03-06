@@ -79,14 +79,18 @@ class ArticleListView extends GenericView("articlelistview") {
     text = "BibtexID"
     cellValueFactory = (a) => new StringProperty(a.value.bibtexid)
   }
+  val cModtime = new TableColumn[Article, String] {
+    text = "Modtime"
+    cellValueFactory = (a) => new StringProperty(a.value.getModtimeString)
+  }
 
   val articles = new ObservableBuffer[Article]()
 
   val sortedArticles = new SortedBuffer[Article](articles)
 
   val alv: TableView[Article] = new TableView[Article](sortedArticles) {
-    columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview)
-    columns.foreach(tc => tc.setPrefWidth(120.0)) // TODO waitforfix
+    columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview, cModtime)
+    columns.foreach(tc => tc.setPrefWidth(120.0)) // only on first start!
     sortedArticles.comparator <== comparator
 
     sortOrder += (cPubdate, cTitle)
@@ -118,7 +122,15 @@ class ArticleListView extends GenericView("articlelistview") {
     }
     enabled = true
   }
-
+  val aRecentChanges = new MyAction("Article", "Show recently changed articles") {
+    tooltipString = "Show recently changed articles (max 100)"
+    image = new Image(getClass.getResource("/images/clock.png").toExternalForm)
+    action = (_) => inTransaction {
+      val al = from(ReftoolDB.articles)(a => select(a) orderBy(a.modtime desc)).page(0, 100).toList
+      setArticles(al, "Recently changed", null, List(cModtime))
+    }
+    enabled = true
+  }
   val aSetColor = new MyAction("Article", "Cycle article color") {
     tooltipString = "Cycle article color for article in this topic"
     image = new Image(getClass.getResource("/images/colors.png").toExternalForm)
@@ -354,7 +366,8 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   }
 
-  toolbaritems ++= Seq( lbCurrentTitle, aPreviousTopic.toolbarButton, aSetColor.toolbarButton, aShowStack.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
+  toolbaritems ++= Seq( lbCurrentTitle, aPreviousTopic.toolbarButton, aRecentChanges.toolbarButton, aSetColor.toolbarButton,
+    aShowStack.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
     aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveFromTopic.toolbarButton, aRemoveArticle.toolbarButton, aRevealPDF.toolbarButton,
     aCopyURLs.toolbarButton, aCopyPDFs.toolbarButton, aOpenURL.toolbarButton)
 
@@ -374,7 +387,7 @@ class ArticleListView extends GenericView("articlelistview") {
         alv.getSelectionModel.select(a)
         alv.scrollTo(alv.getSelectionModel.getSelectedIndex)
       }
-    }
+    } else debug("revealarticle: not found: " + a)
   }
 
   def safeSelect(oldidx: Int) = {
@@ -383,7 +396,7 @@ class ArticleListView extends GenericView("articlelistview") {
     if (newidx > -1) alv.getSelectionModel.select(newidx)
   }
 
-  ApplicationController.showArticlesListListeners += ( (al: List[Article], title: String) => setArticles(al, title, null) )
+  ApplicationController.showArticlesListListeners += ( (al: List[Article], title: String) => setArticles(al, title, null, null) )
   ApplicationController.showArticlesFromTopicListeners += ( (t: Topic) => setArticlesTopic(t) )
   ApplicationController.revealArticleInListListeners += ( (a: Article) => selectRevealArticle(a) )
   ApplicationController.articleChangedListeners += ( (a: Article) => {
@@ -409,7 +422,7 @@ class ArticleListView extends GenericView("articlelistview") {
   })
 
   var firstRun = true
-  def setArticles(al: List[Article], title: String, topic: Topic): Unit = {
+  def setArticles(al: List[Article], title: String, topic: Topic, sortCols: List[TableColumn[Article, String]]): Unit = {
     logCall(s"num=${al.length} topic=$topic")
     currentTopic = topic
     articles.clear()
@@ -426,6 +439,11 @@ class ArticleListView extends GenericView("articlelistview") {
       ReftoolDB.getSetting(ReftoolDB.SLASTARTICLEID) foreach(s => selectRevealArticleByID(s.toLong) )
       firstRun = false
     }
+    alv.sortOrder.clear()
+    if (sortCols != null)
+      sortCols.foreach(sc => alv.sortOrder += sc)
+    else
+      alv.sortOrder += (cPubdate, cTitle)
   }
 
   def setArticlesTopic(topic: Topic) {
@@ -437,9 +455,9 @@ class ArticleListView extends GenericView("articlelistview") {
           ReftoolDB.articles.where(a =>
             a.id notIn from(ReftoolDB.topics2articles)(t2a => select(t2a.ARTICLE))
           )
-        setArticles(q.toList ++ ReftoolDB.orphanTopic.articles.toList, "Orphaned articles", null)
+        setArticles(q.toList ++ ReftoolDB.orphanTopic.articles.toList, "Orphaned articles", null, null)
       } else
-        setArticles(topic.articles.toList, s"Articles in [${topic.title}]  ", topic)
+        setArticles(topic.articles.toList, s"Articles in [${topic.title}]  ", topic, null)
     }
   }
 
@@ -458,7 +476,6 @@ class ArticleListView extends GenericView("articlelistview") {
     if (s1.length == 1 && s1(0).contains(",")) {
       s1(0).split(",").zipWithIndex.foreach { case (s: String, i: Int) => if (alv.columns.length > i) alv.columns(i).setPrefWidth(s.toDouble) }
     }
-    // alv.delegate.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY) // TODO waitforfix does not work in combi with setPrefWidth
   }
 
   override val uisettingsID: String = "alv"

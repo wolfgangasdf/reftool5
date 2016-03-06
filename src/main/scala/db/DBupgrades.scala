@@ -18,6 +18,9 @@ object DBupgrades extends Logging {
         s.execute("drop table SETTING")
         s.execute("create table SETTING (ID varchar(1024) not null primary key, VALUE varchar(1024) default '' not null)")
         2
+      case 2 =>
+        s.execute("alter table ARTICLES add column LASTTIMESTAMP bigint not null default 0")
+        3
     }
     dbc.close()
     dbShutdown()
