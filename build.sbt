@@ -15,7 +15,7 @@ JFX.pkgResourcesDir := baseDirectory.value + "/src/deploy"
 JFX.artifactBaseNameValue := "reftool5"
 
 /////////////// mac app bundle via sbt-appbundle
-seq(appbundle.settings: _*)
+Seq(appbundle.settings: _*)
 
 appbundle.name := "Reftool5"
 

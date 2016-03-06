@@ -83,7 +83,7 @@ object UpdatePdfs extends Logging {
       def walkThroughAll(base: MFile): Array[MFile] = {
         // base is directory!
         val these = base.listFiles.filter(_.isFile).filter(!_.getName.startsWith("."))
-        these ++ these.filter(_.isDirectory).flatMap(walkThroughAll(_))
+        these ++ these.filter(_.isDirectory).flatMap(walkThroughAll)
       }
       val updfs = walkThroughAll(res)
 
