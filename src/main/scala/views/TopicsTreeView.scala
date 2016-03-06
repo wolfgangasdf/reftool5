@@ -293,7 +293,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     else if (revealTopic != null)
       tlast = revealTopic
 
-//    tv.setRoot(null) // TODO doesn't work, many little triangles remain!
+    // tv.setRoot(null) // doesn't work, many little triangles remain!
     tv.selectionModel.value.clearSelection()
     // remove all treeitems!
     if (tv.root.value != null) {
@@ -326,7 +326,7 @@ class TopicsTreeView extends GenericView("topicsview") {
           val idx = tv.selectionModel.value.getSelectedIndex
           tv.scrollTo(math.max(0, idx - 5))
           if (editTopic) {
-            tv.layout() // TODO workaround: get focus http://stackoverflow.com/a/29897147
+            tv.layout() // workaround: get focus http://stackoverflow.com/a/29897147
             tv.edit(tin)
           }
           found = true

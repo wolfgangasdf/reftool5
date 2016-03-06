@@ -75,7 +75,6 @@ class BookmarksView extends GenericView("bookmarksview") {
         action = +1
       else if (ke.code == KeyCode.UP)
         action = -1
-      else 0
     }
     if (action != 0) {
       val f = folders(currentFolderIdx)

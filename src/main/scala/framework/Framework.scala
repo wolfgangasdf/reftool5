@@ -1,11 +1,11 @@
 package framework
 
 import db.{Article, Topic}
-import main.Main
+import main.MainScene
 import util.{MFile, AppStorage}
 
-import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConversions._
+import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
 import scalafx.beans.property.BooleanProperty
 import scalafx.concurrent.{Service, WorkerStateEvent}
@@ -16,7 +16,7 @@ import scalafx.scene.control._
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.input.{KeyCode, KeyEvent, MouseEvent, KeyCombination}
 import scalafx.scene.layout.{GridPane, HBox, Pane, VBox}
-import scalafx.scene.{Scene, Group, Node}
+import scalafx.scene.{Group, Node}
 import scalafx.stage.{DirectoryChooser, WindowEvent}
 
 
@@ -279,7 +279,7 @@ object ApplicationController extends Logging {
   val views = new ArrayBuffer[GenericView]
   val containers = new ArrayBuffer[ViewContainer]
   val actions = new ArrayBuffer[MyAction]
-  var mainScene: Scene = null
+  var mainScene: MainScene = null
 
   def isAnyoneDirty = {
     views.exists(v => v.isDirty.value)
@@ -291,20 +291,15 @@ object ApplicationController extends Logging {
 
   def beforeClose(): Unit = {
     views.foreach(c => AppStorage.config.uiSettings.put(c.uisettingsID, c.getUIsettings))
-    AppStorage.config.uiSettings.put("main", main.Main.mainScene.getMainUIsettings)
+    AppStorage.config.uiSettings.put("main", mainScene.getMainUIsettings)
   }
 
   def afterShown(): Unit = {
-    info("Reftool log file: " + main.Main.logfile.getPath)
-
-    import java.lang.management.ManagementFactory
-
-    import scala.collection.JavaConversions._
-    ManagementFactory.getRuntimeMXBean.getInputArguments.foreach( s => info("jvm runtime parm: " + s))
+    java.lang.management.ManagementFactory.getRuntimeMXBean.getInputArguments.foreach( s => info("jvm runtime parm: " + s))
 
     debug("main ui thread: " + Thread.currentThread.getId + " isUI:" + scalafx.application.Platform.isFxApplicationThread)
 
-    Main.mainScene.window.value.onCloseRequest = (we: WindowEvent) => {
+    mainScene.window.value.onCloseRequest = (we: WindowEvent) => {
       if (!ApplicationController.canClose)
         we.consume()
       else {
@@ -315,10 +310,10 @@ object ApplicationController extends Logging {
     containers.foreach(vc => vc.updateToolbar(0))
 
     // restore settings
-    main.Main.mainScene.setMainUIsettings(AppStorage.config.uiSettings.getOrElse("main", ""))
+    mainScene.setMainUIsettings(AppStorage.config.uiSettings.getOrElse("main", ""))
     views.foreach(c => c.setUIsettings(AppStorage.config.uiSettings.getOrElse(c.uisettingsID, "")))
     // menus
-    val mb = Main.mainScene.menuBar
+    val mb = mainScene.menuBar
     actions.foreach( action => {
       var menu = mb.menus.find(m => m.getText == action.category)
       if (menu.isEmpty) {
@@ -338,10 +333,8 @@ object ApplicationController extends Logging {
   workerTimer.schedule( // remove Notification later
     new java.util.TimerTask {
       override def run(): Unit = {
-        if (workerQueue.nonEmpty) debug("workier: len=" + workerQueue.length)
         if (workerQueue.nonEmpty) {
           val work = workerQueue.remove(0)
-          debug("workier: doing " + work)
           if (work.uithread) Helpers.runUIwait(work.f()) else work.f()
         }
       }
@@ -405,10 +398,10 @@ object ApplicationController extends Logging {
 
   val notificationTimer = new java.util.Timer()
   def showNotification(string: String): Unit = {
-    Main.mainScene.statusBarLabel.text = string
+    mainScene.statusBarLabel.text = string
     notificationTimer.schedule( // remove Notification later
       new java.util.TimerTask {
-        override def run(): Unit = { Helpers.runUI( Main.mainScene.statusBarLabel.text = "" ) }
+        override def run(): Unit = { Helpers.runUI( mainScene.statusBarLabel.text = "" ) }
       }, 3000
     )
   }

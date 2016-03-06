@@ -11,7 +11,6 @@ import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
 import scalafx.beans.property.StringProperty
 import scalafx.collections.ObservableBuffer
-import scalafx.collections.transformation.SortedBuffer
 import scalafx.geometry.Insets
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control._
@@ -81,18 +80,15 @@ class ArticleListView extends GenericView("articlelistview") {
   }
   val cModtime = new TableColumn[Article, String] {
     text = "Modtime"
+    sortType = TableColumn.SortType.DESCENDING
     cellValueFactory = (a) => new StringProperty(a.value.getModtimeString)
   }
 
   val articles = new ObservableBuffer[Article]()
 
-  val sortedArticles = new SortedBuffer[Article](articles)
-
-  val alv: TableView[Article] = new TableView[Article](sortedArticles) {
+  val alv: TableView[Article] = new TableView[Article](articles) {
     columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview, cModtime)
-    columns.foreach(tc => tc.setPrefWidth(120.0)) // only on first start!
-    sortedArticles.comparator <== comparator
-
+    columns.foreach(tc => tc.setPrefWidth(120.0))
     sortOrder += (cPubdate, cTitle)
     selectionModel.value.selectionMode = SelectionMode.MULTIPLE
   }
@@ -126,7 +122,7 @@ class ArticleListView extends GenericView("articlelistview") {
     tooltipString = "Show recently changed articles (max 100)"
     image = new Image(getClass.getResource("/images/clock.png").toExternalForm)
     action = (_) => inTransaction {
-      val al = from(ReftoolDB.articles)(a => select(a) orderBy(a.modtime.desc)).page(0, 100).toList
+      val al = from(ReftoolDB.articles)(a => select(a).orderBy(a.modtime.desc)).page(0, 100).toList
       setArticles(al, "Recently changed", null, List(cModtime))
     }
     enabled = true
@@ -444,6 +440,7 @@ class ArticleListView extends GenericView("articlelistview") {
       sortCols.foreach(sc => alv.sortOrder += sc)
     else
       alv.sortOrder += (cPubdate, cTitle)
+    alv.sort()
   }
 
   def setArticlesTopic(topic: Topic) {

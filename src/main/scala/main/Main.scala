@@ -248,8 +248,10 @@ object Main extends JFXApp with Logging {
         new MainScene(this)
       }
       scene = mainScene
+      ApplicationController.mainScene = mainScene
       // onShown = (we: WindowEvent) => { // works only if no stage shown before...
       tryit {
+        info("Reftool log file: " + logfile)
         ApplicationController.afterShown()
       }
       // }
