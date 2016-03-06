@@ -1,6 +1,8 @@
 package db
 
 import java.sql.{SQLNonTransientConnectionException, SQLException}
+import java.text.SimpleDateFormat
+import java.time.Instant
 
 import org.squeryl.adapters.DerbyAdapter
 import org.squeryl.PrimitiveTypeMode._
@@ -18,10 +20,12 @@ import scala.language.postfixOps
 
 /*
 
-  KEEP it simple! don't add unneeded stuff (keys, indices, constraints)...
-  * keep the primary keys, don't add 'identity' columns with auto-increment. Better for DB manipulation!
+  keep it simple! don't add unneeded stuff (keys, indices, constraints)...
+  keep the primary keys, don't add 'identity' columns with auto-increment. Better for DB manipulation!
 
-  after migration etc, check using dblook that upgraded database ddl matches generated one!
+  after migration etc, check using dblook that upgraded database ddl matches generated one:
+    download derby, go to bin folder
+    ./dblook -d jdbc:derby:<path to reftool db>/db5
 
  */
 
@@ -59,7 +63,8 @@ class Article(var entrytype: String = "",
               var linkurl: String = "",
               var bibtexid: String = "",
               var bibtexentry: String = "",
-              var doi: String = "")
+              var doi: String = "",
+              var modtime: Long = Instant.now().toEpochMilli)
   extends BaseEntity with Logging {
 
   lazy val topics = ReftoolDB.topics2articles.right(this)
@@ -107,6 +112,10 @@ class Article(var entrytype: String = "",
   }
   @Transient var testthing = "" // not in DB!
 
+  def getModtimeString = {
+    val sdf = new SimpleDateFormat("yyyyMMdd HH:mm:ss")
+    sdf.format(modtime)
+  }
 }
 object Article {
   def updateBibtexIDinBibtexString(bibtexString: String, oldBibtexID: String, newBibtexID: String) = {
@@ -132,7 +141,7 @@ class Topic2Article(val TOPIC: Long, val ARTICLE: Long, var color: Int) extends 
 
 object ReftoolDB extends Schema with Logging {
 
-  val lastschemaversion = 2
+  val lastschemaversion = 3
 
   info("Initializing reftooldb...")
 
@@ -153,7 +162,6 @@ object ReftoolDB extends Schema with Logging {
   var stackTopic: Topic = null
   var orphanTopic: Topic = null
 
-//  throw new Exception("huhu")
   /*
     there are issues in squeryl with renaming of columns ("named"). if a foreign key does not work, use uppercase!
    */
@@ -183,7 +191,8 @@ object ReftoolDB extends Schema with Logging {
     a.linkurl is(dbType("varchar(1024)"), named("LINKURL")), a.linkurl defaultsTo "",
     a.bibtexid is(dbType("varchar(128)"), named("BIBTEXID")), a.bibtexid defaultsTo "",
     a.bibtexentry is(dbType("varchar(10000)"), named("BIBTEXENTRY")), a.bibtexentry defaultsTo "",
-    a.doi is(dbType("varchar(256)"), named("DOI")), a.doi defaultsTo ""
+    a.doi is(dbType("varchar(256)"), named("DOI")), a.doi defaultsTo "",
+    a.modtime is(dbType("bigint"), named("LASTTIMESTAMP")), a.modtime defaultsTo 0.toLong
   ))
 
   val topics2articles = manyToManyRelation(topics, articles, "TOPIC2ARTICLE").
@@ -196,7 +205,8 @@ object ReftoolDB extends Schema with Logging {
   // manually auto-increment ids.
   override def callbacks = Seq(
     beforeInsert(articles) call((x:Article) => x.id = from(articles)(a => select(a).orderBy(a.id desc)).headOption.getOrElse(new Article()).id + 1),
-    beforeInsert(topics) call((x:Topic) => x.id = from(topics)(a => select(a).orderBy(a.id desc)).headOption.getOrElse(new Topic()).id + 1)
+    beforeInsert(topics) call((x:Topic) => x.id = from(topics)(a => select(a).orderBy(a.id desc)).headOption.getOrElse(new Topic()).id + 1),
+    beforeUpdate(articles) call((x:Article) => x.modtime = Instant.now().toEpochMilli)
   )
 
   // helpers
@@ -289,7 +299,7 @@ object ReftoolDB extends Schema with Logging {
     SessionFactory.concreteFactory = Some(() => Session.create(java.sql.DriverManager.getConnection(dbs), new DerbyAdapter))
 
     transaction {
-      ReftoolDB.printDdl
+      // ReftoolDB.printDdl
       if (startwithempty) {
         ReftoolDB.create
         dbSetSchemaVersion(lastschemaversion)

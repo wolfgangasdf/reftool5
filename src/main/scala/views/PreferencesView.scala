@@ -28,7 +28,7 @@ class PreferencesView extends GenericView("prefsview") {
     // margin = Insets(18)
     hgap = 4
     vgap = 6
-    columnConstraints += new ColumnConstraints(100)
+    columnConstraints += new ColumnConstraints(150)
     columnConstraints += new ColumnConstraints { hgrow = Priority.Always }
   }
 
@@ -61,6 +61,7 @@ class PreferencesView extends GenericView("prefsview") {
       AppStorage.config.autoimportdir = lAutoimport.tf.getText
       AppStorage.config.debuglevel = lDebug.tf.getText.toInt
       AppStorage.config.showstartupdialog = lShowStartupdialog.cb.isSelected
+      AppStorage.save()
       load()
       isDirty.value = false
     }
