@@ -364,7 +364,7 @@ object ApplicationController extends Logging {
   val revealArticleInListListeners = new ArrayBuffer[(Article) => Unit]()
   def submitRevealArticleInList(a: Article) = {
     logCall("aRevealInList " + a)
-    revealArticleInListListeners.foreach( acl => Helpers.runUI(acl(a)) )
+    revealArticleInListListeners.foreach( acl => Helpers.runUIdelayed(acl(a)) ) // give topic time to update alv...
   }
 
   val revealTopicListener = new ArrayBuffer[(Topic) => Unit]()
