@@ -32,7 +32,9 @@ class BookmarksView extends GenericView("bookmarksview") {
   var folders = new ObservableBuffer[Folder]()
   folders += new Folder { name = "New folder" }
 
-  val lv = new ListView[Topic]()
+  val lv = new ListView[Topic]() {
+    tooltip = "Use shift+UP/DOWN to reorder topics!"
+  }
 
   def updateList() = {
     lv.items.get().clear()
