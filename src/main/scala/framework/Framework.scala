@@ -1,12 +1,11 @@
 package framework
 
-import javafx.scene
-
 import db.{Article, Topic}
 import main.Main
 import util.{MFile, AppStorage}
 
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.JavaConversions._
 import scalafx.Includes._
 import scalafx.beans.property.BooleanProperty
 import scalafx.concurrent.{Service, WorkerStateEvent}
@@ -169,7 +168,7 @@ class MyInputTextField(gpRow: Int, labelText: String, iniText: String, helpStrin
   tf.text.onChange(onchange())
   GridPane.setConstraints(tf, 1, gpRow, 2, 1)
 
-  override def content: Seq[scene.Node] = Seq(label, tf)
+  override def content: Seq[javafx.scene.Node] = Seq(label, tf)
 }
 
 class MyInputDirchooser(gpRow: Int, labelText: String, iniText: String, helpString: String) extends MyFlexInput(gpRow, labelText, rows=1, helpString) {
@@ -192,7 +191,7 @@ class MyInputDirchooser(gpRow: Int, labelText: String, iniText: String, helpStri
   GridPane.setConstraints(tf, 1, gpRow, 2, 1)
   GridPane.setConstraints(bt, 2, gpRow, 1, 1)
 
-  override def content: Seq[scene.Node] = Seq(label, tf, bt)
+  override def content: Seq[javafx.scene.Node] = Seq(label, tf, bt)
 }
 
 class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String, helpString: String, disableEnter: Boolean) extends MyFlexInput(gpRow, labelText, rows, helpString) {
@@ -212,7 +211,7 @@ class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String,
   tf.text.onChange(onchange())
   GridPane.setConstraints(tf, 1, gpRow, 2, 1)
 
-  override def content: Seq[scene.Node] = Seq(label, tf)
+  override def content: Seq[javafx.scene.Node] = Seq(label, tf)
 }
 
 class MyInputCheckbox(gpRow: Int, labelText: String, iniStatus: Boolean, helpString: String) extends MyFlexInput(gpRow, labelText, rows=1, helpString) {
@@ -221,7 +220,7 @@ class MyInputCheckbox(gpRow: Int, labelText: String, iniStatus: Boolean, helpStr
   cb.selected.onChange(onchange())
   GridPane.setConstraints(cb, 1, gpRow, 1, 1)
 
-  override def content: Seq[scene.Node] = Seq(label, cb)
+  override def content: Seq[javafx.scene.Node] = Seq(label, cb)
 }
 
 
@@ -330,59 +329,74 @@ object ApplicationController extends Logging {
 
   }
 
+  // reftool main worker, tasks (methods) can be added at top or bottom. no runUI here!
+  val workerQueue = new java.util.concurrent.CopyOnWriteArrayList[() => Unit]()
+  def workerAdd(f: () => Unit, addTop: Boolean): Unit = if (addTop) workerQueue.add(0, f) else workerQueue.add(f)
+  val workerTimer = new java.util.Timer()
+  workerTimer.schedule( // remove Notification later
+    new java.util.TimerTask {
+      override def run(): Unit = {
+        if (workerQueue.nonEmpty) {
+          val fun = workerQueue.remove(0)
+          fun()
+        }
+      }
+    }, 0, 10
+  )
 
+  // to keep order, runUIwait is used.
   val articleChangedListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitArticleChanged(a: Article): Unit = {
+  def submitArticleChanged(a: Article, addTop: Boolean = false): Unit = {
     logCall("aChanged " + a)
-    articleChangedListeners.foreach( acl => Helpers.runUI(acl(a)) )
+    articleChangedListeners.foreach( acl => workerAdd(() => Helpers.runUIwait(acl(a)), addTop) )
   }
 
   val articleRemovedListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitArticleRemoved(a: Article): Unit = {
+  def submitArticleRemoved(a: Article, addTop: Boolean = false): Unit = {
     logCall("aRemoved " + a)
-    articleRemovedListeners.foreach( acl => Helpers.runUI(acl(a)) )
+    articleRemovedListeners.foreach( acl => workerAdd(() => Helpers.runUIwait(acl(a)), addTop) )
   }
 
   val showArticleListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitShowArticle(a: Article): Unit = {
+  def submitShowArticle(a: Article, addTop: Boolean = false): Unit = {
     logCall("aShow " + a)
-    showArticleListeners.foreach( acl => Helpers.runUI(acl(a)) )
+    showArticleListeners.foreach( acl => workerAdd(() => Helpers.runUIwait(acl(a)), addTop) )
   }
 
   val showArticlesListListeners = new ArrayBuffer[(List[Article], String) => Unit]()
-  def submitShowArticlesList(al: List[Article], text: String): Unit = {
+  def submitShowArticlesList(al: List[Article], text: String, addTop: Boolean = false): Unit = {
     logCall("aShowAList ")
-    showArticlesListListeners.foreach( acl => Helpers.runUI(acl(al, text)) )
+    showArticlesListListeners.foreach( acl => workerAdd(() => Helpers.runUIwait(acl(al, text)), addTop) )
   }
 
   val showArticlesFromTopicListeners = new ArrayBuffer[(Topic) => Unit]()
-  def submitShowArticlesFromTopic(t: Topic): Unit = {
+  def submitShowArticlesFromTopic(t: Topic, addTop: Boolean = false): Unit = {
     logCall("aShowFromTopic " + t)
-    showArticlesFromTopicListeners.foreach( acl => Helpers.runUI(acl(t)) )
+    showArticlesFromTopicListeners.foreach( acl => workerAdd(() => Helpers.runUIwait(acl(t)), addTop) )
   }
 
   val revealArticleInListListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitRevealArticleInList(a: Article) = {
+  def submitRevealArticleInList(a: Article, addTop: Boolean = false) = {
     logCall("aRevealInList " + a)
-    revealArticleInListListeners.foreach( acl => Helpers.runUIdelayed(acl(a)) ) // give topic time to update alv...
+    revealArticleInListListeners.foreach( acl => workerAdd(() => Helpers.runUIwait(acl(a)), addTop) )
   }
 
   val revealTopicListener = new ArrayBuffer[(Topic) => Unit]()
-  def submitRevealTopic(t: Topic): Unit = {
+  def submitRevealTopic(t: Topic, addTop: Boolean = false): Unit = {
     logCall("aRevealTopic " + t)
-    revealTopicListener.foreach( rtl => Helpers.runUI(rtl(t)) )
+    revealTopicListener.foreach( rtl => workerAdd(() => Helpers.runUIwait(rtl(t)), addTop) )
   }
 
   val topicChangedListeners = new ArrayBuffer[(Long) => Unit]()
-  def submitTopicChanged(tid: Long): Unit = {
+  def submitTopicChanged(tid: Long, addTop: Boolean = false): Unit = {
     logCall("aTopicChanged " + tid)
-    topicChangedListeners.foreach( rtl => Helpers.runUI(rtl(tid)) )
+    topicChangedListeners.foreach( rtl => workerAdd(() => Helpers.runUIwait(rtl(tid)), addTop) )
   }
 
   val topicRemovedListeners = new ArrayBuffer[(Long) => Unit]()
-  def submitTopicRemoved(tid: Long): Unit = {
+  def submitTopicRemoved(tid: Long, addTop: Boolean = false): Unit = {
     logCall("aTopicRemoved " + tid)
-    topicRemovedListeners.foreach(rtl => Helpers.runUI(rtl(tid)) )
+    topicRemovedListeners.foreach(rtl => workerAdd(() => Helpers.runUIwait(rtl(tid)), addTop) )
   }
 
   val notificationTimer = new java.util.Timer()
@@ -394,24 +408,4 @@ object ApplicationController extends Logging {
       }, 3000
     )
   }
-
-
-  // see ttv for better example
-  def testLongAction() = {
-    new MyWorker("titlechen", new javafx.concurrent.Task[Unit] {
-      override def call() = {
-        updateMessage("huhuhuhuhu")
-        updateProgress(10, 100)
-        // throw new Exception("aaaaatestexception")
-        Thread.sleep(2000)
-        updateProgress(30, 100)
-        val res = MFile(Helpers.runUIwait { new DirectoryChooser { title = "Select directory" }.showDialog(main.Main.stage) })
-        updateMessage("huhuhuhuhu2" + res)
-        Thread.sleep(2000)
-        updateProgress(100, 100)
-        succeeded()
-      }
-    }, () => {}).runInBackground()
-  }
-
 }
