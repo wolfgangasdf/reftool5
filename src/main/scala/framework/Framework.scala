@@ -16,7 +16,7 @@ import scalafx.scene.control._
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.input.{KeyCode, KeyEvent, MouseEvent, KeyCombination}
 import scalafx.scene.layout.{GridPane, HBox, Pane, VBox}
-import scalafx.scene.{Group, Node}
+import scalafx.scene.{Scene, Group, Node}
 import scalafx.stage.{DirectoryChooser, WindowEvent}
 
 
@@ -279,6 +279,7 @@ object ApplicationController extends Logging {
   val views = new ArrayBuffer[GenericView]
   val containers = new ArrayBuffer[ViewContainer]
   val actions = new ArrayBuffer[MyAction]
+  var mainScene: Scene = null
 
   def isAnyoneDirty = {
     views.exists(v => v.isDirty.value)
@@ -330,73 +331,76 @@ object ApplicationController extends Logging {
   }
 
   // reftool main worker, tasks (methods) can be added at top or bottom. no runUI here!
-  val workerQueue = new java.util.concurrent.CopyOnWriteArrayList[() => Unit]()
-  def workerAdd(f: () => Unit, addTop: Boolean): Unit = if (addTop) workerQueue.add(0, f) else workerQueue.add(f)
+  class Work(val f: () => Unit, val uithread: Boolean)
+  val workerQueue = new java.util.concurrent.CopyOnWriteArrayList[Work]()
+  def workerAdd(f: () => Unit, addTop: Boolean, uithread: Boolean): Unit = if (addTop) workerQueue.add(0, new Work(f, uithread)) else workerQueue.add(new Work(f, uithread))
   val workerTimer = new java.util.Timer()
   workerTimer.schedule( // remove Notification later
     new java.util.TimerTask {
       override def run(): Unit = {
+        if (workerQueue.nonEmpty) debug("workier: len=" + workerQueue.length)
         if (workerQueue.nonEmpty) {
-          val fun = workerQueue.remove(0)
-          fun()
+          val work = workerQueue.remove(0)
+          debug("workier: doing " + work)
+          if (work.uithread) Helpers.runUIwait(work.f()) else work.f()
         }
       }
-    }, 0, 10
+    }, 0, 20
   )
 
   // to keep order, runUIwait is used.
   val articleChangedListeners = new ArrayBuffer[(Article) => Unit]()
   def submitArticleChanged(a: Article, addTop: Boolean = false): Unit = {
     logCall("aChanged " + a)
-    articleChangedListeners.foreach( acl => workerAdd(() => Helpers.runUIwait(acl(a)), addTop) )
+    articleChangedListeners.foreach( acl => workerAdd(() => acl(a), addTop, uithread = true) )
   }
 
   val articleRemovedListeners = new ArrayBuffer[(Article) => Unit]()
   def submitArticleRemoved(a: Article, addTop: Boolean = false): Unit = {
     logCall("aRemoved " + a)
-    articleRemovedListeners.foreach( acl => workerAdd(() => Helpers.runUIwait(acl(a)), addTop) )
+    articleRemovedListeners.foreach( acl => workerAdd(() => acl(a), addTop, uithread = true) )
   }
 
   val showArticleListeners = new ArrayBuffer[(Article) => Unit]()
   def submitShowArticle(a: Article, addTop: Boolean = false): Unit = {
     logCall("aShow " + a)
-    showArticleListeners.foreach( acl => workerAdd(() => Helpers.runUIwait(acl(a)), addTop) )
+    showArticleListeners.foreach( acl => workerAdd(() => acl(a), addTop, uithread = true) )
   }
 
   val showArticlesListListeners = new ArrayBuffer[(List[Article], String) => Unit]()
   def submitShowArticlesList(al: List[Article], text: String, addTop: Boolean = false): Unit = {
     logCall("aShowAList ")
-    showArticlesListListeners.foreach( acl => workerAdd(() => Helpers.runUIwait(acl(al, text)), addTop) )
+    showArticlesListListeners.foreach( acl => workerAdd(() => acl(al, text), addTop, uithread = true) )
   }
 
   val showArticlesFromTopicListeners = new ArrayBuffer[(Topic) => Unit]()
   def submitShowArticlesFromTopic(t: Topic, addTop: Boolean = false): Unit = {
     logCall("aShowFromTopic " + t)
-    showArticlesFromTopicListeners.foreach( acl => workerAdd(() => Helpers.runUIwait(acl(t)), addTop) )
+    showArticlesFromTopicListeners.foreach( acl => workerAdd(() => acl(t), addTop, uithread = true) )
   }
 
   val revealArticleInListListeners = new ArrayBuffer[(Article) => Unit]()
   def submitRevealArticleInList(a: Article, addTop: Boolean = false) = {
     logCall("aRevealInList " + a)
-    revealArticleInListListeners.foreach( acl => workerAdd(() => Helpers.runUIwait(acl(a)), addTop) )
+    revealArticleInListListeners.foreach( acl => workerAdd(() => acl(a), addTop, uithread = true) )
   }
 
   val revealTopicListener = new ArrayBuffer[(Topic) => Unit]()
   def submitRevealTopic(t: Topic, addTop: Boolean = false): Unit = {
     logCall("aRevealTopic " + t)
-    revealTopicListener.foreach( rtl => workerAdd(() => Helpers.runUIwait(rtl(t)), addTop) )
+    revealTopicListener.foreach( rtl => workerAdd(() => rtl(t), addTop, uithread = true) )
   }
 
   val topicChangedListeners = new ArrayBuffer[(Long) => Unit]()
   def submitTopicChanged(tid: Long, addTop: Boolean = false): Unit = {
     logCall("aTopicChanged " + tid)
-    topicChangedListeners.foreach( rtl => workerAdd(() => Helpers.runUIwait(rtl(tid)), addTop) )
+    topicChangedListeners.foreach( rtl => workerAdd(() => rtl(tid), addTop, uithread = true) )
   }
 
   val topicRemovedListeners = new ArrayBuffer[(Long) => Unit]()
   def submitTopicRemoved(tid: Long, addTop: Boolean = false): Unit = {
     logCall("aTopicRemoved " + tid)
-    topicRemovedListeners.foreach(rtl => workerAdd(() => Helpers.runUIwait(rtl(tid)), addTop) )
+    topicRemovedListeners.foreach(rtl => workerAdd(() => rtl(tid), addTop, uithread = true) )
   }
 
   val notificationTimer = new java.util.Timer()
