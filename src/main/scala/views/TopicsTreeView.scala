@@ -322,7 +322,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         if (tin.getValue != null) if (tin.getValue.id == tlast.id) {
           tv.requestFocus()
           tv.selectionModel.value.select(tin)
-          ApplicationController.submitShowArticlesFromTopic(tin.getValue)
+          ApplicationController.submitShowArticlesFromTopic(tin.getValue, addTop = true)
           val idx = tv.selectionModel.value.getSelectedIndex
           tv.scrollTo(math.max(0, idx - 5))
           if (editTopic) {
