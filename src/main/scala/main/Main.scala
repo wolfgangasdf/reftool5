@@ -12,7 +12,7 @@ import views._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.language.{implicitConversions, postfixOps, reflectiveCalls}
+import scala.language.{implicitConversions, reflectiveCalls}
 import scalafx.Includes._
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage

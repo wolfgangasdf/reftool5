@@ -126,7 +126,7 @@ class ArticleListView extends GenericView("articlelistview") {
     tooltipString = "Show recently changed articles (max 100)"
     image = new Image(getClass.getResource("/images/clock.png").toExternalForm)
     action = (_) => inTransaction {
-      val al = from(ReftoolDB.articles)(a => select(a) orderBy(a.modtime desc)).page(0, 100).toList
+      val al = from(ReftoolDB.articles)(a => select(a) orderBy(a.modtime.desc)).page(0, 100).toList
       setArticles(al, "Recently changed", null, List(cModtime))
     }
     enabled = true

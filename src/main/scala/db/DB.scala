@@ -8,7 +8,6 @@ import org.squeryl.adapters.DerbyAdapter
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.dsl._
 import org.squeryl._
-
 import org.squeryl.annotations.Transient
 
 import util._
@@ -16,7 +15,6 @@ import util.AppStorage
 import framework.Logging
 
 import scala.collection.mutable.ArrayBuffer
-import scala.language.postfixOps
 
 /*
 
@@ -27,7 +25,7 @@ import scala.language.postfixOps
     download derby, go to bin folder
     ./dblook -d jdbc:derby:<path to reftool db>/db5
 
- */
+*/
 
 
 class BaseEntity extends KeyedEntity[Long] {
@@ -168,45 +166,45 @@ object ReftoolDB extends Schema with Logging {
 
   on(settings)(t => declare(
     t.id.is(dbType("varchar(1024)"), named("ID")),
-    t.value.is(dbType("varchar(1024)"), named("VALUE")), t.value defaultsTo ""
+    t.value.is(dbType("varchar(1024)"), named("VALUE")), t.value.defaultsTo("")
   ))
 
   on(topics)(t => declare(
     t.id is named("ID"),
-    t.title.is(dbType("varchar(512)"), named("TITLE")), t.title defaultsTo "",
-    t.expanded is(dbType("BOOLEAN"), named("EXPANDED")), t.expanded defaultsTo false,
-    t.exportfn is(dbType("varchar(1024)"), named("EXPORTFN")), t.exportfn defaultsTo "",
-    t.parent is named("PARENT") // if 0, root topic!
+    t.title.is(dbType("varchar(512)"), named("TITLE")), t.title.defaultsTo(""),
+    t.expanded.is(dbType("BOOLEAN"), named("EXPANDED")), t.expanded.defaultsTo(false),
+    t.exportfn.is(dbType("varchar(1024)"), named("EXPORTFN")), t.exportfn.defaultsTo(""),
+    t.parent.is(named("PARENT")) // if 0, root topic!
   ))
 
   on(articles)(a => declare(
-    a.id is named("ID"),
-    a.entrytype is(dbType("varchar(256)"), named("ENTRYTYPE")), a.entrytype defaultsTo "",
-    a.title is(dbType("varchar(1024)"), named("TITLE")), a.title defaultsTo "",
-    a.authors is(dbType("varchar(4096)"), named("AUTHORS")), a.authors defaultsTo "",
-    a.journal is(dbType("varchar(256)"), named("JOURNAL")), a.journal defaultsTo "",
-    a.pubdate is(dbType("varchar(128)"), named("PUBDATE")), a.pubdate defaultsTo "",
-    a.review is(dbType("varchar(10000)"), named("REVIEW")), a.review defaultsTo "",
-    a.pdflink is(dbType("varchar(10000)"), named("PDFLINK")), a.pdflink defaultsTo "",
-    a.linkurl is(dbType("varchar(1024)"), named("LINKURL")), a.linkurl defaultsTo "",
-    a.bibtexid is(dbType("varchar(128)"), named("BIBTEXID")), a.bibtexid defaultsTo "",
-    a.bibtexentry is(dbType("varchar(10000)"), named("BIBTEXENTRY")), a.bibtexentry defaultsTo "",
-    a.doi is(dbType("varchar(256)"), named("DOI")), a.doi defaultsTo "",
-    a.modtime is(dbType("bigint"), named("LASTTIMESTAMP")), a.modtime defaultsTo 0.toLong
+    a.id.is(named("ID")),
+    a.entrytype.is(dbType("varchar(256)"), named("ENTRYTYPE")), a.entrytype.defaultsTo(""),
+    a.title.is(dbType("varchar(1024)"), named("TITLE")), a.title.defaultsTo(""),
+    a.authors.is(dbType("varchar(4096)"), named("AUTHORS")), a.authors.defaultsTo(""),
+    a.journal.is(dbType("varchar(256)"), named("JOURNAL")), a.journal.defaultsTo(""),
+    a.pubdate.is(dbType("varchar(128)"), named("PUBDATE")), a.pubdate.defaultsTo(""),
+    a.review.is(dbType("varchar(10000)"), named("REVIEW")), a.review.defaultsTo(""),
+    a.pdflink.is(dbType("varchar(10000)"), named("PDFLINK")), a.pdflink.defaultsTo(""),
+    a.linkurl.is(dbType("varchar(1024)"), named("LINKURL")), a.linkurl.defaultsTo(""),
+    a.bibtexid.is(dbType("varchar(128)"), named("BIBTEXID")), a.bibtexid.defaultsTo(""),
+    a.bibtexentry.is(dbType("varchar(10000)"), named("BIBTEXENTRY")), a.bibtexentry.defaultsTo(""),
+    a.doi.is(dbType("varchar(256)"), named("DOI")), a.doi defaultsTo "",
+    a.modtime.is(dbType("bigint"), named("LASTTIMESTAMP")), a.modtime.defaultsTo(0.toLong)
   ))
 
   val topics2articles = manyToManyRelation(topics, articles, "TOPIC2ARTICLE").
     via[Topic2Article]((t, a, ta) => (ta.TOPIC === t.id, a.id === ta.ARTICLE))
 
   on(topics2articles)(a => declare(
-    a.color is named("COLOR"), a.color defaultsTo 0
+    a.color.is(named("COLOR")), a.color.defaultsTo(0)
   ))
 
   // manually auto-increment ids.
   override def callbacks = Seq(
-    beforeInsert(articles) call((x:Article) => x.id = from(articles)(a => select(a).orderBy(a.id desc)).headOption.getOrElse(new Article()).id + 1),
-    beforeInsert(topics) call((x:Topic) => x.id = from(topics)(a => select(a).orderBy(a.id desc)).headOption.getOrElse(new Topic()).id + 1),
-    beforeUpdate(articles) call((x:Article) => x.modtime = Instant.now().toEpochMilli)
+    beforeInsert(articles).call((x:Article) => x.id = from(articles)(a => select(a).orderBy(a.id.desc)).headOption.getOrElse(new Article()).id + 1),
+    beforeInsert(topics).call((x:Topic) => x.id = from(topics)(a => select(a).orderBy(a.id.desc)).headOption.getOrElse(new Topic()).id + 1),
+    beforeUpdate(articles).call((x:Article) => x.modtime = Instant.now().toEpochMilli)
   )
 
   // helpers
