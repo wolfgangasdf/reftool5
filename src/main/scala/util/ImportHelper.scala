@@ -286,7 +286,7 @@ object ImportHelper extends Logging {
 
   def generateUpdateBibtexID(be: String, a: Article, resetBibtexID: Boolean = false): Article = {
     if (be.trim != "") {
-      a.bibtexentry = be.replaceAllLiterally("~", " ") // tilde in author name gives trouble
+      a.bibtexentry = be
       val (_, btentry) = parseBibtex(a.bibtexentry)
       a.bibtexentry = bibtexFromBtentry(btentry) // update to nice format
       val bidorig = btentry.getKey.getValue
