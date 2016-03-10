@@ -328,7 +328,7 @@ object ApplicationController extends Logging {
   // reftool main worker, tasks (methods) can be added at top or bottom. no runUI here!
   class Work(val f: () => Unit, val uithread: Boolean)
   val workerQueue = new java.util.concurrent.CopyOnWriteArrayList[Work]()
-  def workerAdd(f: () => Unit, addTop: Boolean, uithread: Boolean): Unit = if (addTop) workerQueue.add(0, new Work(f, uithread)) else workerQueue.add(new Work(f, uithread))
+  def workerAdd(f: () => Unit, addTop: Boolean = false, uithread: Boolean = false): Unit = if (addTop) workerQueue.add(0, new Work(f, uithread)) else workerQueue.add(new Work(f, uithread))
   val workerTimer = new java.util.Timer()
   workerTimer.schedule( // remove Notification later
     new java.util.TimerTask {
