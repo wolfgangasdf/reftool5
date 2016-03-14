@@ -370,7 +370,7 @@ object ImportHelper extends Logging {
       s = btfield.toUserString
       if (s.contains('\\') || s.contains('{')) {
         val latexParser = new org.jbibtex.LaTeXParser()
-        val latexObjects = latexParser.parse(s)
+        val latexObjects = latexParser.parse(s.replaceAll("~", " ")) // TODO bug in jbibtex IMO, test with ~ in authors
         val latexPrinter = new org.jbibtex.LaTeXPrinter()
         s = latexPrinter.print(latexObjects)
       }
