@@ -57,7 +57,14 @@ object MFile {
 
   def apply(f: io.File) = if (f == null) null else new MFile(f.getAbsolutePath)
   def apply(filepath: String) = if (filepath == null) null else new MFile(filepath)
-  def createTempFile(prefix: String, suffix: String) = MFile(io.File.createTempFile(prefix, suffix))
+  def createTempFile(prefix: String, suffix: String) = { // standard io.File.createTempFile points often to strange location
+    val tag = System.currentTimeMillis().toString
+    val dir = if (Helpers.isLinux || Helpers.isMac)
+      "/tmp"
+    else
+      System.getProperty("java.io.tmpdir")
+    MFile(dir + "/" + prefix + "-" + tag + suffix)
+  }
   def move(source: MFile, dest: MFile) = java.nio.file.Files.move(source.toPath, dest.toPath)
   def copy(source: MFile, dest: MFile, replaceExisting: Boolean = false, copyAttrs: Boolean = false) = {
     val opts = new ArrayBuffer[StandardCopyOption]()
