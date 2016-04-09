@@ -2,17 +2,9 @@ import java.time.ZonedDateTime
 
 import sbt._
 import sbt.Keys._
-import sbtbuildinfo.Plugin._
+import sbtbuildinfo._
 
 object Build extends Build {
-  lazy val myBuildInfoSettings = Seq(
-    sourceGenerators in Compile <+= buildInfo,
-    buildInfoKeys := Seq[BuildInfoKey](
-      name, version, scalaVersion, sbtVersion,
-      BuildInfoKey.action("buildTime") { ZonedDateTime.now.toString } // re-computed each time at compile
-    ),
-    buildInfoPackage := "buildinfo"
-  )
   lazy val reftool5 = Project(
     id = "reftool5",
     base = file("."),
@@ -36,6 +28,13 @@ object Build extends Build {
         "org.jbibtex" % "jbibtex" % "1.0.15",
         "org.scalaj" %% "scalaj-http" % "1.1.6"
       )
-    ) ++ buildInfoSettings ++ myBuildInfoSettings
+    )
+  ).enablePlugins(BuildInfoPlugin).settings(
+    BuildInfoKeys.buildInfoKeys := Seq[BuildInfoKey](
+      name, version, scalaVersion, sbtVersion,
+      BuildInfoKey.action("buildTime") { ZonedDateTime.now.toString } // re-computed each time at compile
+    ),
+    BuildInfoKeys.buildInfoPackage := "buildinfo",
+    BuildInfoKeys.buildInfoUsePackageAsPath := true
   )
 }
