@@ -26,7 +26,7 @@ object Build extends Build {
         "org.squeryl" %% "squeryl" % "0.9.5-7" withSources() withJavadoc(),
         "org.apache.pdfbox" % "pdfbox" % "1.8.10",
         "org.jbibtex" % "jbibtex" % "1.0.15",
-        "org.scalaj" %% "scalaj-http" % "1.1.6"
+        "org.scalaj" %% "scalaj-http" % "2.3.0"
       )
     )
   ).enablePlugins(BuildInfoPlugin).settings(
