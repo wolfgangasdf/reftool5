@@ -59,10 +59,9 @@ object MFile {
   def apply(filepath: String) = if (filepath == null) null else new MFile(filepath)
   def createTempFile(prefix: String, suffix: String) = { // standard io.File.createTempFile points often to strange location
     val tag = System.currentTimeMillis().toString
-    val dir = if (Helpers.isLinux || Helpers.isMac)
-      "/tmp"
-    else
-      System.getProperty("java.io.tmpdir")
+    var dir = System.getProperty("java.io.tmpdir")
+    if (Helpers.isLinux || Helpers.isMac) if (new io.File("/tmp").isDirectory)
+      dir = "/tmp"
     MFile(dir + "/" + prefix + "-" + tag + suffix)
   }
   def move(source: MFile, dest: MFile) = java.nio.file.Files.move(source.toPath, dest.toPath)

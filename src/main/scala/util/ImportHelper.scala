@@ -329,36 +329,38 @@ object ImportHelper extends Logging {
   }
 
   private def updateBibtexFromDoi(article: Article, doi: String): Article = {
-    // http://labs.crossref.org/citation-formatting-service/
-    import scalaj.http._ // or probably use better http://www.bigbeeconsultants.co.uk/content/bee-client ? but has deps
+    // see http://labs.crossref.org/citation-formatting-service/
+    import scalaj.http._
     var a = article
     debug(s"""# curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
-    def tryhttp: Option[HttpResponse[Array[Byte]]] = {
-      try {
-        Some(Http("http://dx.doi.org/" + doi).timeout(connTimeoutMs = 1000, readTimeoutMs = 5000).
+    var doit = 6
+    while (doit > 0) {
+      val responseo = try {
+        Some(Http("http://dx.doi.org/" + doi).timeout(connTimeoutMs = 2000, readTimeoutMs = 5000).
           header("Accept", "text/bibliography; style=bibtex; locale=en-US.UTF-8").option(HttpOptions.followRedirects(shouldFollow = true)).asBytes)
       } catch {
         case e: SocketTimeoutException =>
           debug("tryhttp: got SocketTimeoutException...")
           None
       }
-    }
-    var responseo = tryhttp
-    if (responseo.isEmpty) { // retry
-      warn("updateBibtesFromDoi: retrying http!")
-      responseo = tryhttp
-    }
-    if (responseo.isDefined) {
-      val response = responseo.get
-      debug("reponse.code: " + response.code)
-      if (response.code == 200) {
-        val rb = new String(response.body, "UTF-8")
-        a = generateUpdateBibtexID(rb, a)
+      if (responseo.isDefined) {
+        val response = responseo.get
+        if (response.code == 200) {
+          val rb = new String(response.body, "UTF-8")
+          a = generateUpdateBibtexID(rb, a)
+          doit = 0 // becomes -1 below
+        } else {
+          debug("updatebibtexfromdoi: response = " + response)
+        }
       } else {
-        debug("updatebibtexfromdoi: resp = " + response)
-        Helpers.runUI { new Alert(AlertType.Error, "Error retrieving metadata from crossref. Probably the article is not yet in their database?\n" +
-          "You have to paste the bibtex entry manually, or retry later (update metadata from pdf).").showAndWait() }
+        debug("updatebibtexfromdoi: received empty response")
       }
+      doit -= 1
+      if (doit > 0) debug("updatebibtexfromdoi: retrying... " + doit)
+    }
+    if (doit != -1) {
+      Helpers.runUI { new Alert(AlertType.Error, "Error retrieving metadata from crossref. Probably the article is not yet in their database?\n" +
+        "You have to paste the bibtex entry manually, or retry later (update metadata from pdf).").showAndWait() }
     }
     a
   }
