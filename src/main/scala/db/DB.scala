@@ -270,6 +270,8 @@ object ReftoolDB extends Schema with Logging {
 
   def initialize(startwithempty: Boolean) {
 
+    System.setProperty("derby.stream.error.method", "db.DerbyUtil.getOS")
+
     val pp = new MFile(AppStorage.config.pdfpath)
     if (!pp.exists) pp.mkdir()
 
@@ -332,3 +334,17 @@ object ReftoolDB extends Schema with Logging {
   }
 
 }
+
+object DerbyUtil extends Logging {
+  var sss = ""
+  def getOS = new java.io.OutputStream {
+    override def write(b: Int): Unit = {
+      sss += b.toChar
+      if (sss.endsWith("\n")) {
+        info("[derby] " + sss.replaceAll("[\\r\\n]", ""))
+        sss = ""
+      }
+    }
+  }
+}
+
