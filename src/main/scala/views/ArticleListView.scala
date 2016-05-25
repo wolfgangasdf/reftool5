@@ -102,7 +102,7 @@ class ArticleListView extends GenericView("articlelistview") {
     image = new Image(getClass.getResource("/images/backward_nav.gif").toExternalForm)
     action = (_) => {
       val tid = if (topicHistory.nonEmpty) {
-        if (currentTopic != null && currentTopic.id == topicHistory.last) { // need topic before
+        if (currentTopic != null && currentTopic.id == topicHistory.last) { // skip current topic
           if (topicHistory.size >= 2) {
             topicHistory.remove(topicHistory.size - 1)
             Some(topicHistory.remove(topicHistory.size - 1))
@@ -203,6 +203,17 @@ class ArticleListView extends GenericView("articlelistview") {
     image = new Image(getClass.getResource("/images/stack.gif").toExternalForm)
     action = (_) => inTransaction {
       setArticlesTopic(ReftoolDB.stackTopic)
+    }
+    enabled = true
+  }
+  val aShowOrphans = new MyAction("Article", "Show orphans") {
+    tooltipString = "Show orphaned articles without topic"
+    image = new Image(getClass.getResource("/images/orphans.png").toExternalForm)
+    action = (_) => inTransaction {
+      val q = ReftoolDB.articles.where(a =>
+        a.id notIn from(ReftoolDB.topics2articles)(t2a => select(t2a.ARTICLE))
+      )
+      setArticles(q.toList, "Orphaned articles", null, null)
     }
     enabled = true
   }
@@ -363,7 +374,7 @@ class ArticleListView extends GenericView("articlelistview") {
   }
 
   toolbaritems ++= Seq( lbCurrentTitle, aPreviousTopic.toolbarButton, aRecentChanges.toolbarButton, aSetColor.toolbarButton,
-    aShowStack.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
+    aShowStack.toolbarButton, aShowOrphans.toolbarButton, aMoveToStack.toolbarButton, aCopyToStack.toolbarButton, aStackMoveHere.toolbarButton,
     aStackCopyHere.toolbarButton, aOpenPDF.toolbarButton, aRemoveFromTopic.toolbarButton, aRemoveArticle.toolbarButton, aRevealPDF.toolbarButton,
     aCopyURLs.toolbarButton, aCopyPDFs.toolbarButton, aOpenURL.toolbarButton)
 
@@ -447,14 +458,7 @@ class ArticleListView extends GenericView("articlelistview") {
     if (topic != null) inTransaction {
       if (topicHistory.isEmpty || topicHistory.last != topic.id)
         topicHistory += topic.id
-      if (topic.title == ReftoolDB.TORPHANS) {
-        val q =
-          ReftoolDB.articles.where(a =>
-            a.id notIn from(ReftoolDB.topics2articles)(t2a => select(t2a.ARTICLE))
-          )
-        setArticles(q.toList ++ ReftoolDB.orphanTopic.articles.toList, "Orphaned articles", null, null)
-      } else
-        setArticles(topic.articles.toList, s"Articles in [${topic.title}]  ", topic, null)
+      setArticles(topic.articles.toList, s"Articles in [${topic.title}]  ", topic, null)
     }
   }
 
