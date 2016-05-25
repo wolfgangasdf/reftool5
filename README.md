@@ -2,14 +2,12 @@
 
 Reftool is a scientific reference manager, similar to [Zotero](https://www.zotero.org) and 
 [Mendeley](https://www.mendeley.com). I use it since 2006, [the old reftool](https://bitbucket.org/wolfgang/reftool) 
-was Eclipse RCP based, Reftool 5 now uses simply JavaFX that is included in Java 8, making it much smaller & faster 
+was Eclipse RCP based, Reftool 5 now uses simply JavaFX that is included in Java 8, making it much smaller and faster
 (reftool 4 data is automatically migrated); but most important, development is very easy. Reftool 5 is stable and 
 constantly improved because I use it daily. The code is pretty clean and you can easily modify it if you wish. 
 
-Why do I not use Zotero? I would like to but: (i) Too slow for 10,000 articles. (ii) No unique bibtex ids. 
-(iii) Daily work needs too many clicks, it doesn't fit my workflow. This appears to be design-based to me and can't 
-be solved easily (also because of XUL...). Further, 
-scala is a beautiful language worth learning; and it's cross-platform thanks to the Java VM!
+Why do I not use Zotero? I would like to but: (i) Too slow for 10,000 articles. (ii) Daily work needs too many clicks, it doesn't fit my workflow. This appears to be design-based to me and can't
+be solved easily (also because of XUL...). Further, scala is a beautiful language worth learning; and it's cross-platform thanks to the Java VM!
 
 Some key specs & features (not complete):
 
@@ -27,7 +25,7 @@ Some key specs & features (not complete):
 * Copy selected articles' URLs to clipboard.
 * Copy selected articles' PDFs to a folder.
 * There is a `stack` topic with its own buttons to easily move / copy articles around or collect them.
-* There is an `ORPHANED` topic for articles not belonging to any topic. Don't misuse this as an "read later" folder.
+* Click on `Show orphans` to show articles not belonging to any topic. Don't misuse this as a "read later" tag.
 * Tools view: Extensive database information, checking for missing / orphaned document files, etc.
 * topics and documents are sorted alphanumerically, just use numbers to order them (000-first, 00-second, 01-third etc.).  
 
@@ -47,6 +45,10 @@ Import / export possibilities:
 * You can import a tree-like folder structure containing PDFs.
 * You can export a bibtex database.
 * If you need more, create an issue on bitbucketor just write your own routine!
+* For synchronization with tablets for reading:
+    * Use `topic -> export documents` to copy PDFs to a certain folder. Existing files will be compared on the byte-level and reported, you can decide if they will be overwritten or ignored.
+    * Use some other program to synchronize the folder with your tablet, add annotations to pdfs etc, and synchronize again.
+    * Use `tools -> update PDFs` to put the PDFs back into reftool. The selection is based on filename, so don't rename them. The PDFs will again be compared on byte-level, and the result presented. You can decide if the changed documents will be deleted after import.
 
 Hints:
 
@@ -54,7 +56,7 @@ Hints:
 
 ### How to run ###
 
-* Get Java JRE >= 8u40
+* Get Java JRE >= 8u60 (don't forget to untick the yahoo [crapware](https://www.google.com/search?q=java+crapware) installer!)
 * [Download the zip](https://bitbucket.org/wolfgang/reftool5/downloads) for Mac or (Windows, Linux), extract it somewhere and double-click the app (Mac) or 
   jar file (Windows, Linux).
 
@@ -63,7 +65,7 @@ database is populated with a few demo topics and articles.
 
 ### How to develop, compile & package ###
 
-* Get Java JDK >= 8u40
+* Get Java JDK >= 8u60
 * check out the code (`hg clone ...` or download a zip) 
 * I use the free community version of [IntelliJ IDEA](https://www.jetbrains.com/idea/download/) with the scala 
 plugin for development, just import the project to get started. 
