@@ -566,7 +566,7 @@ class TopicsTreeView extends GenericView("topicsview") {
           ApplicationController.showNotification("Enter at least one search term >= 3 characters long!")
         }
         btClearSearch.disable = false
-      } else btClearSearch.disable = true
+      } else loadTopics(clearSearch = true)
     }
   }
 
