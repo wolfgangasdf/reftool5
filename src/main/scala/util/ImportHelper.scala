@@ -272,7 +272,7 @@ object ImportHelper extends Logging {
     var bid2 = bibtexid.toLowerCase
     replist.foreach { case (s1, s2) => bid2 = bid2.replaceAllLiterally(s1, s2) }
     bid2 = java.text.Normalizer.normalize(bid2, java.text.Normalizer.Form.NFD)
-    bid2 = bid2.replaceAll("[^\\p{ASCII}]", "").toLowerCase
+    bid2 = bid2.replaceAll("[^\\p{Alnum}]", "").toLowerCase
     var bid3 = bid2
     var iii = 1
     inTransaction { // add numbers if bibtexid exist...
