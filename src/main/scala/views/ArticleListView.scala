@@ -280,15 +280,15 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   }
   val aCopyURLs = new MyAction("Article", "Copy article URLs") {
-    tooltipString = "Copy article URLs to clipboard"
+    tooltipString = "Copy article bibtexid+URL+title to clipboard (shift: text format only)"
     image = new Image(getClass.getResource("/images/copyurls.png").toExternalForm)
-    action = (_) => {
-      val res = alv.selectionModel.value.getSelectedItems.map(a => {
-        a.bibtexid + " " + a.getURL
-      }).mkString("\n")
+    action = (m) => {
       val clipboard = Clipboard.systemClipboard
-      val content = new ClipboardContent {
-        putString(res)
+      val content = new ClipboardContent
+      val items = alv.selectionModel.value.getSelectedItems
+      content.putString(items.map(a => s"${a.bibtexid}, ${a.title}, ${a.getURL}").mkString("\n"))
+      if (m != MyAction.MSHIFT) {
+        content.putHtml("<HTML>" + items.map(a => s"<p>${a.bibtexid} <a href=${a.getURL}>${a.title}</a></p>").mkString("\n")+"</HTML>")
       }
       clipboard.setContent(content)
       ApplicationController.showNotification(s"Copied article URLs to clipboard!")
