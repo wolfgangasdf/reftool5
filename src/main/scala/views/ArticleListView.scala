@@ -288,7 +288,7 @@ class ArticleListView extends GenericView("articlelistview") {
       val items = alv.selectionModel.value.getSelectedItems
       content.putString(items.map(a => s"${a.bibtexid}, ${a.title}, ${a.getURL}").mkString("\n"))
       if (m != MyAction.MSHIFT) {
-        content.putHtml("<HTML>" + items.map(a => s"<p>${a.bibtexid} <a href=${a.getURL}>${a.title}</a></p>").mkString("\n")+"</HTML>")
+        content.putHtml("<HTML>" + items.map(a => s"${a.bibtexid} <a href=${a.getURL}>${a.title}</a><br>").mkString("\n")+"</HTML>")
       }
       clipboard.setContent(content)
       ApplicationController.showNotification(s"Copied article URLs to clipboard!")
