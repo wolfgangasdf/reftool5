@@ -20,7 +20,7 @@ class BookmarksView extends GenericView("bookmarksview") {
 
   var currentFolderIdx = -1
 
-  var currentTopic: Topic = null
+  var currentTopic: Topic = _
 
   class Folder {
     var name: String = ""
@@ -176,11 +176,11 @@ class BookmarksView extends GenericView("bookmarksview") {
 
   toolbaritems ++= Seq(aEditFolder.toolbarButton, aRemoveFolder.toolbarButton, aNewFolder.toolbarButton, aRemoveBookmark.toolbarButton, aAddBookmark.toolbarButton)
 
-  ApplicationController.showArticlesFromTopicListeners += ( (t: Topic) => {
+  ApplicationController.topicSelectedListener += ( (t: Topic) => {
     currentTopic = t
   })
 
-  ApplicationController.topicChangedListeners += ( (tid: Long) => {
+  ApplicationController.topicRenamedListeners += ((tid: Long) => {
     storeSettings()
     restoreSettings()
     selectCurrent()

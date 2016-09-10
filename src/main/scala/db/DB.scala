@@ -155,8 +155,8 @@ object ReftoolDB extends Schema with Logging {
   val SLASTARTICLEID = "lastarticleid"
   val SBOOKMARKS = "bookmarks"
 
-  var rootTopic: Topic = null
-  var stackTopic: Topic = null
+  var rootTopic: Topic = _
+  var stackTopic: Topic = _
 
   /*
     there are issues in squeryl with renaming of columns ("named"). if a foreign key does not work, use uppercase!

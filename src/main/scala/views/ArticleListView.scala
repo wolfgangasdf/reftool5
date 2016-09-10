@@ -23,7 +23,7 @@ import scalafx.scene.control.TableColumn._
 
 class ArticleListView extends GenericView("articlelistview") {
 
-  var currentTopic: Topic = null
+  var currentTopic: Topic = _
   val topicHistory = new ArrayBuffer[Long]()
 
   val colors = List("-fx-background-color: white", "-fx-background-color: red", "-fx-background-color: LightSalmon", "-fx-background-color: LightGreen")
@@ -404,7 +404,7 @@ class ArticleListView extends GenericView("articlelistview") {
   }
 
   ApplicationController.showArticlesListListeners += ( (al: List[Article], title: String) => setArticles(al, title, null, null) )
-  ApplicationController.showArticlesFromTopicListeners += ( (t: Topic) => setArticlesTopic(t) )
+  ApplicationController.topicSelectedListener += ( (t: Topic) => setArticlesTopic(t) )
   ApplicationController.revealArticleInListListeners += ( (a: Article) => selectRevealArticle(a) )
   ApplicationController.articleChangedListeners += ( (a: Article) => {
     if (currentTopic != null) {

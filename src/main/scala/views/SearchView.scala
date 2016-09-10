@@ -2,10 +2,10 @@ package views
 
 import java.time._
 
-import db.{Article, ReftoolDB}
+import db.{Article, ReftoolDB, Topic}
 import framework.{ApplicationController, GenericView}
 import org.squeryl.PrimitiveTypeMode._
-import org.squeryl.Queryable
+import org.squeryl.{Query, Queryable}
 import util.SearchUtil
 
 import scalafx.Includes._
@@ -48,7 +48,6 @@ class SearchView extends GenericView("searchview") {
   )
 
   def doSearch() {
-    // toInstant(ZonedDateTime.now().getOffset).toEpochMilli
     val millis1 = date1.getValue.atTime(hours1.getText.toInt, 0).toInstant(ZonedDateTime.now().getOffset).toEpochMilli
     val millis2 = date2.getValue.atTime(hours2.getText.toInt, 59).toInstant(ZonedDateTime.now().getOffset).toEpochMilli
     inTransaction {
@@ -56,7 +55,11 @@ class SearchView extends GenericView("searchview") {
       val terms = SearchUtil.getSearchTerms(tfSearch.getText)
       val canSearchWithoutTerms = cbModifiedSince.selected.value
       if (terms.exists(_.length > 2) || canSearchWithoutTerms) {
-        var res = dynamicWhere(ReftoolDB.articles, terms(0), millis1, millis2)
+        var res: Query[Article] = if (cbOnlyTopic.selected.value && currentTopic != null)
+          currentTopic.articles
+        else
+          ReftoolDB.articles
+        res = dynamicWhere(res, terms(0), millis1, millis2)
         for (i <- 1 until terms.length) res = dynamicWhere(res, terms(i), millis1, millis2)
         if (res.isEmpty)
           ApplicationController.showNotification("Search returned no results!")
@@ -86,6 +89,9 @@ class SearchView extends GenericView("searchview") {
     prefWidth = 50
   }
 
+  var currentTopic: Topic = _
+  val tfCurrentTopic = new TextField() { text = "<topic>" ; editable = false }
+  val cbOnlyTopic = new CheckBox("Only search current topic") { selected = false }
   val cbTitle = new CheckBox("Title") { selected = true }
   val cbAuthors = new CheckBox("Authors") { selected = true }
   val cbReview = new CheckBox("Review") { selected = true }
@@ -101,11 +107,13 @@ class SearchView extends GenericView("searchview") {
   val hours1 = new HourTextField("00")
   val hours2 = new HourTextField("23")
   val selAll = List(cbTitle, cbAuthors, cbReview, cbBibtexID, cbBibtex, cbPubdate, cbJournal, cbDOI, cbDocuments)
-  val selNotDefault = Seq(cbBibtex, cbPubdate, cbDOI, cbDocuments)
+  val selNotDefault = Seq(cbBibtex, cbPubdate, cbDOI, cbDocuments, cbOnlyTopic)
   val btSelectDefault = new Button("Select default") {
     onAction = (ae: ActionEvent) => {
       selAll.foreach( _.selected = true)
       selNotDefault.foreach( _.selected = false)
+      date1.value = LocalDate.now.minusDays(1)
+      date2.value = LocalDate.now
     }
   }
   val btSelectNone = new Button("Select none") {
@@ -126,6 +134,7 @@ class SearchView extends GenericView("searchview") {
       spacing = 5.0
       children = List(
         cbTitle, cbAuthors, cbReview, cbBibtexID, cbBibtex, cbPubdate, cbJournal, cbDOI, cbDocuments,
+        new HBox { children = List(cbOnlyTopic, tfCurrentTopic) },
         new HBox {
           alignment = Pos.CenterLeft
           children = List(cbModifiedSince, date1, hours1, new Label(":00  and  "), date2, hours2, new Label(":59"))
@@ -134,6 +143,13 @@ class SearchView extends GenericView("searchview") {
       )
     }
   }
+
+  def setCurrentTopic(t: Topic) = {
+    currentTopic = t
+    tfCurrentTopic.text = currentTopic.toString
+  }
+
+  ApplicationController.topicSelectedListener += ((a: Topic) => setCurrentTopic(a) )
 
   override def onViewClicked(): Unit = {
     tfSearch.requestFocus()

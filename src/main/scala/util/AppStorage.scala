@@ -50,7 +50,7 @@ object AppSettings extends Logging {
 }
 
 object AppStorage extends Logging {
-  var config : Config = null
+  var config : Config = _
 
   def getImportFolder(num: Int) = AppStorage.config.pdfpath + "/" + AppStorage.config.importfolderprefix + num
 

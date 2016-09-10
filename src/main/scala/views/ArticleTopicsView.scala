@@ -13,7 +13,7 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
 
   text = "A-topics"
 
-  var article: Article = null
+  var article: Article = _
 
   val lv = new ListView[Topic] {
     onMouseClicked = (me: MouseEvent) => {

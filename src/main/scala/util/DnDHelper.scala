@@ -8,6 +8,6 @@ import scalafx.scene.control.TreeItem
 
 object DnDHelper {
   var articles = new ArrayBuffer[Article]()
-  var articlesTopic: Topic = null
-  var topicTreeItem: TreeItem[Topic] = null
+  var articlesTopic: Topic = _
+  var topicTreeItem: TreeItem[Topic] = _
 }

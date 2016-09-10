@@ -21,7 +21,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
 
   text = "Docs"
 
-  var article: Article = null
+  var article: Article = _
 
   class MyListCell extends TextFieldListCell[Document] {
 
