@@ -482,6 +482,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     aRemoveTopic.enabled = sel
   }
 
+  // selection changed must be handled via mouseclick/key updown, doesn't work well with selection change below.
   tv.onMouseClicked = (me: MouseEvent) => {
     if (me.clickCount == 1) {
       val newVal = tv.getSelectionModel.getSelectedItem
@@ -491,10 +492,20 @@ class TopicsTreeView extends GenericView("topicsview") {
     }
   }
 
+  tv.onKeyReleased = (ke: KeyEvent) => {
+    ke.code match {
+      case KeyCode.DOWN | KeyCode.UP =>
+        val newVal = tv.getSelectionModel.getSelectedItem
+        if (newVal != null) {
+          ApplicationController.submitTopicSelected(newVal.getValue)
+        }
+      case _ =>
+    }
+  }
+
   tv.selectionModel().selectedItem.onChange { (_, oldVal, newVal) => {
     updateButtons()
   } }
-
 
   text = "Topics"
 
