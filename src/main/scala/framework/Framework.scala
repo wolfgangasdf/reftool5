@@ -100,11 +100,11 @@ class ViewContainer extends Pane with Logging {
 
 class MyAction(val category: String, val title: String) extends Logging {
   private var _tooltipString: String = ""
-  private var _image: Image = null
+  private var _image: Image = _
   private var _enabled: Boolean = false
-  private var _accelerator: KeyCombination = null
+  private var _accelerator: KeyCombination = _
 
-  var action: (String) => Unit = null // argument: modifier key
+  var action: (String) => Unit = _ // argument: modifier key
 
   // must use getter & setter because toolbarbutton etc has to be modified after it's instantiated
   def image = _image
@@ -279,7 +279,7 @@ object ApplicationController extends Logging {
   val views = new ArrayBuffer[GenericView]
   val containers = new ArrayBuffer[ViewContainer]
   val actions = new ArrayBuffer[MyAction]
-  var mainScene: MainScene = null
+  var mainScene: MainScene = _
 
   def isAnyoneDirty = {
     views.exists(v => v.isDirty.value)
@@ -366,10 +366,11 @@ object ApplicationController extends Logging {
     showArticlesListListeners.foreach( acl => workerAdd(() => acl(al, text), addTop, uithread = true) )
   }
 
-  val showArticlesFromTopicListeners = new ArrayBuffer[(Topic) => Unit]()
-  def submitShowArticlesFromTopic(t: Topic, addTop: Boolean = false): Unit = {
-    logCall("aShowFromTopic " + t)
-    showArticlesFromTopicListeners.foreach( acl => workerAdd(() => acl(t), addTop, uithread = true) )
+  // for other views to update if topic changed. can be null.
+  val topicSelectedListener = new ArrayBuffer[(Topic) => Unit]()
+  def submitTopicSelected(t: Topic, addTop: Boolean = false): Unit = {
+    logCall("aTopicSelected " + t)
+    topicSelectedListener.foreach( rtl => workerAdd(() => rtl(t), addTop, uithread = true) )
   }
 
   val revealArticleInListListeners = new ArrayBuffer[(Article) => Unit]()
@@ -384,10 +385,10 @@ object ApplicationController extends Logging {
     revealTopicListener.foreach( rtl => workerAdd(() => rtl(t), addTop, uithread = true) )
   }
 
-  val topicChangedListeners = new ArrayBuffer[(Long) => Unit]()
-  def submitTopicChanged(tid: Long, addTop: Boolean = false): Unit = {
-    logCall("aTopicChanged " + tid)
-    topicChangedListeners.foreach( rtl => workerAdd(() => rtl(tid), addTop, uithread = true) )
+  val topicRenamedListeners = new ArrayBuffer[(Long) => Unit]()
+  def submitTopicRenamed(tid: Long, addTop: Boolean = false): Unit = {
+    logCall("aTopicRenamed " + tid)
+    topicRenamedListeners.foreach(rtl => workerAdd(() => rtl(tid), addTop, uithread = true) )
   }
 
   val topicRemovedListeners = new ArrayBuffer[(Long) => Unit]()

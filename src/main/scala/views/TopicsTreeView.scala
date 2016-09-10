@@ -189,7 +189,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
           } else {
             a.topics.dissociate(DnDHelper.articlesTopic)
             if (!a.topics.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue)
-            ApplicationController.submitShowArticlesFromTopic(DnDHelper.articlesTopic)
+            ApplicationController.submitTopicSelected(DnDHelper.articlesTopic)
           }
           ApplicationController.submitArticleChanged(a)
         }
@@ -211,7 +211,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
 
 }
 object MyTreeCell {
-  var lastDragoverCell: TreeCell[Topic] = null
+  var lastDragoverCell: TreeCell[Topic] = _
   val effectDropshadow = new DropShadow(5.0, 0.0, -3.0, Color.web("#666666"))
   val effectInnershadow = new InnerShadow()
   effectInnershadow.setOffsetX(1.0)
@@ -236,8 +236,8 @@ class TreeIterator[T](root: TreeItem[T]) extends Iterator[TreeItem[T]] with Logg
 
 class TopicsTreeView extends GenericView("topicsview") {
 
-  var troot: Topic = null
-  var tiroot: MyTreeItem = null
+  var troot: Topic = _
+  var tiroot: MyTreeItem = _
   val gv = this
   var searchActive: Boolean = false
 
@@ -250,7 +250,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     onEditCommit = (ee: TreeView.EditEvent[Topic]) => {
       inTransaction {
         ReftoolDB.topics.update(ee.newValue)
-        ApplicationController.submitTopicChanged(ee.newValue.id)
+        ApplicationController.submitTopicRenamed(ee.newValue.id)
         loadTopics(revealLastTopic = true)
       }
     }
@@ -322,7 +322,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         if (tin.getValue != null) if (tin.getValue.id == tlast.id) {
           tv.requestFocus()
           tv.selectionModel.value.select(tin)
-          ApplicationController.submitShowArticlesFromTopic(tin.getValue, addTop = true)
+          ApplicationController.submitTopicSelected(tin.getValue, addTop = true)
           val idx = tv.selectionModel.value.getSelectedIndex
           tv.scrollTo(math.max(0, idx - 5))
           if (editTopic) {
@@ -347,7 +347,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         val a = new Article(title = "new content")
         ReftoolDB.articles.insert(a)
         a.topics.associate(t)
-        ApplicationController.submitShowArticlesFromTopic(t)
+        ApplicationController.submitTopicSelected(t)
         ApplicationController.submitRevealArticleInList(a)
       }
     }
@@ -486,7 +486,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     if (me.clickCount == 1) {
       val newVal = tv.getSelectionModel.getSelectedItem
       if (newVal != null) {
-        ApplicationController.submitShowArticlesFromTopic(newVal.getValue)
+        ApplicationController.submitTopicSelected(newVal.getValue)
       }
     }
   }

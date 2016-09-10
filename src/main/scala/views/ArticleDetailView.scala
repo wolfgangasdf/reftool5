@@ -46,7 +46,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     } else true
   }
 
-  var article: Article = null
+  var article: Article = _
 
   def setArticle(aa: Article) {
     logCall("" + aa)

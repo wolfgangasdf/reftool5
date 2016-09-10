@@ -198,7 +198,7 @@ object Main extends JFXApp with Logging {
   // redirect console output, must happen on top of this object!
   val oldOut = System.out
   val oldErr = System.err
-  var logps: io.FileOutputStream = null
+  var logps: io.FileOutputStream = _
   System.setOut(new io.PrintStream(new MyConsole(false), true))
   System.setErr(new io.PrintStream(new MyConsole(true), true))
 
@@ -229,7 +229,7 @@ object Main extends JFXApp with Logging {
 //    new Image(getClass.getResource("/icons/Icon-128.png").toExternalForm)
   )
 
-  var mainScene: MainScene = null
+  var mainScene: MainScene = _
 
   def loadMainScene(createNewStorage: Boolean) = {
     logCall()

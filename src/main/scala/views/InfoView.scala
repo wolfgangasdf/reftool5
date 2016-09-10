@@ -75,7 +75,6 @@ class InfoView extends GenericView("toolview") {
         ReftoolDB.articles.insert(a)
         a.topics.associate(st)
         ApplicationController.submitRevealTopic(st)
-        ApplicationController.submitShowArticlesFromTopic(st)
         ApplicationController.submitRevealArticleInList(a)
       }
     }
