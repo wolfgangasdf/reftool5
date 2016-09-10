@@ -2,7 +2,7 @@ package views
 
 
 import db.{Article, ReftoolDB, Topic}
-import framework.{Helpers, ApplicationController, GenericView, MyAction}
+import framework.{ApplicationController, GenericView, Helpers, MyAction}
 import org.squeryl.PrimitiveTypeMode._
 import util._
 
@@ -15,8 +15,8 @@ import scalafx.geometry.Insets
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control._
 import scalafx.scene.image.Image
-import scalafx.scene.input.{TransferMode, MouseEvent, ClipboardContent, Clipboard}
-import scalafx.scene.layout.{BackgroundFill, CornerRadii, Background, BorderPane}
+import scalafx.scene.input.{Clipboard, ClipboardContent, MouseEvent, TransferMode}
+import scalafx.scene.layout.{Background, BackgroundFill, BorderPane, CornerRadii}
 import scalafx.scene.paint.Color
 import scalafx.scene.control.TableColumn._
 
@@ -143,7 +143,7 @@ class ArticleListView extends GenericView("articlelistview") {
           case None =>
         }
       }
-      ApplicationController.submitArticleChanged(a)
+      ApplicationController.submitArticleModified(a)
     }
   }
 
@@ -155,7 +155,7 @@ class ArticleListView extends GenericView("articlelistview") {
       as.foreach( a => {
         a.topics.dissociate(currentTopic)
         if (!a.topics.contains(ReftoolDB.stackTopic)) a.topics.associate(ReftoolDB.stackTopic)
-        ApplicationController.submitArticleChanged(a)
+        ApplicationController.submitArticleModified(a)
       })
       ApplicationController.showNotification(s"Moved ${as.length} articles to stack!")
       Helpers.runUIdelayed(alv.requestFocus())
@@ -168,7 +168,7 @@ class ArticleListView extends GenericView("articlelistview") {
       val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
       as.foreach( a => {
         if (!a.topics.contains(ReftoolDB.stackTopic)) a.topics.associate(ReftoolDB.stackTopic)
-        ApplicationController.submitArticleChanged(a)
+        ApplicationController.submitArticleModified(a)
       })
       ApplicationController.showNotification(s"Copied ${as.length} articles to stack!")
     }
@@ -180,7 +180,7 @@ class ArticleListView extends GenericView("articlelistview") {
       ReftoolDB.stackTopic.articles.foreach( a => {
         a.topics.dissociate(ReftoolDB.stackTopic)
         if (!a.topics.contains(currentTopic)) a.topics.associate(currentTopic)
-        ApplicationController.submitArticleChanged(a)
+        ApplicationController.submitArticleModified(a)
       })
       ApplicationController.showNotification(s"Moved articles from stack!")
       setArticlesTopic(currentTopic)
@@ -192,7 +192,7 @@ class ArticleListView extends GenericView("articlelistview") {
     action = (_) => inTransaction {
       ReftoolDB.stackTopic.articles.foreach( a => {
         if (!a.topics.contains(currentTopic)) a.topics.associate(currentTopic)
-        ApplicationController.submitArticleChanged(a)
+        ApplicationController.submitArticleModified(a)
       } )
       ApplicationController.showNotification(s"Copied articles from stack!")
       setArticlesTopic(currentTopic)
@@ -249,7 +249,7 @@ class ArticleListView extends GenericView("articlelistview") {
       val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
       as.foreach( a => {
         a.topics.dissociate(currentTopic)
-        ApplicationController.submitArticleChanged(a)
+        ApplicationController.submitArticleModified(a)
       })
       ApplicationController.showNotification(s"Removed ${as.length} articles from topic [$currentTopic]!")
       Helpers.runUIdelayed(alv.requestFocus())
@@ -309,7 +309,7 @@ class ArticleListView extends GenericView("articlelistview") {
       as.foreach( a => {
         val aa = ReftoolDB.renameDocuments(a)
         ReftoolDB.articles.update(aa)
-        ApplicationController.submitArticleChanged(aa)
+        ApplicationController.submitArticleModified(aa)
       })
       ApplicationController.showNotification(s"Updated document filenames of ${as.length} articles!")
     }
@@ -392,7 +392,12 @@ class ArticleListView extends GenericView("articlelistview") {
     if (articles.contains(a)) {
       Helpers.runUI {
         alv.getSelectionModel.select(a)
-        alv.scrollTo(alv.getSelectionModel.getSelectedIndex)
+        // test if article row is visible...
+        val vflow = alv.delegate.getSkin.asInstanceOf[com.sun.javafx.scene.control.skin.TableViewSkin[_]].
+          getChildren.get(1).asInstanceOf[com.sun.javafx.scene.control.skin.VirtualFlow[_]]
+        val idx = alv.getSelectionModel.getSelectedIndex
+        if (!(vflow.getFirstVisibleCell.getIndex <= idx && vflow.getLastVisibleCell.getIndex >= idx))
+          alv.scrollTo(a)
       }
     } else debug("revealarticle: not found: " + a)
   }
@@ -406,7 +411,7 @@ class ArticleListView extends GenericView("articlelistview") {
   ApplicationController.showArticlesListListeners += ( (al: List[Article], title: String) => setArticles(al, title, null, null) )
   ApplicationController.topicSelectedListener += ( (t: Topic) => setArticlesTopic(t) )
   ApplicationController.revealArticleInListListeners += ( (a: Article) => selectRevealArticle(a) )
-  ApplicationController.articleChangedListeners += ( (a: Article) => {
+  ApplicationController.articleModifiedListeners += ((a: Article) => {
     if (currentTopic != null) {
       val oldsel = alv.getSelectionModel.getSelectedItems.headOption
       val oldselidx = alv.getSelectionModel.getSelectedIndices.headOption

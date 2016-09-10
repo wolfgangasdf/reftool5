@@ -154,7 +154,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
       article = ReftoolDB.renameDocuments(article)
       ReftoolDB.articles.update(article)
     }
-    ApplicationController.submitArticleChanged(article)
+    ApplicationController.submitArticleModified(article)
     setArticle(article)
   }
 
@@ -166,7 +166,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     if (a == article) setArticle(null)
   } )
 
-  ApplicationController.articleChangedListeners += ( (a: Article) => {
+  ApplicationController.articleModifiedListeners += ((a: Article) => {
     if (a == article) setArticle(a)
   } )
 

@@ -342,10 +342,11 @@ object ApplicationController extends Logging {
   )
 
   // to keep order, runUIwait is used.
-  val articleChangedListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitArticleChanged(a: Article, addTop: Boolean = false): Unit = {
-    logCall("aChanged " + a)
-    articleChangedListeners.foreach( acl => workerAdd(() => acl(a), addTop, uithread = true) )
+
+  val articleModifiedListeners = new ArrayBuffer[(Article) => Unit]()
+  def submitArticleModified(a: Article, addTop: Boolean = false): Unit = {
+    logCall("aModified " + a)
+    articleModifiedListeners.foreach(acl => workerAdd(() => acl(a), addTop, uithread = true) )
   }
 
   val articleRemovedListeners = new ArrayBuffer[(Article) => Unit]()
