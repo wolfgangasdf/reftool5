@@ -148,7 +148,7 @@ object ReftoolDB extends Schema with Logging {
   val topics = table[Topic]("TOPICS")
 
   val TSTACK = "0000-stack"
-  val TDBSTATS = "9-DB statistics"
+  val TSPECIAL = "0000-special"
 
   val SSCHEMAVERSION = "schemaversion"
   val SLASTTOPICID = "lasttopicid"
@@ -157,6 +157,7 @@ object ReftoolDB extends Schema with Logging {
 
   var rootTopic: Topic = _
   var stackTopic: Topic = _
+  var specialTopic: Topic = _
 
   /*
     there are issues in squeryl with renaming of columns ("named"). if a foreign key does not work, use uppercase!
@@ -310,9 +311,10 @@ object ReftoolDB extends Schema with Logging {
         rootTopic = topics.insert(rootTopic)
       }
       if (topics.where(t => t.title === TSTACK).isEmpty) topics.insert(new Topic(TSTACK, rootTopic.id, false))
-      if (topics.where(t => t.title === TDBSTATS).isEmpty) topics.insert(new Topic(TDBSTATS, rootTopic.id, false))
+      if (topics.where(t => t.title === TSPECIAL).isEmpty) topics.insert(new Topic(TSPECIAL, rootTopic.id, false))
 
       stackTopic = topics.where(t => t.title === TSTACK).head
+      specialTopic = topics.where(t => t.title === TSPECIAL).head
 
       if (startwithempty) addDemoContent(rootTopic)
     }

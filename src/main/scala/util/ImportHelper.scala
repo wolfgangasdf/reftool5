@@ -372,7 +372,7 @@ object ImportHelper extends Logging {
       s = btfield.toUserString
       if (s.contains('\\') || s.contains('{')) {
         val latexParser = new org.jbibtex.LaTeXParser()
-        val s1 = s.replaceAll("(?<!\\\\)~", " ") // TODO IMO bug in jbibtex, A~B lastname fails
+        val s1 = s.replaceAll("(?<!\\\\)~", " ") // IMO bug in jbibtex, A~B lastname fails
         val latexObjects = latexParser.parse(s1)
         val latexPrinter = new org.jbibtex.LaTeXPrinter()
         s = latexPrinter.print(latexObjects)

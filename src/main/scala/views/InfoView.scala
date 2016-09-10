@@ -63,11 +63,11 @@ class InfoView extends GenericView("toolview") {
 
   val aDBstats: MyAction = new MyAction("Tools", "Generate DB statistics") {
     image = new Image(getClass.getResource("/images/dbstats.png").toExternalForm)
-    tooltipString = "Generate DB statistics in " + ReftoolDB.TDBSTATS
+    tooltipString = "Generate DB statistics in " + ReftoolDB.TSPECIAL
     action = (_) => {
       val stats = ReftoolDB.getDBstats
       inTransaction {
-        val st = ReftoolDB.topics.where(t => t.title === ReftoolDB.TDBSTATS).head
+        val st = ReftoolDB.topics.where(t => t.title === ReftoolDB.TSPECIAL).head
         val a = new Article(title = "DB statistics",
           pubdate = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()),
           review = stats

@@ -1,9 +1,10 @@
 package util
 
 import java.text.SimpleDateFormat
+import java.util.Date
 
-import db.{Article, ReftoolDB}
-import framework.{Logging, ApplicationController}
+import db.{Article, ReftoolDB, Topic}
+import framework.{ApplicationController, Logging}
 import org.squeryl.PrimitiveTypeMode._
 
 import scala.collection.mutable.ArrayBuffer
@@ -13,7 +14,7 @@ import scalafx.scene.control._
 import scalafx.scene.control.cell.CheckBoxTableCell
 import scalafx.scene.control.TableColumn._
 import scalafx.scene.layout.VBox
-import scalafx.stage.{Window, DirectoryChooser}
+import scalafx.stage.{DirectoryChooser, Window}
 import scalafx.Includes._
 
 object UpdatePdfs extends Logging {
@@ -132,7 +133,10 @@ object UpdatePdfs extends Logging {
         case Some(ButtonType.OK) =>
           info("syncing pdfs...")
 
-          val changedArticles = entries.map(e => {
+          val datestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())
+          val t = inTransaction { ReftoolDB.topics.insert(new Topic(title = "Updated PDF articles " + datestamp, parent = ReftoolDB.specialTopic.id, expanded = false)) }
+
+          entries.foreach(e => {
             info("copying " + e.fExternal.getPath + " -> " + e.fReftool.getPath)
             MFile.copy(e.fExternal, e.fReftool, replaceExisting = true, copyAttrs = true)
             taInfo.appendText("copied: " + e.toString + "\n")
@@ -140,9 +144,11 @@ object UpdatePdfs extends Logging {
               debug("remove file: " + e.fExternal.getPath)
               e.fExternal.delete()
             }
-            e.article
+            inTransaction { e.article.topics.associate(t) }
           } )
-          ApplicationController.submitShowArticlesList(changedArticles.toList, s"Imported document articles")
+
+          ApplicationController.submitRevealTopic(t)
+
         case _ => debug("cancel: ")
       }
 
