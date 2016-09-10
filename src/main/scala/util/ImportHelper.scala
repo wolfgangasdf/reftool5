@@ -186,7 +186,7 @@ object ImportHelper extends Logging {
             ReftoolDB.articles.insertOrUpdate(a)
             if (topic != null) a.topics.associate(topic)
           }
-          ApplicationController.submitArticleChanged(a)
+          ApplicationController.submitArticleModified(a)
           ApplicationController.showNotification("import successful of " + a)
           debug(" import successful of " + sourceFile.getName)
           // show article

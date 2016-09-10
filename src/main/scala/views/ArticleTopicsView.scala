@@ -35,7 +35,7 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
       })
       ApplicationController.showNotification(s"Removed article from topic!")
       setArticle(article)
-      ApplicationController.submitArticleChanged(article)
+      ApplicationController.submitArticleModified(article)
     }
   }
 
@@ -62,7 +62,7 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
     if (a == article) setArticle(null)
   } )
 
-  ApplicationController.articleChangedListeners += ( (a: Article) => {
+  ApplicationController.articleModifiedListeners += ((a: Article) => {
     if (a == article) setArticle(a)
   } )
 
