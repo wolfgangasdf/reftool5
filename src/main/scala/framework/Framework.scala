@@ -205,7 +205,14 @@ class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String,
   }
   if (disableEnter) {
     tf.filterEvent(KeyEvent.KeyPressed) {
-      (ke: KeyEvent) => if (ke.code == KeyCode.ENTER) ke.consume()
+      (ke: KeyEvent) => ke.code match {
+        case KeyCode.ENTER => ke.consume()
+        case KeyCode.TAB =>
+          val beh = tf.skin.value.asInstanceOf[com.sun.javafx.scene.control.skin.TextAreaSkin].getBehavior
+          if (ke.shiftDown) beh.callAction("TraversePrevious") else beh.callAction("TraverseNext")
+          ke.consume()
+        case _ =>
+      }
     }
   }
   tf.text.onChange(onchange())
