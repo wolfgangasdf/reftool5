@@ -96,7 +96,7 @@ object ImportHelper extends Logging {
     val dialogStage = new Stage {
       width = 800
       height = 600
-      val initModality = Modality.WINDOW_MODAL
+      val initModality = Modality.WindowModal
       initOwner(main.Main.stage)
       scene = new Scene {
         content = new ScrollPane {
@@ -104,8 +104,8 @@ object ImportHelper extends Logging {
         }
       }
     }
-    myContent.prefHeight <== dialogStage.scene.height
-    myContent.prefWidth <== dialogStage.scene.width
+    myContent.prefHeight <== dialogStage.getScene.height
+    myContent.prefWidth <== dialogStage.getScene.width
 
     webEngine.location.onChange( {
       val newl = webEngine.location.value

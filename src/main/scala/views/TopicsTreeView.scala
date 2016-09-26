@@ -97,7 +97,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
 
   // drag'n'drop
   onDragDetected = (me: MouseEvent) => {
-    val db = treeView.value.startDragAndDrop(TransferMode.MOVE)
+    val db = treeView.value.startDragAndDrop(TransferMode.Move)
     val cont = new ClipboardContent()
     cont.putString("topic") // can't easily make custom DataFormats on mac (!)
     db.delegate.setContent(cont)
@@ -147,14 +147,14 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
         val dti = DnDHelper.topicTreeItem
         if (dti.getParent != treeItem.value) {
           MyTreeCell.lastDragoverCell = this
-          de.acceptTransferModes(TransferMode.MOVE)
+          de.acceptTransferModes(TransferMode.Move)
         }
       } else if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "articles") {
         MyTreeCell.lastDragoverCell = this
-        de.acceptTransferModes(TransferMode.COPY, TransferMode.LINK)
+        de.acceptTransferModes(TransferMode.Copy, TransferMode.Link)
       } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
         if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].length == 1) // only one file at a time!
-          de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK)
+          de.acceptTransferModes(TransferMode.Copy, TransferMode.Move, TransferMode.Link)
       }
     }
   }
@@ -184,7 +184,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       inTransaction {
         dropOk = true
         for (a <- DnDHelper.articles) {
-          if (de.transferMode == TransferMode.COPY) {
+          if (de.transferMode == TransferMode.Copy) {
             if (!a.topics.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue)
           } else {
             a.topics.dissociate(DnDHelper.articlesTopic)
@@ -197,7 +197,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
       val f = MFile(files.head)
-      ImportHelper.importDocument(f, treeItem.value.getValue, null, Some(de.transferMode == TransferMode.COPY), isAdditionalDoc = false)
+      ImportHelper.importDocument(f, treeItem.value.getValue, null, Some(de.transferMode == TransferMode.Copy), isAdditionalDoc = false)
       dropOk = true
     }
 
@@ -494,7 +494,7 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   tv.onKeyReleased = (ke: KeyEvent) => {
     ke.code match {
-      case KeyCode.DOWN | KeyCode.UP =>
+      case KeyCode.Down | KeyCode.Up =>
         val newVal = tv.getSelectionModel.getSelectedItem
         if (newVal != null) {
           ApplicationController.submitTopicSelected(newVal.getValue)
@@ -543,7 +543,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     hgrow = Priority.Always
     promptText = "search..."
     tooltip = new Tooltip { text = "enter space-separated search terms (group with single quote), topics matching all terms are listed.\nmeta+enter: match full topic path (slow!)" }
-    onKeyPressed = (e: KeyEvent) => if (e.code == KeyCode.ENTER) {
+    onKeyPressed = (e: KeyEvent) => if (e.code == KeyCode.Enter) {
       if (text.value.trim != "") {
         val terms = SearchUtil.getSearchTerms(text.value)
         if (terms.exists(_.length > 2)) {

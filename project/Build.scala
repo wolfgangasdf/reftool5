@@ -17,11 +17,10 @@ object Build extends Build {
       organization := "com.reftool5",
       version := "0.1-SNAPSHOT",
       javaOptions ++= Seq("-Xms100m", "-Xmx300m"),
-      scalaVersion := "2.11.7",
+      scalaVersion := "2.11.8",
       scalacOptions ++= Seq("-feature", "-unchecked", "-deprecation", "-encoding", "UTF-8"),
       libraryDependencies ++= Seq(
-        "org.scalafx" %% "scalafx" % "8.0.60-R9",
-        "com.typesafe.akka" %% "akka-actor" % "2.4.0",
+        "org.scalafx" %% "scalafx" % "8.0.92-R10",
         "org.apache.derby" % "derby" % "10.12.1.1",
         "org.squeryl" %% "squeryl" % "0.9.5-7" withSources() withJavadoc(),
         "org.apache.pdfbox" % "pdfbox" % "1.8.10",

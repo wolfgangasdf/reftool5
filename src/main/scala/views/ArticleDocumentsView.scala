@@ -45,7 +45,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
   }
   val lv = new ListView[Document] {
     editable = true
-    selectionModel.value.setSelectionMode(SelectionMode.SINGLE)
+    selectionModel.value.setSelectionMode(SelectionMode.Single)
     //    val converter = StringConverter.toStringConverter[Document](_.docName)
     cellFactory = (v: ListView[Document]) => new MyListCell()
     onEditCommit = (eev: ListView.EditEvent[Document]) => {
@@ -60,14 +60,14 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     onDragOver = (de: DragEvent) => {
       if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
         if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].length == 1) // only one file at a time!
-          de.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK)
+          de.acceptTransferModes(TransferMode.Copy, TransferMode.Move, TransferMode.Link)
       }
     }
     onDragDropped = (de: DragEvent) => {
       if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
         val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
         val f = MFile(files.head)
-        ImportHelper.importDocument(f, null, article, Some(de.transferMode == TransferMode.COPY), isAdditionalDoc = true)
+        ImportHelper.importDocument(f, null, article, Some(de.transferMode == TransferMode.Copy), isAdditionalDoc = true)
       }
 
       de.dropCompleted = true

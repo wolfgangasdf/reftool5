@@ -114,29 +114,29 @@ class MainScene(stage: Stage) extends Scene with Logging {
   }
 
   val spleft = new SplitPane {
-    orientation = Orientation.VERTICAL
+    orientation = Orientation.Vertical
     dividerPositions = 0.5
     items += (toplefttabs, bottomlefttabs)
   }
 
   val spbottomright = new SplitPane {
-    orientation = Orientation.VERTICAL
+    orientation = Orientation.Vertical
     dividerPositions = 0.5
     items += (brtoptabs, brbottomtabs)
   }
   val spbottom = new SplitPane {
-    orientation = Orientation.HORIZONTAL
+    orientation = Orientation.Horizontal
     dividerPositions = 0.7
     items += (bottomtabs, spbottomright)
   }
   val spv = new SplitPane {
-    orientation = Orientation.VERTICAL
+    orientation = Orientation.Vertical
     dividerPositions = 0.3
     items += (toptabs, spbottom)
   }
 
   val sph = new SplitPane {
-    orientation = Orientation.HORIZONTAL
+    orientation = Orientation.Horizontal
     dividerPositions = 0.15
     items +=(spleft, spv)
   }

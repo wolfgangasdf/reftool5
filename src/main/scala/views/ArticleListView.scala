@@ -80,7 +80,7 @@ class ArticleListView extends GenericView("articlelistview") {
   }
   val cModtime = new TableColumn[Article, String] {
     text = "Modtime"
-    sortType = TableColumn.SortType.DESCENDING
+    sortType = TableColumn.SortType.Descending
     cellValueFactory = (a) => new StringProperty(a.value.getModtimeString)
   }
 
@@ -90,7 +90,7 @@ class ArticleListView extends GenericView("articlelistview") {
     columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview, cModtime)
     columns.foreach(tc => tc.setPrefWidth(120.0))
     sortOrder += (cPubdate, cTitle)
-    selectionModel.value.selectionMode = SelectionMode.MULTIPLE
+    selectionModel.value.selectionMode = SelectionMode.Multiple
   }
 
   text = "Article list"
@@ -357,8 +357,8 @@ class ArticleListView extends GenericView("articlelistview") {
       }
       onDragDetected = (me: MouseEvent) => {
         ApplicationController.showNotification("Drag'n'drop: 'link' means 'move'!")
-        val db = if (currentTopic == null) startDragAndDrop(TransferMode.COPY) else {
-          startDragAndDrop(TransferMode.ANY:_*) // TODO workaround, MOVE and COPY does not work! I use LINK therefore...
+        val db = if (currentTopic == null) startDragAndDrop(TransferMode.Copy) else {
+          startDragAndDrop(TransferMode.Any:_*) // TODO workaround, MOVE and COPY does not work! I use LINK therefore...
         }
         val cont = new ClipboardContent {
           putString("articles") // can't easily make custom DataFormats on mac (!)
