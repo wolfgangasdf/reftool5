@@ -71,9 +71,9 @@ class BookmarksView extends GenericView("bookmarksview") {
     val ct = lv.getSelectionModel.getSelectedItem
     var action = 0
     if (ct != null && ke.shiftDown) {
-      if (ke.code == KeyCode.DOWN)
+      if (ke.code == KeyCode.Down)
         action = +1
-      else if (ke.code == KeyCode.UP)
+      else if (ke.code == KeyCode.Up)
         action = -1
     }
     if (action != 0) {

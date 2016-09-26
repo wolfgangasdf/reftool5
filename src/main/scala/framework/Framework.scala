@@ -206,8 +206,8 @@ class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String,
   if (disableEnter) {
     tf.filterEvent(KeyEvent.KeyPressed) {
       (ke: KeyEvent) => ke.code match {
-        case KeyCode.ENTER => ke.consume()
-        case KeyCode.TAB =>
+        case KeyCode.Enter => ke.consume()
+        case KeyCode.Tab =>
           val beh = tf.skin.value.asInstanceOf[com.sun.javafx.scene.control.skin.TextAreaSkin].getBehavior
           if (ke.shiftDown) beh.callAction("TraversePrevious") else beh.callAction("TraverseNext")
           ke.consume()
