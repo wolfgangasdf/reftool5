@@ -19,8 +19,8 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
     onMouseClicked = (me: MouseEvent) => {
       if (me.clickCount == 2) {
         if (selectionModel.value.getSelectedItems.length > 0) {
-          ApplicationController.submitRevealTopic(selectionModel.value.getSelectedItems.head)
-          ApplicationController.submitRevealArticleInList(article)
+          ApplicationController.obsRevealTopic(selectionModel.value.getSelectedItems.head)
+          ApplicationController.obsRevealArticleInList(article)
         }
       }
     }
@@ -35,7 +35,7 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
       })
       ApplicationController.showNotification(s"Removed article from topic!")
       setArticle(article)
-      ApplicationController.submitArticleModified(article)
+      ApplicationController.obsArticleModified(article)
     }
   }
 
@@ -54,15 +54,15 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
     }
   }
 
-  ApplicationController.showArticleListeners += ( (a: Article) => {
+  ApplicationController.obsShowArticle += ((a: Article) => {
     setArticle(a)
   } )
 
-  ApplicationController.articleRemovedListeners += ( (a: Article) => {
+  ApplicationController.obsArticleRemoved += ((a: Article) => {
     if (a == article) setArticle(null)
   } )
 
-  ApplicationController.articleModifiedListeners += ((a: Article) => {
+  ApplicationController.obsArticleModified += ((a: Article) => {
     if (a == article) setArticle(a)
   } )
 

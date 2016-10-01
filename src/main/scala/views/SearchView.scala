@@ -69,7 +69,7 @@ class SearchView extends GenericView("searchview") {
             new Alert(AlertType.Warning, s"Showing only the first $maxSize of ${res.size} results!", ButtonType.OK).showAndWait()
             res.page(0, maxSize)
           } else res
-          ApplicationController.submitShowArticlesList(res2.toList, s"Search [${text.value}]")
+          ApplicationController.obsShowArticlesList((res2.toList, s"Search [${text.value}]"))
         }
       } else {
         ApplicationController.showNotification("Enter at least one search term >= 3 characters long!")
@@ -149,7 +149,7 @@ class SearchView extends GenericView("searchview") {
     tfCurrentTopic.text = currentTopic.toString
   }
 
-  ApplicationController.topicSelectedListener += ((a: Topic) => setCurrentTopic(a) )
+  ApplicationController.obsTopicSelected += ((a: Topic) => setCurrentTopic(a) )
 
   override def onViewClicked(): Unit = {
     tfSearch.requestFocus()

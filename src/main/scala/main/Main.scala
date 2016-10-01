@@ -6,7 +6,7 @@ import java.io
 import buildinfo.BuildInfo
 import db.ReftoolDB
 import framework.Helpers._
-import framework.{Helpers, ApplicationController, Logging, ViewContainer}
+import framework.{ApplicationController, Helpers, Logging, ViewContainer}
 import util._
 import views._
 
@@ -26,7 +26,7 @@ import scalafx.scene.control.TextField._
 import scalafx.scene.control.ComboBox._
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout._
-import scalafx.stage.{WindowEvent, DirectoryChooser, Stage}
+import scalafx.stage.{DirectoryChooser, Stage, WindowEvent}
 
 
 class MainScene(stage: Stage) extends Scene with Logging {

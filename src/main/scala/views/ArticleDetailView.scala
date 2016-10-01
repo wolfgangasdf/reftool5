@@ -110,12 +110,12 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
         ReftoolDB.articles.update(article)
       }
       isDirty.value = false
-      ApplicationController.submitArticleModified(article)
+      ApplicationController.obsArticleModified(article)
     } catch {
       case e: Exception =>
         Helpers.showExceptionAlert("Exception during save article, see below. Did you enter excessive amount of text?\nI will revert to previous state... be patient.", e)
         isDirty.value = false
-        ApplicationController.submitArticleModified(article) // important to notify alv to reload articles!
+        ApplicationController.obsArticleModified(article) // important to notify alv to reload articles!
     }
   }
 
@@ -180,7 +180,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
         ReftoolDB.articles.update(newa)
       }
       ApplicationController.showNotification(s"Updated article from bibtex!")
-      ApplicationController.submitArticleModified(newa)
+      ApplicationController.obsArticleModified(newa)
       setArticle(newa)
     }
   }
@@ -195,7 +195,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
         ReftoolDB.articles.update(newa)
       }
       ApplicationController.showNotification(s"Generated new bibtex ID!")
-      ApplicationController.submitArticleModified(newa)
+      ApplicationController.obsArticleModified(newa)
       setArticle(newa)
     }
   }
@@ -217,7 +217,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
         ReftoolDB.articles.update(newa)
       }
       ApplicationController.showNotification(s"(Re-)created bibtex entry!")
-      ApplicationController.submitArticleModified(newa)
+      ApplicationController.obsArticleModified(newa)
       setArticle(newa)
       if (article.bibtexid == "unknown") {
         info("bibtex id unknown, try to generate...")
@@ -228,16 +228,16 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   toolbaritems ++= Seq(lbCurrentArticle, aSave.toolbarButton, aGenerateBibtexID.toolbarButton, aUpdateFromBibtex.toolbarButton, aUpdateMetadatafromPDF.toolbarButton, aCreateBibtex.toolbarButton)
 
-  ApplicationController.showArticleListeners += ( (a: Article) => {
+  ApplicationController.obsShowArticle += ((a: Article) => {
     setArticle(a)
     activateThisTab()
   } )
 
-  ApplicationController.articleRemovedListeners += ( (a: Article) => {
+  ApplicationController.obsArticleRemoved += ((a: Article) => {
     if (a == article) setArticle(null)
   } )
 
-  ApplicationController.articleModifiedListeners += ((a: Article) => {
+  ApplicationController.obsArticleModified += ((a: Article) => {
     if (a == article) setArticle(a)
   } )
 

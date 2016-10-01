@@ -189,11 +189,11 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
           } else {
             a.topics.dissociate(DnDHelper.articlesTopic)
             if (!a.topics.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue)
-            ApplicationController.submitTopicSelected(DnDHelper.articlesTopic)
           }
-          ApplicationController.submitArticleModified(a)
+          ApplicationController.obsArticleModified(a)
         }
       }
+      ApplicationController.obsTopicSelected(DnDHelper.articlesTopic)
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
       val f = MFile(files.head)
@@ -250,7 +250,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     onEditCommit = (ee: TreeView.EditEvent[Topic]) => {
       inTransaction {
         ReftoolDB.topics.update(ee.newValue)
-        ApplicationController.submitTopicRenamed(ee.newValue.id)
+        ApplicationController.obsTopicRenamed(ee.newValue.id)
         loadTopics(revealLastTopic = true)
       }
     }
@@ -322,7 +322,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         if (tin.getValue != null) if (tin.getValue.id == tlast.id) {
           tv.requestFocus()
           tv.selectionModel.value.select(tin)
-          ApplicationController.submitTopicSelected(tin.getValue, addTop = true)
+          ApplicationController.obsTopicSelected(tin.getValue, addTop = true)
           val idx = tv.selectionModel.value.getSelectedIndex
           tv.scrollTo(math.max(0, idx - 5))
           if (editTopic) {
@@ -347,8 +347,8 @@ class TopicsTreeView extends GenericView("topicsview") {
         val a = new Article(title = "new content")
         ReftoolDB.articles.insert(a)
         a.topics.associate(t)
-        ApplicationController.submitTopicSelected(t)
-        ApplicationController.submitRevealArticleInList(a)
+        ApplicationController.obsTopicSelected(t)
+        ApplicationController.obsRevealArticleInList(a)
       }
     }
   }
@@ -457,7 +457,7 @@ class TopicsTreeView extends GenericView("topicsview") {
           if (doit) {
             t.articles.dissociateAll
             ReftoolDB.topics.delete(t.id)
-            ApplicationController.submitTopicRemoved(t.id)
+            ApplicationController.obsTopicRemoved(t.id)
           }
 
           loadTopics(revealLastTopic = false, revealTopic = pt)
@@ -466,7 +466,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     }
   }
 
-  ApplicationController.revealTopicListener += ( (t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t, clearSearch = true) )
+  ApplicationController.obsRevealTopic += ((t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t, clearSearch = true) )
 
   toolbaritems ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aExportTopicPDFs.toolbarButton,
     aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton
@@ -487,7 +487,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     if (me.clickCount == 1) {
       val newVal = tv.getSelectionModel.getSelectedItem
       if (newVal != null) {
-        ApplicationController.submitTopicSelected(newVal.getValue)
+        ApplicationController.obsTopicSelected(newVal.getValue)
       }
     }
   }
@@ -497,7 +497,7 @@ class TopicsTreeView extends GenericView("topicsview") {
       case KeyCode.Down | KeyCode.Up =>
         val newVal = tv.getSelectionModel.getSelectedItem
         if (newVal != null) {
-          ApplicationController.submitTopicSelected(newVal.getValue)
+          ApplicationController.obsTopicSelected(newVal.getValue)
         }
       case _ =>
     }
