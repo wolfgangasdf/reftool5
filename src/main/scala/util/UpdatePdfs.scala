@@ -147,7 +147,7 @@ object UpdatePdfs extends Logging {
             inTransaction { e.article.topics.associate(t) }
           } )
 
-          ApplicationController.submitRevealTopic(t)
+          ApplicationController.obsRevealTopic(t)
 
         case _ => debug("cancel: ")
       }

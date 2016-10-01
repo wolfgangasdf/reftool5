@@ -2,7 +2,7 @@ package framework
 
 import db.{Article, Topic}
 import main.MainScene
-import util.{MFile, AppStorage}
+import util.{AppStorage, MFile}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
@@ -11,10 +11,11 @@ import scalafx.beans.property.BooleanProperty
 import scalafx.concurrent.{Service, WorkerStateEvent}
 import scalafx.event.ActionEvent
 import scalafx.geometry.Pos
+import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control.Tab._
 import scalafx.scene.control._
 import scalafx.scene.image.{Image, ImageView}
-import scalafx.scene.input.{KeyCode, KeyEvent, MouseEvent, KeyCombination}
+import scalafx.scene.input.{KeyCode, KeyCombination, KeyEvent, MouseEvent}
 import scalafx.scene.layout.{GridPane, HBox, Pane, VBox}
 import scalafx.scene.{Group, Node}
 import scalafx.stage.{DirectoryChooser, WindowEvent}
@@ -335,75 +336,49 @@ object ApplicationController extends Logging {
   // reftool main worker, tasks (methods) can be added at top or bottom. no runUI here!
   class Work(val f: () => Unit, val uithread: Boolean)
   val workerQueue = new java.util.concurrent.CopyOnWriteArrayList[Work]()
-  def workerAdd(f: () => Unit, addTop: Boolean = false, uithread: Boolean = false): Unit = if (addTop) workerQueue.add(0, new Work(f, uithread)) else workerQueue.add(new Work(f, uithread))
+  def workerAdd(f: () => Unit, addTop: Boolean = false, uithread: Boolean = false): Unit = {
+    if (addTop) workerQueue.add(0, new Work(f, uithread)) else workerQueue.add(new Work(f, uithread))
+  }
   val workerTimer = new java.util.Timer()
-  workerTimer.schedule( // remove Notification later
+  var lastWorkEnd: Long = 0
+  var stressCounter = 0
+  val stressAlert = new Alert(AlertType.Information) { title = "Information" ; contentText = "I am busy..." }
+  workerTimer.schedule(
     new java.util.TimerTask {
       override def run(): Unit = {
         if (workerQueue.nonEmpty) {
+          if ((System.nanoTime()-lastWorkEnd)/1e6 < 100) stressCounter += 1 else stressCounter = 0
+          if (stressCounter > 5) Helpers.runUIwait { stressAlert.show() }
           val work = workerQueue.remove(0)
           if (work.uithread) Helpers.runUIwait(work.f()) else work.f()
+          lastWorkEnd = System.nanoTime()
+        } else {
+          stressCounter = 0
+          if (stressAlert.isShowing) Helpers.runUI( stressAlert.hide() )
         }
       }
     }, 0, 20
   )
 
   // to keep order, runUIwait is used.
-
-  val articleModifiedListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitArticleModified(a: Article, addTop: Boolean = false): Unit = {
-    logCall("aModified " + a)
-    articleModifiedListeners.foreach(acl => workerAdd(() => acl(a), addTop, uithread = true) )
+  class Observable[Payload](title: String) {
+    val listeners = new ArrayBuffer[(Payload) => Unit]()
+    def +=(fff: Payload => Unit) = listeners += fff // easily add listener
+    def apply(pl: Payload, addTop: Boolean = false): Unit = { // easily notify
+      logCall(s"$title payload=$pl")
+      listeners.foreach(listener => workerAdd(() => listener(pl), addTop, uithread = true) )
+    }
   }
 
-  val articleRemovedListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitArticleRemoved(a: Article, addTop: Boolean = false): Unit = {
-    logCall("aRemoved " + a)
-    articleRemovedListeners.foreach( acl => workerAdd(() => acl(a), addTop, uithread = true) )
-  }
-
-  val showArticleListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitShowArticle(a: Article, addTop: Boolean = false): Unit = {
-    logCall("aShow " + a)
-    showArticleListeners.foreach( acl => workerAdd(() => acl(a), addTop, uithread = true) )
-  }
-
-  val showArticlesListListeners = new ArrayBuffer[(List[Article], String) => Unit]()
-  def submitShowArticlesList(al: List[Article], text: String, addTop: Boolean = false): Unit = {
-    logCall("aShowAList ")
-    showArticlesListListeners.foreach( acl => workerAdd(() => acl(al, text), addTop, uithread = true) )
-  }
-
-  // for other views to update if topic changed. can be null.
-  val topicSelectedListener = new ArrayBuffer[(Topic) => Unit]()
-  def submitTopicSelected(t: Topic, addTop: Boolean = false): Unit = {
-    logCall("aTopicSelected " + t)
-    topicSelectedListener.foreach( rtl => workerAdd(() => rtl(t), addTop, uithread = true) )
-  }
-
-  val revealArticleInListListeners = new ArrayBuffer[(Article) => Unit]()
-  def submitRevealArticleInList(a: Article, addTop: Boolean = false) = {
-    logCall("aRevealInList " + a)
-    revealArticleInListListeners.foreach( acl => workerAdd(() => acl(a), addTop, uithread = true) )
-  }
-
-  val revealTopicListener = new ArrayBuffer[(Topic) => Unit]()
-  def submitRevealTopic(t: Topic, addTop: Boolean = false): Unit = {
-    logCall("aRevealTopic " + t)
-    revealTopicListener.foreach( rtl => workerAdd(() => rtl(t), addTop, uithread = true) )
-  }
-
-  val topicRenamedListeners = new ArrayBuffer[(Long) => Unit]()
-  def submitTopicRenamed(tid: Long, addTop: Boolean = false): Unit = {
-    logCall("aTopicRenamed " + tid)
-    topicRenamedListeners.foreach(rtl => workerAdd(() => rtl(tid), addTop, uithread = true) )
-  }
-
-  val topicRemovedListeners = new ArrayBuffer[(Long) => Unit]()
-  def submitTopicRemoved(tid: Long, addTop: Boolean = false): Unit = {
-    logCall("aTopicRemoved " + tid)
-    topicRemovedListeners.foreach(rtl => workerAdd(() => rtl(tid), addTop, uithread = true) )
-  }
+  val obsArticleModified = new Observable[Article]("oArticleModified")
+  val obsArticleRemoved = new Observable[Article]("oArticleRemoved")
+  val obsShowArticle = new Observable[Article]("oArticleShow")
+  val obsShowArticlesList = new Observable[(List[Article], String)]("aShowAList ")
+  val obsTopicSelected = new Observable[Topic]("oTopicSelected") // for other views to update if topic changed. topic can be null.
+  val obsRevealArticleInList = new Observable[Article]("oRevealAInList")
+  val obsRevealTopic = new Observable[Topic]("oRevealTopic")
+  val obsTopicRenamed = new Observable[Long]("oTopicRenamed")
+  val obsTopicRemoved = new Observable[Long]("oTopicRemoved")
 
   val notificationTimer = new java.util.Timer()
   def showNotification(string: String): Unit = {

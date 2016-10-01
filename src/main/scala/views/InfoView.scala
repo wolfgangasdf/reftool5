@@ -53,7 +53,7 @@ class InfoView extends GenericView("toolview") {
               these ++ these.filter(_.isDirectory).flatMap(walkThroughAll(_, thisTopic))
             }
             walkThroughAll(res, tbase)
-            Helpers.runUIwait { ApplicationController.submitRevealTopic(tbase) }
+            ApplicationController.obsRevealTopic(tbase)
           }
         }.start()
       }
@@ -74,8 +74,8 @@ class InfoView extends GenericView("toolview") {
         )
         ReftoolDB.articles.insert(a)
         a.topics.associate(st)
-        ApplicationController.submitRevealTopic(st)
-        ApplicationController.submitRevealArticleInList(a)
+        ApplicationController.obsRevealTopic(st)
+        ApplicationController.obsRevealArticleInList(a)
       }
     }
     enabled = true
@@ -135,7 +135,7 @@ class InfoView extends GenericView("toolview") {
             }
           })
         })
-        ApplicationController.submitShowArticlesList(ares.toList, "Articles with missing documents")
+        ApplicationController.obsShowArticlesList((ares.toList, "Articles with missing documents"))
       }
     }
     enabled = true

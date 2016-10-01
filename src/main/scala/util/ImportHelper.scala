@@ -186,12 +186,12 @@ object ImportHelper extends Logging {
             ReftoolDB.articles.insertOrUpdate(a)
             if (topic != null) a.topics.associate(topic)
           }
-          ApplicationController.submitArticleModified(a)
+          ApplicationController.obsArticleModified(a)
           ApplicationController.showNotification("import successful of " + a)
           debug(" import successful of " + sourceFile.getName)
           // show article
-          ApplicationController.submitRevealTopic(topic)
-          ApplicationController.submitRevealArticleInList(a)
+          ApplicationController.obsRevealTopic(topic)
+          ApplicationController.obsRevealArticleInList(a)
         }
         if (!backgroundImportRunning.compareAndSet(true, false)) {
           throw new Exception("illegal state: backgroundImportRunning was false!")
@@ -226,7 +226,7 @@ object ImportHelper extends Logging {
       inTransaction {
         val res = ReftoolDB.articles.where(a => upper(a.pdflink) like s"%${relp.toUpperCase}%")
         if (res.nonEmpty) {
-          ApplicationController.submitShowArticlesList(res.toList, "Dropped:")
+          ApplicationController.obsShowArticlesList((res.toList, "Dropped:"))
         }
       }
       backgroundImportRunning.set(false)
@@ -332,12 +332,15 @@ object ImportHelper extends Logging {
     // see http://labs.crossref.org/citation-formatting-service/
     import scalaj.http._
     var a = article
-    debug(s"""# curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
+    val doienc = java.net.URLEncoder.encode(doi, "utf-8")
+    debug(s"""# curl "http://crosscite.org/citeproc/format?doi=$doienc&style=bibtex&lang=en-US" """)
+    // debug(s"""# curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
     var doit = 6
     while (doit > 0) {
       val responseo = try {
-        Some(Http("http://dx.doi.org/" + doi).timeout(connTimeoutMs = 2000, readTimeoutMs = 5000).
-          header("Accept", "text/bibliography; style=bibtex; locale=en-US.UTF-8").option(HttpOptions.followRedirects(shouldFollow = true)).asBytes)
+        Some(Http(s"http://crosscite.org/citeproc/format?doi=$doienc&style=bibtex&lang=en-US").asString)
+        // Some(Http("http://dx.doi.org/" + doi).timeout(connTimeoutMs = 2000, readTimeoutMs = 5000).
+        //  header("Accept", "text/bibliography; style=bibtex; locale=en-US.UTF-8").option(HttpOptions.followRedirects(shouldFollow = true)).asBytes)
       } catch {
         case e: SocketTimeoutException =>
           debug("tryhttp: got SocketTimeoutException...")
@@ -346,7 +349,8 @@ object ImportHelper extends Logging {
       if (responseo.isDefined) {
         val response = responseo.get
         if (response.code == 200) {
-          val rb = new String(response.body, "UTF-8")
+          val rb = response.body
+          // val rb = new String(response.body, "UTF-8")
           a = generateUpdateBibtexID(rb, a)
           doit = 0 // becomes -1 below
         } else {

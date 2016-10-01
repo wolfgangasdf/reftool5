@@ -98,7 +98,6 @@ contact: http://home.physics.leidenuniv.nl/~loeffler
 
 * Scalafx GUI Application framework: I couldn't find one (yet), so reftool contains its own GUI app framework 
   with, e.g., buttons next to tabs (`Framework.scala`)
-* Reftool is mostly single-threaded except for PDF-import to keep the app responsive. This keeps the code very simple.
 
 ### License ###
 [MIT](http://opensource.org/licenses/MIT)

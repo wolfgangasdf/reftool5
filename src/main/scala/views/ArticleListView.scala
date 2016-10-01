@@ -143,7 +143,7 @@ class ArticleListView extends GenericView("articlelistview") {
           case None =>
         }
       }
-      ApplicationController.submitArticleModified(a)
+      ApplicationController.obsArticleModified(a)
     }
   }
 
@@ -155,7 +155,7 @@ class ArticleListView extends GenericView("articlelistview") {
       as.foreach( a => {
         a.topics.dissociate(currentTopic)
         if (!a.topics.contains(ReftoolDB.stackTopic)) a.topics.associate(ReftoolDB.stackTopic)
-        ApplicationController.submitArticleModified(a)
+        ApplicationController.obsArticleModified(a)
       })
       ApplicationController.showNotification(s"Moved ${as.length} articles to stack!")
       Helpers.runUIdelayed(alv.requestFocus())
@@ -168,7 +168,7 @@ class ArticleListView extends GenericView("articlelistview") {
       val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
       as.foreach( a => {
         if (!a.topics.contains(ReftoolDB.stackTopic)) a.topics.associate(ReftoolDB.stackTopic)
-        ApplicationController.submitArticleModified(a)
+        ApplicationController.obsArticleModified(a)
       })
       ApplicationController.showNotification(s"Copied ${as.length} articles to stack!")
     }
@@ -180,7 +180,7 @@ class ArticleListView extends GenericView("articlelistview") {
       ReftoolDB.stackTopic.articles.foreach( a => {
         a.topics.dissociate(ReftoolDB.stackTopic)
         if (!a.topics.contains(currentTopic)) a.topics.associate(currentTopic)
-        ApplicationController.submitArticleModified(a)
+        ApplicationController.obsArticleModified(a)
       })
       ApplicationController.showNotification(s"Moved articles from stack!")
       setArticlesTopic(currentTopic)
@@ -192,7 +192,7 @@ class ArticleListView extends GenericView("articlelistview") {
     action = (_) => inTransaction {
       ReftoolDB.stackTopic.articles.foreach( a => {
         if (!a.topics.contains(currentTopic)) a.topics.associate(currentTopic)
-        ApplicationController.submitArticleModified(a)
+        ApplicationController.obsArticleModified(a)
       } )
       ApplicationController.showNotification(s"Copied articles from stack!")
       setArticlesTopic(currentTopic)
@@ -249,7 +249,7 @@ class ArticleListView extends GenericView("articlelistview") {
       val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
       as.foreach( a => {
         a.topics.dissociate(currentTopic)
-        ApplicationController.submitArticleModified(a)
+        ApplicationController.obsArticleModified(a)
       })
       ApplicationController.showNotification(s"Removed ${as.length} articles from topic [$currentTopic]!")
       Helpers.runUIdelayed(alv.requestFocus())
@@ -272,7 +272,7 @@ class ArticleListView extends GenericView("articlelistview") {
               FileHelper.getDocumentFileAbs(d.docPath).delete()
             })
             ReftoolDB.articles.delete(a.id)
-            ApplicationController.submitArticleRemoved(a)
+            ApplicationController.obsArticleRemoved(a)
           })
           Helpers.runUIdelayed(alv.requestFocus())
         case _ =>
@@ -309,7 +309,7 @@ class ArticleListView extends GenericView("articlelistview") {
       as.foreach( a => {
         val aa = ReftoolDB.renameDocuments(a)
         ReftoolDB.articles.update(aa)
-        ApplicationController.submitArticleModified(aa)
+        ApplicationController.obsArticleModified(aa)
       })
       ApplicationController.showNotification(s"Updated document filenames of ${as.length} articles!")
     }
@@ -342,7 +342,7 @@ class ArticleListView extends GenericView("articlelistview") {
           aOpenPDF.enabled = true
           aRevealPDF.enabled = true
           aOpenURL.enabled = true
-          ApplicationController.submitShowArticle(ob.head)
+          ApplicationController.obsShowArticle(ob.head)
         }
       }
     }
@@ -408,10 +408,10 @@ class ArticleListView extends GenericView("articlelistview") {
     if (newidx > -1) alv.getSelectionModel.select(newidx)
   }
 
-  ApplicationController.showArticlesListListeners += ( (al: List[Article], title: String) => setArticles(al, title, null, null) )
-  ApplicationController.topicSelectedListener += ( (t: Topic) => setArticlesTopic(t) )
-  ApplicationController.revealArticleInListListeners += ( (a: Article) => selectRevealArticle(a) )
-  ApplicationController.articleModifiedListeners += ((a: Article) => {
+  ApplicationController.obsShowArticlesList += { case (al: List[Article], title: String) => setArticles(al, title, null, null) }
+  ApplicationController.obsTopicSelected += ((t: Topic) => setArticlesTopic(t) )
+  ApplicationController.obsRevealArticleInList += ((a: Article) => selectRevealArticle(a) )
+  ApplicationController.obsArticleModified += ((a: Article) => {
     if (currentTopic != null) {
       val oldsel = alv.getSelectionModel.getSelectedItems.headOption
       val oldselidx = alv.getSelectionModel.getSelectedIndices.headOption
@@ -429,7 +429,7 @@ class ArticleListView extends GenericView("articlelistview") {
       if (oldart.isDefined) { articles.replaceAll(oldart.get, a) }
     }
   })
-  ApplicationController.articleRemovedListeners += ( (a: Article) => {
+  ApplicationController.obsArticleRemoved += ((a: Article) => {
     articles -= a
   })
 

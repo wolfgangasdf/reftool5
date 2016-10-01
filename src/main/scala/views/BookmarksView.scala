@@ -63,7 +63,7 @@ class BookmarksView extends GenericView("bookmarksview") {
   lv.onMouseClicked = (me: MouseEvent) => {
     if (me.clickCount == 2) {
       if (lv.getSelectionModel.getSelectedItems.length > 0) {
-        ApplicationController.submitRevealTopic(lv.getSelectionModel.getSelectedItems.head)
+        ApplicationController.obsRevealTopic(lv.getSelectionModel.getSelectedItems.head)
       }
     }
   }
@@ -176,18 +176,18 @@ class BookmarksView extends GenericView("bookmarksview") {
 
   toolbaritems ++= Seq(aEditFolder.toolbarButton, aRemoveFolder.toolbarButton, aNewFolder.toolbarButton, aRemoveBookmark.toolbarButton, aAddBookmark.toolbarButton)
 
-  ApplicationController.topicSelectedListener += ( (t: Topic) => {
+  ApplicationController.obsTopicSelected += ((t: Topic) => {
     currentTopic = t
   })
 
-  ApplicationController.topicRenamedListeners += ((tid: Long) => {
+  ApplicationController.obsTopicRenamed += ((tid: Long) => {
     storeSettings()
     restoreSettings()
     selectCurrent()
     updateList()
   })
 
-  ApplicationController.topicRemovedListeners += ((tid: Long) => {
+  ApplicationController.obsTopicRemoved += ((tid: Long) => {
     storeSettings()
     restoreSettings()
     selectCurrent()
