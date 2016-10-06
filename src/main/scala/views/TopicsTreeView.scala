@@ -466,7 +466,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     }
   }
 
-  ApplicationController.obsRevealTopic += ((t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t, clearSearch = true) )
+  ApplicationController.obsRevealTopic += ((t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t, clearSearch = false) )
 
   toolbaritems ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aExportTopicPDFs.toolbarButton,
     aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton

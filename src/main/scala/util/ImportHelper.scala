@@ -48,7 +48,7 @@ object ImportHelper extends Logging {
     val tfDOI = new TextField {
       hgrow = Priority.Always
       onAction = (ae: ActionEvent) => {
-        doi = text.value.trim.replaceAll("http://dx.doi.org/", "")
+        doi = text.value.trim.replaceAll(".*doi.org/", "")
         scene.value.getWindow.asInstanceOf[javafx.stage.Stage].close()
       }
     }
@@ -109,8 +109,8 @@ object ImportHelper extends Logging {
 
     webEngine.location.onChange( {
       val newl = webEngine.location.value
-      if (newl.contains("dx.doi.org")) {
-        doi = newl.replaceAll("http://dx.doi.org/", "")
+      if (newl.contains("doi.org")) {
+        doi = newl.replaceAll(".*doi.org/", "")
         dialogStage.close()
       }
     } )
@@ -125,7 +125,7 @@ object ImportHelper extends Logging {
                               interactive: Boolean = true, parsePdf: Boolean = true) = {
     new javafx.concurrent.Task[Unit] {
       override def call(): Unit = {
-        var a = if (article == null) new Article(title = sourceFile.getName) else article
+        var a = if (article == null) new Article(title = sourceFile.getName, entrytype = "article") else article
         if (updateMetadata) try {
           updateProgress(0, 100)
           updateMessage("find document metadata...")

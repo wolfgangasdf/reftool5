@@ -146,7 +146,7 @@ class SearchView extends GenericView("searchview") {
 
   def setCurrentTopic(t: Topic) = {
     currentTopic = t
-    tfCurrentTopic.text = currentTopic.toString
+    tfCurrentTopic.text = if (currentTopic != null) currentTopic.toString else ""
   }
 
   ApplicationController.obsTopicSelected += ((a: Topic) => setCurrentTopic(a) )
