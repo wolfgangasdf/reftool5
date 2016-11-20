@@ -333,14 +333,14 @@ object ImportHelper extends Logging {
     import scalaj.http._
     var a = article
     val doienc = java.net.URLEncoder.encode(doi, "utf-8")
-    debug(s"""# curl "http://crosscite.org/citeproc/format?doi=$doienc&style=bibtex&lang=en-US" """)
-    // debug(s"""# curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
+    // debug(s"""# curl "http://crosscite.org/citeproc/format?doi=$doienc&style=bibtex&lang=en-US" """)
+    debug(s"""# curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
     var doit = 6
     while (doit > 0) {
       val responseo = try {
-        Some(Http(s"http://crosscite.org/citeproc/format?doi=$doienc&style=bibtex&lang=en-US").asString)
-        // Some(Http("http://dx.doi.org/" + doi).timeout(connTimeoutMs = 2000, readTimeoutMs = 5000).
-        //  header("Accept", "text/bibliography; style=bibtex; locale=en-US.UTF-8").option(HttpOptions.followRedirects(shouldFollow = true)).asBytes)
+        // Some(Http(s"http://crosscite.org/citeproc/format?doi=$doienc&style=bibtex&lang=en-US").asString)
+        Some(Http("http://dx.doi.org/" + doi).timeout(connTimeoutMs = 2000, readTimeoutMs = 5000).
+          header("Accept", "text/bibliography; style=bibtex; locale=en-US.UTF-8").option(HttpOptions.followRedirects(shouldFollow = true)).asBytes)
       } catch {
         case e: SocketTimeoutException =>
           debug("tryhttp: got SocketTimeoutException...")
@@ -349,8 +349,8 @@ object ImportHelper extends Logging {
       if (responseo.isDefined) {
         val response = responseo.get
         if (response.code == 200) {
-          val rb = response.body
-          // val rb = new String(response.body, "UTF-8")
+          // val rb = response.body
+          val rb = new String(response.body, "UTF-8")
           a = generateUpdateBibtexID(rb, a)
           doit = 0 // becomes -1 below
         } else {

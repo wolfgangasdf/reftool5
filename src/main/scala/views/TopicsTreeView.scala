@@ -1,5 +1,7 @@
 package views
 
+import java.text.SimpleDateFormat
+import java.util.Date
 import javafx.scene.{control => jfxsc}
 
 import db.{Article, ReftoolDB, Topic}
@@ -91,7 +93,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
 //  converter = myStringConverter // scalafx bug doesn't work
   delegate.setConverter(myStringConverter)
 
-  treeItem.onChange((_, oldti, newti) => {
+  treeItem.onChange((_, _, newti) => {
     text = if (newti != null) newti.getValue.title else null
   })
 
@@ -205,9 +207,9 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
     de.consume()
   }
 
-  onDragExited = (de: DragEvent) => clearDnDFormatting()
+  onDragExited = (_: DragEvent) => clearDnDFormatting()
 
-  onDragDone = (de: DragEvent) => clearDnDFormatting()
+  onDragDone = (_: DragEvent) => clearDnDFormatting()
 
 }
 object MyTreeCell {
@@ -238,7 +240,7 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   var troot: Topic = _
   var tiroot: MyTreeItem = _
-  val gv = this
+  val gv: TopicsTreeView = this
   var searchActive: Boolean = false
 
   val tv = new TreeView[Topic] {
@@ -251,7 +253,7 @@ class TopicsTreeView extends GenericView("topicsview") {
       inTransaction {
         ReftoolDB.topics.update(ee.newValue)
         ApplicationController.obsTopicRenamed(ee.newValue.id)
-        loadTopics(revealLastTopic = true)
+        loadTopics()
       }
     }
 
@@ -259,10 +261,10 @@ class TopicsTreeView extends GenericView("topicsview") {
       (me: MouseEvent) => if (me.clickCount == 1) me.consume() // but enable double click to expand/collapse
     }
 
-    cellFactory = (v: TreeView[Topic]) => new MyTreeCell()
+    cellFactory = (_: TreeView[Topic]) => new MyTreeCell()
   }
 
-  def expandAllParents(t: Topic) = {
+  def expandAllParents(t: Topic): Unit = {
     var pt = t.parentTopic.head
     while (pt != null) {
       if (!pt.expanded) {
@@ -307,7 +309,11 @@ class TopicsTreeView extends GenericView("topicsview") {
     }
 
     inTransaction {
-      if (tlast != null) expandAllParents(tlast) // expand topic to be revealed
+      if (tlast != null) {
+        expandAllParents(tlast)
+        tlast.expanded = true
+        ReftoolDB.topics.update(tlast)
+      } // expand topic to be revealed
       troot = ReftoolDB.rootTopic
       tiroot = new MyTreeItem(troot, this)
       tv.root = tiroot
@@ -355,7 +361,7 @@ class TopicsTreeView extends GenericView("topicsview") {
   val aAddTopic: MyAction = new MyAction("Topic", "Add new topic") {
     image = new Image(getClass.getResource("/images/addtsk_tsk.gif").toExternalForm)
     tooltipString = "Add topic below selected topic, shift+click to add root topic"
-    def addNewTopic(parendID: Long) = {
+    def addNewTopic(parendID: Long): Unit = {
       val t2 = inTransaction { ReftoolDB.topics.insert(new Topic(title = "new topic", parent = parendID, expanded = searchActive)) }
       loadTopics(revealLastTopic = false, revealTopic = t2, editTopic = true)
     }
@@ -396,9 +402,12 @@ class TopicsTreeView extends GenericView("topicsview") {
           t.exportfn = fn.getPath
           ReftoolDB.topics.update(t)
         }
+        def fixbibtex(s: String): String = s.replaceAllLiterally("–", "-") // can't use utf8 in bst files...
         val pw = new java.io.PrintWriter(new java.io.FileOutputStream(fn.toFile, false))
+        val datestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())
+        pw.write(s"% $datestamp Reftool export topic:${t.title}\n")
         t.articles.toList.sortWith{(a,b) => a.bibtexid.compareTo(b.bibtexid) < 0}// alphabetically!
-          .foreach( a => pw.write(a.bibtexentry + "\n") )
+          .foreach( a => pw.write(fixbibtex(a.bibtexentry) + "\n") )
         pw.close()
         ApplicationController.showNotification(s"Exported articles in topic to bibtex!")
       }
@@ -408,9 +417,10 @@ class TopicsTreeView extends GenericView("topicsview") {
     image = new Image(getClass.getResource("/images/copypdfs.png").toExternalForm)
     tooltipString = "Export documents of all articles in current topic to folder\n" +
       "If duplicate, compare files and ask user."
-    action = (m) => {
+    action = (_) => {
       val t = tv.getSelectionModel.getSelectedItem.getValue
       val articles = inTransaction { t.articles.toList }
+      debug(s"aexppdfs: topicfn=${t.exportfn}")
       val newfolder = UpdatePdfs.exportPdfs(articles, new MFile(t.exportfn), toolbarButton.getParent.getScene.getWindow)
       if (newfolder != null) inTransaction {
         t.exportfn = newfolder.getPath
@@ -419,7 +429,16 @@ class TopicsTreeView extends GenericView("topicsview") {
     }
   }
 
-  def collapseAllTopics() = {
+  val aUpdatePDFs: MyAction = new MyAction("Topic", "Update PDFs") {
+    image = new Image(getClass.getResource("/images/updatepdfs.png").toExternalForm)
+    tooltipString = "Update pdfs from a folder.\nFilename must not be changed in reftool or outside, or you have to do update them manually!"
+
+    action = (_) => UpdatePdfs.updatePdfs(toolbarButton.getScene.getWindow(),
+      Option(tv.getSelectionModel.getSelectedItem).map(ti => ti.getValue))
+    enabled = true
+  }
+
+  def collapseAllTopics(): Unit = {
     update(ReftoolDB.topics)(t =>
       where(t.expanded === true and t.parent <> 0)
         set(t.expanded := false)
@@ -466,14 +485,14 @@ class TopicsTreeView extends GenericView("topicsview") {
     }
   }
 
-  ApplicationController.obsRevealTopic += ((t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t, clearSearch = false) )
+  ApplicationController.obsRevealTopic += ((t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t) )
 
   toolbaritems ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aExportTopicPDFs.toolbarButton,
-    aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton
+    aUpdatePDFs.toolbarButton, aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton
   )
 
 
-  def updateButtons() = {
+  def updateButtons(): Unit = {
     val sel = tv.getSelectionModel.getSelectedItems.nonEmpty
     aAddArticle.enabled = sel
     aAddTopic.enabled = sel
@@ -503,7 +522,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     }
   }
 
-  tv.selectionModel().selectedItem.onChange { (_, oldVal, newVal) => {
+  tv.selectionModel().selectedItem.onChange { (_, _, _) => {
     updateButtons()
   } }
 
@@ -512,7 +531,7 @@ class TopicsTreeView extends GenericView("topicsview") {
   val btClearSearch = new Button() {
     graphic = new ImageView(new Image(getClass.getResource("/images/delete_obj_grey.gif").toExternalForm))
     disable = true
-    onAction = (ae: ActionEvent) => loadTopics(clearSearch = true)
+    onAction = (_: ActionEvent) => loadTopics(clearSearch = true)
   }
 
   // fast sql search
