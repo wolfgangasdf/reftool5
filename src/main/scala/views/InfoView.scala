@@ -81,7 +81,7 @@ class InfoView extends GenericView("toolview") {
     enabled = true
   }
 
-  def addToInfo(s: String) = {
+  def addToInfo(s: String): Unit = {
     taInfo.appendText(s + "\n")
     debug("i: " + s)
   }
@@ -141,13 +141,6 @@ class InfoView extends GenericView("toolview") {
     enabled = true
   }
 
-  val aUpdatePDFs: MyAction = new MyAction("Tools", "Update PDFs") {
-    image = new Image(getClass.getResource("/images/updatepdfs.png").toExternalForm)
-    tooltipString = "Update pdfs from a folder.\nFilename must not be changed in reftool or outside, or you have to do update them manually!"
-    action = (_) => UpdatePdfs.updatePdfs(taInfo, toolbarButton.getScene.getWindow())
-    enabled = true
-  }
-
   val aMemory: MyAction = new MyAction("Tools", "Memory info") {
     image = new Image(getClass.getResource("/images/meminfo.png").toExternalForm)
     tooltipString = "Memory cleanup and statistics"
@@ -173,7 +166,7 @@ class InfoView extends GenericView("toolview") {
     enabled = true
   }
 
-  toolbaritems ++= Seq(aUpdatePDFs.toolbarButton, aDBstats.toolbarButton, aCheckArticleDocs.toolbarButton, aFindOrphanedPDFs.toolbarButton, aMemory.toolbarButton, aClear.toolbarButton)
+  toolbaritems ++= Seq(aDBstats.toolbarButton, aCheckArticleDocs.toolbarButton, aFindOrphanedPDFs.toolbarButton, aMemory.toolbarButton, aClear.toolbarButton)
 
   content = new BorderPane {
     margin = Insets(5.0)

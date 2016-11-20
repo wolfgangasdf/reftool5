@@ -32,7 +32,7 @@ object UpdatePdfs extends Logging {
     val tcRemove = new TableColumn[UEntry, java.lang.Boolean] {
       text = "Remove"
       cellValueFactory = { x => new BooleanProperty(x, " - ", false) {
-        onChange( (_, oldValue, newValue) => items.remove(x.value) )
+        onChange( (_, _, _) => items.remove(x.value) )
       }.delegate }
       prefWidth = 80
     }
@@ -41,7 +41,7 @@ object UpdatePdfs extends Logging {
     val tcOpenboth = new TableColumn[UEntry, java.lang.Boolean] {
       text = "Open"
       cellValueFactory = { x => new BooleanProperty(x, "open both", false) {
-        onChange( (_, oldValue, newValue) => {
+        onChange( (_, _, _) => {
           FileHelper.openDocument(x.value.fReftool)
           FileHelper.openDocument(x.value.fExternal)
         } )
@@ -71,22 +71,19 @@ object UpdatePdfs extends Logging {
     )
   }
 
-  def updatePdfs(taInfo: TextArea, window: Window): Unit = {
-    taInfo.text = "Update pdfs output:\n"
+  def updatePdfs(window: Window, topic: Option[Topic]): Unit = {
+    info("Update pdfs output:")
     val res = MFile(new DirectoryChooser {
       title = "Select folder where to import files from"
+      val folder: MFile = topic.map(t => new MFile(t.exportfn)).orNull
+      if (folder != null) if (folder.exists) initialDirectory = folder.toFile
     }.showDialog(window))
     if (res != null) {
       val entries = new ObservableBuffer[UEntry]()
       val equalFiles = new ArrayBuffer[MFile]()
       val newFiles = new ArrayBuffer[MFile]()
       // list update-pdfs
-      def walkThroughAll(base: MFile): Array[MFile] = {
-        // base is directory!
-        val these = base.listFiles.filter(_.isFile).filter(!_.getName.startsWith("."))
-        these ++ these.filter(_.isDirectory).flatMap(walkThroughAll)
-      }
-      val updfs = walkThroughAll(res)
+      val updfs = res.listFiles.filter(_.isFile).filter(!_.getName.startsWith("."))
 
       // find article & local file & compare
       updfs.foreach { fileExternal =>
@@ -100,15 +97,14 @@ object UpdatePdfs extends Logging {
               else
                 entries += new UEntry(fileReftool, fileExternal, ares.head)
             case 0 => newFiles += fileExternal
-            case _ => taInfo.appendText("Error: multiple articles with same pdf filename: " + fileExternal.getName + "\n")
+            case _ => info("Error: multiple articles with same pdf filename: " + fileExternal.getName)
           }
         }
       }
 
-      // present results
-      entries.foreach(e => taInfo.appendText("changed: " + e.toString + "\n"))
-      newFiles.foreach(file => taInfo.appendText("new file: " + file.getName + "\n"))
-      equalFiles.foreach(file => taInfo.appendText("equal: " + file.getName + "\n"))
+      entries.foreach(e => info("changed: " + e.toString))
+      newFiles.foreach(file => info("new file: " + file.getName))
+      equalFiles.foreach(file => info("equal: " + file.getName))
 
       val dialog = new Dialog[ButtonType]() {
         title = "Update PDFs"
@@ -123,10 +119,14 @@ object UpdatePdfs extends Logging {
       val cbRemoveAfter = new CheckBox("Remove imported documents after copy") {
         selected = true
       }
+      val cbRemoveFromTopic = new CheckBox(s"Remove articles where document was imported from topic $topic (if it was in it) after import") {
+        selected = true
+      }
       dialog.dialogPane().buttonTypes = Seq(ButtonType.OK, ButtonType.Cancel)
       dialog.dialogPane().content = new VBox {
         children += tableview
         children += cbRemoveAfter
+        children += cbRemoveFromTopic
       }
 
       dialog.showAndWait() match {
@@ -134,20 +134,23 @@ object UpdatePdfs extends Logging {
           info("syncing pdfs...")
 
           val datestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())
-          val t = inTransaction { ReftoolDB.topics.insert(new Topic(title = "Updated PDF articles " + datestamp, parent = ReftoolDB.specialTopic.id, expanded = false)) }
+          val topicUpdated = inTransaction { ReftoolDB.topics.insert(new Topic(title = "Updated PDF articles " + datestamp, parent = ReftoolDB.specialTopic.id, expanded = false)) }
 
           entries.foreach(e => {
             info("copying " + e.fExternal.getPath + " -> " + e.fReftool.getPath)
             MFile.copy(e.fExternal, e.fReftool, replaceExisting = true, copyAttrs = true)
-            taInfo.appendText("copied: " + e.toString + "\n")
+            info("copied: " + e.toString + "\n")
             if (cbRemoveAfter.selected.value) {
               debug("remove file: " + e.fExternal.getPath)
               e.fExternal.delete()
             }
-            inTransaction { e.article.topics.associate(t) }
+            inTransaction {
+              e.article.topics.associate(topicUpdated)
+              if (cbRemoveFromTopic.selected.value) topic.foreach(t => e.article.topics.dissociate(t))
+            }
           } )
 
-          ApplicationController.obsRevealTopic(t)
+          ApplicationController.obsRevealTopic(topicUpdated)
 
         case _ => debug("cancel: ")
       }
