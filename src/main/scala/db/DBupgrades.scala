@@ -1,5 +1,7 @@
 package db
 
+import java.sql.Connection
+
 import framework.Logging
 import util.AppStorage
 import ReftoolDB.dbShutdown
@@ -7,7 +9,7 @@ import ReftoolDB.dbShutdown
 
 object DBupgrades extends Logging {
 
-  def dbGetConnection = java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.dbpath};upgrade=true")
+  def dbGetConnection: Connection = java.sql.DriverManager.getConnection(s"jdbc:derby:${AppStorage.config.dbpath};upgrade=true")
 
   def upgradeSchema(oldv: Int): Int = {
     info("upgrade database from schemaversion " + oldv + " ...")

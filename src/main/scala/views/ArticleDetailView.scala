@@ -33,7 +33,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     aUpdateMetadatafromPDF.enabled = !isDirty.value
   })
 
-  override def canClose = {
+  override def canClose: Boolean = {
     if (isDirty.value) {
       val res = new Alert(AlertType.Confirmation) {
         headerText = "Application close requested"
@@ -120,7 +120,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   }
 
   class MyLine(gpRow: Int, labelText: String, rows: Int = 1, disableEnter: Boolean = false) extends MyInputTextArea(gpRow, labelText, rows, "", "", disableEnter) {
-    val lineidx = lines.size
+    val lineidx: Int = lines.size
     onchange = () => { isDirty.value = true }
     lines += this
   }

@@ -15,7 +15,7 @@ class LogView extends GenericView("logview") {
 
   toolbaritems += new Button("Clear output") {
     graphic = new ImageView(new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm))
-    onAction = (ae: ActionEvent) => taLog.text = ""
+    onAction = (_: ActionEvent) => taLog.text = ""
   }
 
   val taLog = new TextArea()

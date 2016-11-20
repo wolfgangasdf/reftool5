@@ -22,7 +22,7 @@ class PreferencesView extends GenericView("prefsview") {
     aSave.enabled = isDirty.value
   })
 
-  def onchange() = { isDirty.value = true }
+  def onchange(): Unit = { isDirty.value = true }
 
   class MyGridPane extends GridPane {
     // margin = Insets(18)
@@ -47,7 +47,7 @@ class PreferencesView extends GenericView("prefsview") {
     children ++= lAutoimport.content ++ lDebug.content ++ lShowStartupdialog.content
   }
 
-  def load() = {
+  def load(): Unit = {
     lAutoimport.tf.text = AppStorage.config.autoimportdir
     lDebug.tf.text = AppStorage.config.debuglevel.toString
     lShowStartupdialog.cb.selected = AppStorage.config.showstartupdialog

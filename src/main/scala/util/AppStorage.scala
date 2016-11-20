@@ -11,17 +11,17 @@ class Config extends Logging {
   val uiSettings = new mutable.HashMap[String, String]()
 
   var datadir = ""
-  var recentDatadirs = Array[String]()
+  var recentDatadirs: Array[String] = Array[String]()
   var autoimportdir = ""
   var debuglevel = 0
   var showstartupdialog = false
 
-  def dbpath = datadir + "/db5"
-  def dbschemaversionpath = dbpath + "/schemaversion.txt"
-  def olddbpath = datadir + "/db" // reftool4
-  def pdfpath = datadir + "/files"
+  def dbpath: String = datadir + "/db5"
+  def dbschemaversionpath: String = dbpath + "/schemaversion.txt"
+  def olddbpath: String = datadir + "/db" // reftool4
+  def pdfpath: String = datadir + "/files"
   val importfolderprefix = "folder-" // after this a number to limit #files in folder
-  val csspath = getClass.getResource("/reftool.css").toExternalForm
+  val csspath: String = getClass.getResource("/reftool.css").toExternalForm
   info("csspath: " + csspath)
 }
 
@@ -36,10 +36,10 @@ object AppSettings extends Logging {
     settpath = toJavaPathSeparator(System.getenv("APPDATA")) + "/Reftool5"
   } else throw new Exception("operating system not found")
 
-  def getSettingPath = settpath + "/reftool5settings" + ".txt"
+  def getSettingPath: String = settpath + "/reftool5settings" + ".txt"
 
   info("AppSettings: file = " + getSettingPath)
-  def getLines = {
+  def getLines: Array[AnyRef] = {
     val fff = MFile(getSettingPath)
     if (!fff.exists) {
       info("creating setting file " + fff.toString)
@@ -52,7 +52,7 @@ object AppSettings extends Logging {
 object AppStorage extends Logging {
   var config : Config = _
 
-  def getImportFolder(num: Int) = AppStorage.config.pdfpath + "/" + AppStorage.config.importfolderprefix + num
+  def getImportFolder(num: Int): String = AppStorage.config.pdfpath + "/" + AppStorage.config.importfolderprefix + num
 
   def splitsetting(ss: String) : List[String] = {
     val commapos = ss.indexOf("=")

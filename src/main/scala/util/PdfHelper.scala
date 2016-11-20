@@ -3,18 +3,19 @@ package util
 import org.apache.pdfbox.util.PDFTextStripper
 import org.apache.pdfbox.pdmodel.PDDocument
 
-import scala.collection.JavaConversions._
-
 import framework.Logging
+
+import scala.collection.JavaConversions._
+import scala.util.matching.Regex
 
 object PdfHelper extends Logging {
 
   // doi syntax: http://www.doi.org/doi_handbook/2_Numbering.html#2.2
   // regex from http://stackoverflow.com/questions/27910/finding-a-doi-in-a-document-or-page
-  val doire = """(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'])\S)+)""".r
-  val arxivre = """arXiv:([A-Za-z\-]+/\d+|\d+\.\d+)(?:v\d+)?""".r
+  val doire: Regex = """(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'])\S)+)""".r
+  val arxivre: Regex = """arXiv:([A-Za-z\-]+/\d+|\d+\.\d+)(?:v\d+)?""".r
 
-  def getDOI(file: MFile) = {
+  def getDOI(file: MFile): String = {
     var doi = ""
     val pdf = PDDocument.load(file.toFile)
     if (!pdf.isEncrypted) {
