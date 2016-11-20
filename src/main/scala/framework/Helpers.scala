@@ -25,16 +25,16 @@ object Helpers extends Logging {
   }
 
 
-  def toJavaPathSeparator(in: String) = {
+  def toJavaPathSeparator(in: String): String = {
     if (isWin) in.replaceAll("""\\""", "/")
     else in
   }
 
-  def isMac = System.getProperty("os.name").toLowerCase.contains("mac")
-  def isLinux = System.getProperty("os.name").toLowerCase.contains("nix")
-  def isWin = System.getProperty("os.name").toLowerCase.contains("win")
+  def isMac: Boolean = System.getProperty("os.name").toLowerCase.contains("mac")
+  def isLinux: Boolean = System.getProperty("os.name").toLowerCase.contains("nix")
+  def isWin: Boolean = System.getProperty("os.name").toLowerCase.contains("win")
 
-  def toHexString(s: String, encoding: String) = {
+  def toHexString(s: String, encoding: String): String = {
     s.getBytes(encoding).map("%02x " format _).mkString
   }
 
@@ -73,7 +73,7 @@ object Helpers extends Logging {
     stat
   }
 
-  def showExceptionAlert(what: String, t: Throwable) = {
+  def showExceptionAlert(what: String, t: Throwable): Option[ButtonType] = {
     error(what)
     error(t.getMessage)
     t.printStackTrace()
@@ -87,7 +87,7 @@ object Helpers extends Logging {
     showTextAlert(AlertType.Error, "Exception", xx, "Exception stacktrace:", exceptionText, null)
   }
 
-  def showTextAlert(alerttype: AlertType, titletext: String, headertext: String, contenttext: String, text: String, buttons: Seq[ButtonType] = null) = {
+  def showTextAlert(alerttype: AlertType, titletext: String, headertext: String, contenttext: String, text: String, buttons: Seq[ButtonType] = null): Option[ButtonType] = {
     val exceptionText = text
     val textArea = new TextArea {
       text = exceptionText

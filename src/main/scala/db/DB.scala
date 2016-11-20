@@ -65,10 +65,10 @@ class Article(var entrytype: String = "",
               var modtime: Long = Instant.now().toEpochMilli)
   extends BaseEntity with Logging {
 
-  lazy val topics = ReftoolDB.topics2articles.right(this)
-  def getT2a(t: Topic) = ReftoolDB.topics2articles.where(t2a => t2a.ARTICLE === id and t2a.TOPIC === t.id).headOption
+  lazy val topics: Query[Topic] with ManyToMany[Topic, Topic2Article] = ReftoolDB.topics2articles.right(this)
+  def getT2a(t: Topic): Option[Topic2Article] = ReftoolDB.topics2articles.where(t2a => t2a.ARTICLE === id and t2a.TOPIC === t.id).headOption
   def getURL: String = if (doi != "") "http://dx.doi.org/" + doi else linkurl
-  def color(t: Topic) = if (t == null) 0 else getT2a(t) match {
+  def color(t: Topic): Int = if (t == null) 0 else getT2a(t) match {
     case None => 0
     case Some(t2a) => t2a.color
   }
@@ -94,39 +94,39 @@ class Article(var entrytype: String = "",
     abres.sorted
   }
 
-  def setDocuments(dl: List[Document]) = {
+  def setDocuments(dl: List[Document]): Unit = {
     pdflink = dl.map(d => s"${d.docName}\t${d.docPath}\n").mkString("")
   }
 
   // list of <docname>\t<docpath>\n OR <docpath>
-  def getFirstDocRelative = {
+  def getFirstDocRelative: String = {
     val docs = getDocuments
     if (docs.nonEmpty) docs.head.docPath else ""
   }
 
-  def updateBibtexID(newBibtexID: String) = {
+  def updateBibtexID(newBibtexID: String): Unit = {
     bibtexentry = Article.updateBibtexIDinBibtexString(bibtexentry, bibtexid, newBibtexID)
     bibtexid = newBibtexID
   }
   @Transient var testthing = "" // not in DB!
 
-  def getModtimeString = {
+  def getModtimeString: String = {
     val sdf = new SimpleDateFormat("yyyyMMdd HH:mm:ss")
     sdf.format(modtime)
   }
 }
 object Article {
-  def updateBibtexIDinBibtexString(bibtexString: String, oldBibtexID: String, newBibtexID: String) = {
+  def updateBibtexIDinBibtexString(bibtexString: String, oldBibtexID: String, newBibtexID: String): String = {
     bibtexString.replaceAllLiterally(s"{$oldBibtexID,", s"{$newBibtexID,")
   }
 }
 
 class Topic(var title: String = "", var parent: Long = 0, var expanded: Boolean = false, var exportfn: String = "") extends BaseEntity {
-  lazy val articles = ReftoolDB.topics2articles.left(this)
-  lazy val childrenTopics = ReftoolDB.topics.where( t => t.parent === id)
-  lazy val parentTopic = ReftoolDB.topics.where( t => t.id === parent)
+  lazy val articles: Query[Article] with ManyToMany[Article, Topic2Article] = ReftoolDB.topics2articles.left(this)
+  lazy val childrenTopics: Query[Topic] = ReftoolDB.topics.where(t => t.parent === id)
+  lazy val parentTopic: Query[Topic] = ReftoolDB.topics.where(t => t.id === parent)
 
-  def orderedChilds = inTransaction {
+  def orderedChilds: List[Topic] = inTransaction {
     childrenTopics.toList.sortWith( (s1, s2) => StringHelper.AlphaNumStringSorter(s1.title, s2.title))
   }
   override def toString: String = title
@@ -134,7 +134,7 @@ class Topic(var title: String = "", var parent: Long = 0, var expanded: Boolean 
 }
 
 class Topic2Article(val TOPIC: Long, val ARTICLE: Long, var color: Int) extends KeyedEntity[CompositeKey2[Long, Long]] {
-   def id = compositeKey(TOPIC, ARTICLE)
+   def id: CompositeKey2[Long, Long] = compositeKey(TOPIC, ARTICLE)
 }
 
 object ReftoolDB extends Schema with Logging {
@@ -143,9 +143,9 @@ object ReftoolDB extends Schema with Logging {
 
   info("Initializing reftooldb...")
 
-  val settings = table[Setting]("SETTING")
-  val articles = table[Article]("ARTICLES")
-  val topics = table[Topic]("TOPICS")
+  val settings: Table[Setting] = table[Setting]("SETTING")
+  val articles: Table[Article] = table[Article]("ARTICLES")
+  val topics: Table[Topic] = table[Topic]("TOPICS")
 
   val TSTACK = "0000-stack"
   val TSPECIAL = "0000-special"
@@ -192,7 +192,7 @@ object ReftoolDB extends Schema with Logging {
     a.modtime.is(dbType("bigint"), named("LASTTIMESTAMP")), a.modtime.defaultsTo(0.toLong)
   ))
 
-  val topics2articles = manyToManyRelation(topics, articles, "TOPIC2ARTICLE").
+  val topics2articles: ManyToManyRelationImpl[Topic, Article, Topic2Article] = manyToManyRelation(topics, articles, "TOPIC2ARTICLE").
     via[Topic2Article]((t, a, ta) => (ta.TOPIC === t.id, a.id === ta.ARTICLE))
 
   on(topics2articles)(a => declare(
@@ -211,7 +211,7 @@ object ReftoolDB extends Schema with Logging {
     val s = settings.lookup(key)
     if (s.isDefined) Option(s.get.value) else None
   }
-  def setSetting(key: String, value: String) = inTransaction {
+  def setSetting(key: String, value: String): Unit = inTransaction {
     val sett = settings.lookup(key).getOrElse(new Setting(key, value))
     sett.value = value
     settings.insertOrUpdate(sett)
@@ -321,7 +321,7 @@ object ReftoolDB extends Schema with Logging {
     info("Database loaded!")
   }
 
-  def addDemoContent(troot: Topic) = {
+  def addDemoContent(troot: Topic): Unit = {
     val ta = topics.insert(new Topic("demo main topic A", troot.id))
     val tb = topics.insert(new Topic("demo main topic B", troot.id))
     val ta1 = topics.insert(new Topic("demo subtopic A1", ta.id))

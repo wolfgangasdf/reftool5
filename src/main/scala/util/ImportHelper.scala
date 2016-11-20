@@ -41,13 +41,13 @@ object ImportHelper extends Logging {
       text = iniSearch
     }
     val btSearch = new Button("Search!") {
-      onAction = (ae: ActionEvent) => {
+      onAction = (_: ActionEvent) => {
         webEngine.load("http://search.crossref.org/?q=" + tfSearch.text.value)
       }
     }
     val tfDOI = new TextField {
       hgrow = Priority.Always
-      onAction = (ae: ActionEvent) => {
+      onAction = (_: ActionEvent) => {
         doi = text.value.trim.replaceAll(".*doi.org/", "")
         scene.value.getWindow.asInstanceOf[javafx.stage.Stage].close()
       }
@@ -56,7 +56,7 @@ object ImportHelper extends Logging {
     val tfArxiv = new TextField {
       hgrow = Priority.Always
       text = "arXiv:"
-      onAction = (ae: ActionEvent) => {
+      onAction = (_: ActionEvent) => {
         text.value.trim match {
           case PdfHelper.arxivre(aid) =>
             doi = "arXiv:" + aid
@@ -67,7 +67,7 @@ object ImportHelper extends Logging {
     }
 
     val btReveal = new Button("reveal") {
-      onAction = (ae: ActionEvent) => FileHelper.revealFile(new MFile(filepath))
+      onAction = (_: ActionEvent) => FileHelper.revealFile(new MFile(filepath))
     }
 
     val myContent = new VBox {
@@ -87,7 +87,7 @@ object ImportHelper extends Logging {
         new HBox { children ++= Seq( new Label("Or enter arxiv ID here:"), tfArxiv ) },
         new Separator(),
         new Button("Do it later manually") {
-          onAction = (ae: ActionEvent) => {
+          onAction = (_: ActionEvent) => {
             scene.value.getWindow.asInstanceOf[javafx.stage.Stage].close()
           }
         }
@@ -138,13 +138,13 @@ object ImportHelper extends Logging {
             }
             updateProgress(30, 100)
             doi match {
-              case PdfHelper.arxivre(aid) =>
+              case PdfHelper.arxivre(_) =>
                 updateMessage("retrieve bibtex from arxiv ID...")
                 val arxivid = doi.replaceAllLiterally("arXiv:", "")
                 a.linkurl = "http://arxiv.org/abs/" + arxivid
                 a = updateBibtexFromArxiv(a, arxivid)
                 a = updateArticleFromBibtex(a)
-              case PdfHelper.doire(did) =>
+              case PdfHelper.doire(_) =>
                 a.doi = doi
                 updateMessage("retrieve bibtex from DOI...")
                 a = updateBibtexFromDoi(a, doi)
@@ -332,7 +332,7 @@ object ImportHelper extends Logging {
     // see http://labs.crossref.org/citation-formatting-service/
     import scalaj.http._
     var a = article
-    val doienc = java.net.URLEncoder.encode(doi, "utf-8")
+    // val doienc = java.net.URLEncoder.encode(doi, "utf-8")
     // debug(s"""# curl "http://crosscite.org/citeproc/format?doi=$doienc&style=bibtex&lang=en-US" """)
     debug(s"""# curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
     var doit = 6
@@ -342,7 +342,7 @@ object ImportHelper extends Logging {
         Some(Http("http://dx.doi.org/" + doi).timeout(connTimeoutMs = 2000, readTimeoutMs = 5000).
           header("Accept", "text/bibliography; style=bibtex; locale=en-US.UTF-8").option(HttpOptions.followRedirects(shouldFollow = true)).asBytes)
       } catch {
-        case e: SocketTimeoutException =>
+        case _: SocketTimeoutException =>
           debug("tryhttp: got SocketTimeoutException...")
           None
       }

@@ -25,6 +25,7 @@ class BibtexTools {
 }
 
 import scala.annotation.tailrec
+import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 
 object bibtex {
@@ -39,11 +40,11 @@ object bibtex {
 object StringUtils {
 
   import scala.language.reflectiveCalls
-  import scala.language.implicitConversions
+//  import scala.language.implicitConversions
 
-  implicit def char2testable(c: Char) = new {
-    def isAlphaNumeric = c.toString.matches("[a-zA-Z0-9]")
-    def isBibTeXLower =
+  implicit class char2testable(c: Char) {
+    def isAlphaNumeric: Boolean = c.toString.matches("[a-zA-Z0-9]")
+    def isBibTeXLower: Boolean =
       if (c.isDigit)
         true
       else
@@ -64,7 +65,7 @@ object StringUtils {
 
     lazy val composedword: Parser[ComposedWord] =
       simpleword ~ sep ~ word ^^ {
-        case first ~ sep ~ second => ComposedWord(first, second, sep)
+        case first ~ sep2 ~ second => ComposedWord(first, second, sep2)
       }
 
     lazy val pseudoLetter: Parser[PseudoLetter] = special | block | character
@@ -109,7 +110,7 @@ object StringUtils {
     findFirst(str.letters)
   }
 
-  def isFirstCharacterLower(str: Word) =
+  def isFirstCharacterLower(str: Word): Boolean =
     firstCharacter(str).exists(_.isBibTeXLower)
 
 }
@@ -119,15 +120,15 @@ sealed trait PseudoLetter {
   val whitespace_? : Boolean
 }
 final case class CharacterLetter(char: Char) extends PseudoLetter {
-  override def toString = char.toString
-  val whitespace_? = char.toString.matches("\\s+")
+  override def toString: String = char.toString
+  val whitespace_? : Boolean = char.toString.matches("\\s+")
 }
 final case class BlockLetter(parts: List[PseudoLetter]) extends PseudoLetter {
-  override def toString = parts.mkString("{", "", "}")
-  val whitespace_? = parts.forall(_.whitespace_?)
+  override def toString: String = parts.mkString("{", "", "}")
+  val whitespace_? : Boolean = parts.forall(_.whitespace_?)
 }
 final case class SpecialLetter(command: String, arg: Option[String], withBraces: Boolean) extends PseudoLetter {
-  override def toString = {
+  override def toString: String = {
     val argument = arg match {
       case Some(a) if withBraces => "{" + a + "}"
       case Some(a) => a
@@ -147,13 +148,13 @@ trait Word {
   val length: Int
 }
 final case class ComposedWord(first: Word, second: Word, sep: CharacterLetter) extends Word {
-  val letters = first.letters ++ List(sep) ++ second.letters
-  val length = first.length + second.length + 1
-  override def toString = "" + first + sep + second
+  val letters: List[PseudoLetter] = first.letters ++ List(sep) ++ second.letters
+  val length: Int = first.length + second.length + 1
+  override def toString: String = "" + first + sep + second
 }
 final case class SimpleWord(letters: List[PseudoLetter]) extends Word {
   def this(str: String) = this(str.toCharArray.map(CharacterLetter).toList)
-  val length = letters.foldLeft(0) { (result, current) =>
+  val length: Int = letters.foldLeft(0) { (result, current) =>
     def internalCount(letter: PseudoLetter, depth: Int): Int = letter match {
       case _: CharacterLetter => 1
       case _: SpecialLetter if depth == 0 =>
@@ -165,10 +166,10 @@ final case class SimpleWord(letters: List[PseudoLetter]) extends Word {
     }
     result + internalCount(current, 0)
   }
-  override def toString = letters.mkString
+  override def toString: String = letters.mkString
 }
 final case class Sentence(words: List[Word]) {
-  override def toString = words.mkString(" ")
+  override def toString: String = words.mkString(" ")
 }
 
 /**
@@ -178,17 +179,17 @@ final case class Sentence(words: List[Word]) {
  */
 object AuthorNamesExtractor extends StringUtils.StringParser {
 
-  lazy val nameSep = """(?i)\s+and\s+""".r
+  lazy val nameSep: Regex = """(?i)\s+and\s+""".r
 
-  lazy val names =
+  lazy val names: _root_.util.bibtex.AuthorNamesExtractor.Parser[List[String]] =
     rep1sep(uptoNameSep, nameSep) ^^ (_.map(_.toString))
 
-  lazy val uptoNameSep =
+  lazy val uptoNameSep: _root_.util.bibtex.AuthorNamesExtractor.Parser[SimpleWord] =
     guard(nameSep) ~> "" ^^^ SimpleWord(Nil) |
       rep1(block | special | not(nameSep) ~> ".|\\s".r ^^
         (str => CharacterLetter(str.charAt(0)))) ^^ SimpleWord
 
-  def toList(authors: String) = {
+  def toList(authors: String): List[Author] = {
     parseAll(names, authors).getOrElse(Nil).map { author =>
       try {
         AuthorNameExtractor.parse(author)
@@ -202,7 +203,7 @@ object AuthorNamesExtractor extends StringUtils.StringParser {
     }
   }
 
-  def authorNb(authors: String) =
+  def authorNb(authors: String): TOption[Int] =
     parseAll(names, authors) match {
       case Success(res, _) => TSome(res.size)
       case failure => TError(failure.toString)
@@ -267,7 +268,7 @@ object SpecialCharacters {
     "L" -> 'Ł',
     "ss" -> 'ß')
 
-  def apply(special: SpecialLetter) = special match {
+  def apply(special: SpecialLetter): Option[Char] = special match {
     case SpecialLetter(command, Some(arg), _) =>
       withArg.get((command, arg))
     case SpecialLetter(command, _, _) =>
@@ -283,12 +284,12 @@ object AuthorNameExtractor {
 
   private object NameParser extends StringParser {
 
-    lazy val author = lastFirstParts | firstLastParts
+    lazy val author: _root_.util.bibtex.AuthorNameExtractor.NameParser.Parser[Author] = lastFirstParts | firstLastParts
 
-    lazy val firstLastParts =
+    lazy val firstLastParts: _root_.util.bibtex.AuthorNameExtractor.NameParser.Parser[Author] =
       repsep(
         word, "\\s+".r) ^^ {
-        case l @ some :: tail =>
+        case l @ _ :: _ =>
           // the lastname part contains at least the last word
           val lastname = l.last
           // remaining word, removing at least the last one which is in the lastname part
@@ -300,7 +301,7 @@ object AuthorNameExtractor {
         case _ => bibtex.EmptyAuthor
       }
 
-    lazy val lastFirstParts =
+    lazy val lastFirstParts: _root_.util.bibtex.AuthorNameExtractor.NameParser.Parser[Author] =
       rep2sep(
         repsep(word, "\\s+".r),
         ",\\s*".r) ^^ {
@@ -321,12 +322,12 @@ object AuthorNameExtractor {
         case _ => bibtex.EmptyAuthor
       }
 
-    def rep2sep[T, U](p: => Parser[T], s: => Parser[U]) =
+    def rep2sep[T, U](p: => Parser[T], s: => Parser[U]): _root_.util.bibtex.AuthorNameExtractor.NameParser.Parser[List[T]] =
       p ~ rep1(s ~> p) ^^ { case x ~ y => x :: y }
 
   }
 
-  def toFirstVonLast(parts: List[Word]) = {
+  def toFirstVonLast(parts: List[Word]): (List[Word], List[Word], List[Word]) = {
     var first = List[Word]()
     var von = List[Word]()
     var last = List[Word]()
@@ -359,7 +360,7 @@ object AuthorNameExtractor {
     (first, von, last)
   }
 
-  def toVonLast(parts: List[Word]) = {
+  def toVonLast(parts: List[Word]): (List[Word], List[Word]) = {
     var von = List[Word]()
     var last = List[Word]()
     var first = true
@@ -388,7 +389,7 @@ object AuthorNameExtractor {
     (von, last)
   }
 
-  def parse(author: String) =
+  def parse(author: String): Author =
     NameParser.parseAll(NameParser.author, author) match {
       case NameParser.Success(res, _) => res
       case f => throw new Exception(f.toString)
@@ -407,19 +408,19 @@ case class Author(first: List[Word],
       StringUtils.StringParser.parseAll(StringUtils.StringParser.string, last).get,
       StringUtils.StringParser.parseAll(StringUtils.StringParser.string, jr).get)
 
-  override def toString =
+  override def toString: String =
     "first: " + first +
       "\nvon: " + von +
       "\nlast: " + last +
       "\njr: " + jr
 
-  override def equals(other: Any) = other match {
+  override def equals(other: Any): Boolean = other match {
     case Author(f, v, l, j) =>
       first == f && v == von && l == last && j == jr
     case _ => false
   }
 
-  override def hashCode = {
+  override def hashCode: Int = {
     var hash = 31 + first.hashCode
     hash = hash * 31 + von.hashCode
     hash = hash * 31 + last.hashCode
@@ -471,7 +472,7 @@ sealed abstract class TOption[+A] extends Product with Serializable {
 case class TSome[+A](value: A) extends TOption[A] {
   def isEmpty = false
   def isError = false
-  def get = value
+  def get: A = value
   def message = throw new NoSuchElementException("TSome.message")
 }
 

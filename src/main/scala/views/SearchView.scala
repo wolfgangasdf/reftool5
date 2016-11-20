@@ -26,12 +26,12 @@ class SearchView extends GenericView("searchview") {
     var millis2: Long = 0
     tooltip = new Tooltip { text = "Sspace-separated search terms (group with single quote), articles matching all terms are returned if you press Enter!" }
     this.promptText = "Enter search string"
-    onAction = (ae: ActionEvent) => {
+    onAction = (_: ActionEvent) => {
       doSearch()
     }
   }
 
-  def dynamicWhere(q: Queryable[Article], sstr: String, millis1: Long, millis2: Long) = q.where(a =>
+  def dynamicWhere(q: Queryable[Article], sstr: String, millis1: Long, millis2: Long): Query[Article] = q.where(a =>
     (
       (upper(a.title) like s"%$sstr%".inhibitWhen(!cbTitle.selected.value))
         or (upper(a.authors) like s"%$sstr%".inhibitWhen(!cbAuthors.selected.value))
@@ -109,7 +109,7 @@ class SearchView extends GenericView("searchview") {
   val selAll = List(cbTitle, cbAuthors, cbReview, cbBibtexID, cbBibtex, cbPubdate, cbJournal, cbDOI, cbDocuments)
   val selNotDefault = Seq(cbBibtex, cbPubdate, cbDOI, cbDocuments, cbOnlyTopic)
   val btSelectDefault = new Button("Select default") {
-    onAction = (ae: ActionEvent) => {
+    onAction = (_: ActionEvent) => {
       selAll.foreach( _.selected = true)
       selNotDefault.foreach( _.selected = false)
       date1.value = LocalDate.now.minusDays(1)
@@ -117,12 +117,12 @@ class SearchView extends GenericView("searchview") {
     }
   }
   val btSelectNone = new Button("Select none") {
-    onAction = (ae: ActionEvent) => {
+    onAction = (_: ActionEvent) => {
       selAll.foreach( _.selected = false)
     }
   }
   val btSearch = new Button("Search!") {
-    onAction = (ae: ActionEvent) => doSearch()
+    onAction = (_: ActionEvent) => doSearch()
   }
   content = new BorderPane {
     margin = Insets(5.0)
@@ -144,7 +144,7 @@ class SearchView extends GenericView("searchview") {
     }
   }
 
-  def setCurrentTopic(t: Topic) = {
+  def setCurrentTopic(t: Topic): Unit = {
     currentTopic = t
     tfCurrentTopic.text = if (currentTopic != null) currentTopic.toString else ""
   }

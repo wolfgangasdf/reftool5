@@ -32,7 +32,7 @@ trait HasUISettings {
 
 abstract class GenericView(id: String) extends Tab with HasUISettings with Logging {
 
-  var isDirty = BooleanProperty(value = false)
+  val isDirty = BooleanProperty(value = false)
 
   val toolbaritems = new ArrayBuffer[Node]
 
@@ -40,11 +40,11 @@ abstract class GenericView(id: String) extends Tab with HasUISettings with Loggi
 
   def canClose: Boolean
 
-  def activateThisTab() = {
+  def activateThisTab(): Unit = {
     tabPane.value.getSelectionModel.select(this)
   }
 
-  def onViewClicked() = {}
+  def onViewClicked(): Unit = {}
 }
 
 class ViewContainer extends Pane with Logging {
@@ -108,7 +108,7 @@ class MyAction(val category: String, val title: String) extends Logging {
   var action: (String) => Unit = _ // argument: modifier key
 
   // must use getter & setter because toolbarbutton etc has to be modified after it's instantiated
-  def image = _image
+  def image: Image = _image
   def image_= (i: Image): Unit = {
     _image = i
     toolbarButton.graphic = new ImageView(i)
@@ -116,29 +116,29 @@ class MyAction(val category: String, val title: String) extends Logging {
     menuEntry.graphic = new ImageView(i)
   }
 
-  def tooltipString = _tooltipString
+  def tooltipString: String = _tooltipString
   def tooltipString_= (s: String): Unit = {
     _tooltipString = s
     toolbarButton.tooltip = new Tooltip { text = s }
   }
 
-  def enabled = _enabled
+  def enabled: Boolean = _enabled
   def enabled_= (b: Boolean): Unit = {
     _enabled = b
     toolbarButton.disable = !b
     menuEntry.disable = !b
   }
 
-  def accelerator = _accelerator
+  def accelerator: KeyCombination = _accelerator
   def accelerator_= (keyCombination: KeyCombination): Unit = {
     _accelerator = keyCombination
     menuEntry.accelerator = keyCombination
   }
 
-  val toolbarButton = {
+  val toolbarButton: Button = {
     new Button {
       text = title
-      onAction = (ae: ActionEvent) => action(MyAction.MNONE)
+      onAction = (_: ActionEvent) => action(MyAction.MNONE)
     }
   }
   toolbarButton.onMouseClicked = (me: MouseEvent) => {
@@ -146,9 +146,9 @@ class MyAction(val category: String, val title: String) extends Logging {
     if (me.shiftDown) action(MyAction.MSHIFT)
     else if (me.controlDown) action(MyAction.MCTRL)
   }
-  val menuEntry = {
+  val menuEntry: MenuItem = {
     new MenuItem(title) {
-      onAction = (ae: ActionEvent) => action(MyAction.MNONE)
+      onAction = (_: ActionEvent) => action(MyAction.MNONE)
     }
   }
   enabled = false
@@ -180,7 +180,7 @@ class MyInputDirchooser(gpRow: Int, labelText: String, iniText: String, helpStri
   tf.text.onChange(onchange())
 
   val bt = new Button("Browse...") {
-    onAction = (ae: ActionEvent) => {
+    onAction = (_: ActionEvent) => {
       val dc = MFile(new DirectoryChooser {
         title = "Choose directory..."
       }.showDialog(this.delegate.getScene.getWindow))
@@ -252,7 +252,7 @@ abstract class MyFlexInput(gpRow: Int, labelText: String, rows: Int = 1, helpStr
 // https://github.com/scalafx/ProScalaFX/blob/master/src/proscalafx/ch06/ServiceExample.scala
 class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () => Unit ) extends Logging {
   object worker extends Service[Unit](new javafx.concurrent.Service[Unit]() {
-    override def createTask() = atask
+    override def createTask(): javafx.concurrent.Task[Unit] = atask
   })
   val lab = new Label("")
   val progress = new ProgressBar { minWidth = 250 }
@@ -262,14 +262,14 @@ class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () 
     dialogPane.value.content = new VBox { children ++= Seq(lab, progress) }
     dialogPane.value.getButtonTypes += ButtonType.Cancel
   }
-  def runInBackground() = {
+  def runInBackground(): Unit = {
     al.show()
     lab.text <== worker.message
     progress.progress <== worker.progress
-    worker.onSucceeded = (wse: WorkerStateEvent) => {
+    worker.onSucceeded = (_: WorkerStateEvent) => {
       al.close()
     }
-    worker.onFailed = (wse: WorkerStateEvent) => {
+    worker.onFailed = (_: WorkerStateEvent) => {
       error("onfailed: " + atask.getException.getMessage)
       atask.getException.printStackTrace()
       al.close()
@@ -289,11 +289,11 @@ object ApplicationController extends Logging {
   val actions = new ArrayBuffer[MyAction]
   var mainScene: MainScene = _
 
-  def isAnyoneDirty = {
+  def isAnyoneDirty: Boolean = {
     views.exists(v => v.isDirty.value)
   }
 
-  def canClose = {
+  def canClose: Boolean = {
     !views.exists(v => !v.canClose)
   }
 
@@ -363,7 +363,7 @@ object ApplicationController extends Logging {
   // to keep order, runUIwait is used.
   class Observable[Payload](title: String) {
     val listeners = new ArrayBuffer[(Payload) => Unit]()
-    def +=(fff: Payload => Unit) = listeners += fff // easily add listener
+    def +=(fff: Payload => Unit): listeners.type = listeners += fff // easily add listener
     def apply(pl: Payload, addTop: Boolean = false): Unit = { // easily notify
       logCall(s"$title payload=$pl")
       listeners.foreach(listener => workerAdd(() => listener(pl), addTop, uithread = true) )

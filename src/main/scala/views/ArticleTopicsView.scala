@@ -45,7 +45,7 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
     aRemoveFromTopic.enabled = lv.selectionModel.value.getSelectedItems.length > 0
   }
 
-  def setArticle(a: Article) = {
+  def setArticle(a: Article): Unit = {
     logCall(a)
     inTransaction {
       lv.getItems.clear()

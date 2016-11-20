@@ -26,7 +26,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
   class MyListCell extends TextFieldListCell[Document] {
 
     item.onChange { // this is how to override updateItem !
-      (_, oldd, newd) => if (newd != null) tooltip = new Tooltip { text = newd.docPath }
+      (_, _, newd) => if (newd != null) tooltip = new Tooltip { text = newd.docPath }
     }
 
     val myConverter = new StringConverter[Document] {
@@ -47,8 +47,8 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     editable = true
     selectionModel.value.setSelectionMode(SelectionMode.Single)
     //    val converter = StringConverter.toStringConverter[Document](_.docName)
-    cellFactory = (v: ListView[Document]) => new MyListCell()
-    onEditCommit = (eev: ListView.EditEvent[Document]) => {
+    cellFactory = (_: ListView[Document]) => new MyListCell()
+    onEditCommit = (_: ListView.EditEvent[Document]) => {
       updateArticle()
     }
     onMouseClicked = (me: MouseEvent) => {

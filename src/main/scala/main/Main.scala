@@ -36,7 +36,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
       new Menu("Help") {
         items = List(
           new MenuItem("About") {
-            onAction = (e: ActionEvent) => {
+            onAction = (_: ActionEvent) => {
               new Alert(AlertType.Information, "", ButtonType.Close) {
                 title = "About Reftool 5"
                 headerText = "Reftool 5 - a scientific reference manager"
@@ -47,7 +47,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
                     new TextField { text = "Reftool version: " + BuildInfo.version ; editable = false },
                     new TextField { text = "Build time: " + BuildInfo.buildTime ; editable = false },
                     new Button("Open Reftool homepage") {
-                      onAction = (ae: ActionEvent) =>
+                      onAction = (_: ActionEvent) =>
                         FileHelper.openURL("https://bitbucket.org/wolfgang/reftool5")
                     }
                   )
@@ -57,7 +57,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
             }
           },
           new MenuItem("Reload CSS") {
-            onAction = (e: ActionEvent) => {
+            onAction = (_: ActionEvent) => {
               info("Reload application CSS stylesheets")
               stylesheets = List(AppStorage.config.csspath)
             }
@@ -73,13 +73,13 @@ class MainScene(stage: Stage) extends Scene with Logging {
     //articlelist
   }
 
-  val articleDetailView = tryit { new ArticleDetailView }
-  val articleTopicsView = tryit { new ArticleTopicsView }
-  val articleDocumentsView = tryit { new ArticleDocumentsView }
-  var searchView = tryit { new SearchView }
-  var logView = tryit { new LogView }
-  var infoView = tryit { new InfoView }
-  var prefsView = tryit { new PreferencesView }
+  val articleDetailView: ArticleDetailView = tryit { new ArticleDetailView }
+  val articleTopicsView: ArticleTopicsView = tryit { new ArticleTopicsView }
+  val articleDocumentsView: ArticleDocumentsView = tryit { new ArticleDocumentsView }
+  val searchView: SearchView = tryit { new SearchView }
+  val logView: LogView = tryit { new LogView }
+  val infoView: InfoView = tryit { new InfoView }
+  val prefsView: PreferencesView = tryit { new PreferencesView }
 
   val bottomtabs = new ViewContainer {
     addView(articleDetailView)
@@ -97,8 +97,8 @@ class MainScene(stage: Stage) extends Scene with Logging {
     addView(articleDocumentsView)
   }
 
-  val topicTreeView = tryit { new TopicsTreeView }
-  val bookmarksView = tryit { new BookmarksView }
+  val topicTreeView: TopicsTreeView = tryit { new TopicsTreeView }
+  val bookmarksView: BookmarksView = tryit { new BookmarksView }
 
   val toplefttabs = new ViewContainer {
     addView(topicTreeView)
@@ -107,7 +107,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
     addView(bookmarksView)
   }
 
-  val articleListView = tryit { new ArticleListView }
+  val articleListView: ArticleListView = tryit { new ArticleListView }
 
   val toptabs = new ViewContainer {
     addView(articleListView)
@@ -174,7 +174,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
     vals.mkString(";")
   }
 
-  def setMainUIsettings(s: String) = {
+  def setMainUIsettings(s: String): Unit = {
     val parms = s.split(";")
     if (parms.length == getMainUIsettings.split(";").length) {
       val it = parms.iterator
@@ -231,7 +231,7 @@ object Main extends JFXApp with Logging {
 
   var mainScene: MainScene = _
 
-  def loadMainScene(createNewStorage: Boolean) = {
+  def loadMainScene(createNewStorage: Boolean): Unit = {
     logCall()
     try {
       ReftoolDB.initialize(startwithempty = createNewStorage)
@@ -259,7 +259,7 @@ object Main extends JFXApp with Logging {
     }
   }
 
-  def loadStartupDialog() = {
+  def loadStartupDialog(): Unit = {
     val doAutostart = !AppStorage.config.showstartupdialog && new MFile(AppStorage.config.datadir).isDirectory
 
     stage = new PrimaryStage {
@@ -278,7 +278,7 @@ object Main extends JFXApp with Logging {
               children += new Button("Open last reftool data directory \n" + AppStorage.config.datadir) {
                 maxWidth = Double.PositiveInfinity
                 disable = !new MFile(AppStorage.config.datadir).isDirectory
-                onAction = (ae: ActionEvent) => {
+                onAction = (_: ActionEvent) => {
                   loadMainScene(createNewStorage = false)
                 }
               }
@@ -286,7 +286,7 @@ object Main extends JFXApp with Logging {
                 maxWidth = Double.PositiveInfinity
                 promptText = "Select recent data directory..."
                 disable = AppStorage.config.recentDatadirs.isEmpty
-                onAction = (ae: ActionEvent) => {
+                onAction = (_: ActionEvent) => {
                   if (new MFile(value.value).isDirectory) {
                     AppStorage.config.datadir = value.value
                     loadMainScene(createNewStorage = false)
@@ -295,7 +295,7 @@ object Main extends JFXApp with Logging {
               }
               children += new Button("Open other reftool data directory") {
                 maxWidth = Double.PositiveInfinity
-                onAction = (ae: ActionEvent) => {
+                onAction = (_: ActionEvent) => {
                   val res = MFile(new DirectoryChooser { title = "Select reftool data directory" }.showDialog(stage))
                   if (res != null) {
                     AppStorage.config.datadir = res.getPath
@@ -305,7 +305,7 @@ object Main extends JFXApp with Logging {
               }
               children += new Button("Create new reftool data directory...") {
                 maxWidth = Double.PositiveInfinity
-                onAction = (ae: ActionEvent) => {
+                onAction = (_: ActionEvent) => {
                   val res = MFile(new DirectoryChooser { title = "Select new reftool data directory" }.showDialog(stage))
                   if (res != null) {
                     if (res.listFiles.nonEmpty) {
@@ -321,7 +321,7 @@ object Main extends JFXApp with Logging {
           }
         }
         sizeToScene()
-        onShown = (we: WindowEvent) => {
+        onShown = (_: WindowEvent) => {
           if (doAutostart) {
             Future { // otherwise the startup window is not shown...
               Thread.sleep(500)

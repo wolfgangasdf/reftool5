@@ -18,7 +18,7 @@ class BookmarksView extends GenericView("bookmarksview") {
 
   text = "Bookmarks"
 
-  var currentFolderIdx = -1
+  var currentFolderIdx: Int = -1
 
   var currentTopic: Topic = _
 
@@ -36,7 +36,7 @@ class BookmarksView extends GenericView("bookmarksview") {
     tooltip = "Use shift+UP/DOWN to reorder topics!"
   }
 
-  def updateList() = {
+  def updateList(): Unit = {
     lv.items.get().clear()
     lv.items = new ObservableBuffer[Topic]() ++ folders(currentFolderIdx).topics
   }
@@ -44,7 +44,7 @@ class BookmarksView extends GenericView("bookmarksview") {
   val cbfolder = new ChoiceBox[Folder] {
     maxWidth = 1000
     hgrow = Priority.Always
-    onAction = (ae: ActionEvent) => {
+    onAction = (_: ActionEvent) => {
       if (value.value != null) {
         currentFolderIdx = selectionModel.value.getSelectedIndex
         if (currentFolderIdx > -1) updateList()
@@ -55,9 +55,9 @@ class BookmarksView extends GenericView("bookmarksview") {
 
   cbfolder.selectionModel.value.select(0)
 
-  def selectCurrent() = cbfolder.getSelectionModel.select(currentFolderIdx)
+  def selectCurrent(): Unit = cbfolder.getSelectionModel.select(currentFolderIdx)
 
-  def checkFolders() = if (folders.isEmpty) folders += new Folder { name = "New Folder" }
+  def checkFolders(): Any = if (folders.isEmpty) folders += new Folder { name = "New Folder" }
 
 
   lv.onMouseClicked = (me: MouseEvent) => {
@@ -180,14 +180,14 @@ class BookmarksView extends GenericView("bookmarksview") {
     currentTopic = t
   })
 
-  ApplicationController.obsTopicRenamed += ((tid: Long) => {
+  ApplicationController.obsTopicRenamed += ((_: Long) => {
     storeSettings()
     restoreSettings()
     selectCurrent()
     updateList()
   })
 
-  ApplicationController.obsTopicRemoved += ((tid: Long) => {
+  ApplicationController.obsTopicRemoved += ((_: Long) => {
     storeSettings()
     restoreSettings()
     selectCurrent()

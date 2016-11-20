@@ -33,7 +33,7 @@ class ArticleListView extends GenericView("articlelistview") {
 
   // for coloring of cells.
   class MyTableCell extends TableCell[Article, String] {
-    item.onChange { (a, b, c) => {
+    item.onChange { (_, b, c) => {
       val idx = index.value
       background = new Background(Array[BackgroundFill]()) // remove old background
       if (b != null && c == null) text = "" // cells are re-used, need to clear old text
@@ -348,7 +348,7 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   )
 
-  alv.rowFactory = (fact: TableView[Article]) => {
+  alv.rowFactory = (_: TableView[Article]) => {
     new TableRow[Article] {
       onMouseClicked = (me: MouseEvent) => {
         if (me.clickCount == 3) {
@@ -382,13 +382,13 @@ class ArticleListView extends GenericView("articlelistview") {
     center = alv
   }
 
-  def selectRevealArticleByID(id: Long) = {
+  def selectRevealArticleByID(id: Long): Unit = {
     inTransaction {
       ReftoolDB.articles.lookup(id) foreach(a => selectRevealArticle(a))
     }
   }
 
-  def selectRevealArticle(a: Article) = {
+  def selectRevealArticle(a: Article): Unit = {
     if (articles.contains(a)) {
       Helpers.runUI {
         alv.getSelectionModel.select(a)
@@ -402,7 +402,7 @@ class ArticleListView extends GenericView("articlelistview") {
     } else debug("revealarticle: not found: " + a)
   }
 
-  def safeSelect(oldidx: Int) = {
+  def safeSelect(oldidx: Int): Unit = {
     val newidx = if (articles.length > oldidx) oldidx
     else { if (articles.length > 0) math.max(0, oldidx - 1) else -1 }
     if (newidx > -1) alv.getSelectionModel.select(newidx)
