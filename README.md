@@ -1,7 +1,7 @@
 # Reftool 5
 
 Reftool is a scientific reference manager, similar to [Zotero](https://www.zotero.org) and 
-[Mendeley](https://www.mendeley.com). I use it since 2006, [the old reftool](https://bitbucket.org/wolfgang/reftool) 
+[Mendeley](https://www.mendeley.com), but focussed on scientific paper management. I use it since 2006, [the old reftool](https://bitbucket.org/wolfgang/reftool)
 was Eclipse RCP based, Reftool 5 now uses simply JavaFX that is included in Java 8, making it much smaller and faster
 (reftool 4 data is automatically migrated); but most important, development is very easy. Reftool 5 is stable and 
 constantly improved because I use it daily. The code is pretty clean and you can easily modify it if you wish. 
@@ -43,12 +43,13 @@ Reftool is/can not:
 Import / export possibilities:
 
 * You can import a tree-like folder structure containing PDFs.
-* You can export a bibtex database.
+* You can export a topic to a bibtex database (e.g., for writing a paper).
 * If you need more, create an issue on bitbucketor just write your own routine!
 * For synchronization with tablets for reading:
+    * make a topic where you copy the documents that should be synchronized (e.g. "000-tablet")
     * Use `topic -> export documents` to copy PDFs to a certain folder. Existing files will be compared on the byte-level and reported, you can decide if they will be overwritten or ignored.
     * Use some other program to synchronize the folder with your tablet, add annotations to pdfs etc, and synchronize again.
-    * Use `tools -> update PDFs` to put the PDFs back into reftool. The selection is based on filename, so don't rename them. The PDFs will again be compared on byte-level, and the result presented. You can decide if the changed documents will be deleted after import.
+    * Use `topic -> update PDFs` to put the PDFs back into reftool. The selection is based on filename, so don't rename them. The PDFs will again be compared on byte-level, and the result presented. You can decide if the changed documents will be deleted after import.
 
 Hints:
 
@@ -68,7 +69,7 @@ database is populated with a few demo topics and articles.
 * Get Java JDK >= 8u60
 * check out the code (`hg clone ...` or download a zip) 
 * I use the free community version of [IntelliJ IDEA](https://www.jetbrains.com/idea/download/) with the scala 
-plugin for development, just import the project to get started. 
+plugin for development, just open the project to get started.
 
 Run Reftool from terminal and package it:
 
@@ -79,7 +80,7 @@ Run Reftool from terminal and package it:
 ### Suggestions, bug reports, pull requests, contact ###
 Please use the bitbucket-provided tools for bug reports and contributed code. Anything is welcome!
 
-contact: http://home.physics.leidenuniv.nl/~loeffler
+contact: http://quphotonics.org
 
 ### Used technologies ###
 
