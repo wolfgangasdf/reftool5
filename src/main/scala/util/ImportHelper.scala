@@ -130,7 +130,7 @@ object ImportHelper extends Logging {
           updateProgress(0, 100)
           updateMessage("find document metadata...")
           var doi = ""
-          if (sourceFile.getName.endsWith(".pdf")) {
+          if (sourceFile.getName.toLowerCase.endsWith(".pdf")) {
             if (parsePdf) doi = PdfHelper.getDOI(sourceFile)
             debug(" pdf doi=" + doi)
             if (doi == "" && interactive) Helpers.runUIwait {
@@ -190,7 +190,7 @@ object ImportHelper extends Logging {
           ApplicationController.showNotification("import successful of " + a)
           debug(" import successful of " + sourceFile.getName)
           // show article
-          ApplicationController.obsRevealTopic(topic)
+          if (topic != null) ApplicationController.obsRevealTopic(topic)
           ApplicationController.obsRevealArticleInList(a)
         }
         if (!backgroundImportRunning.compareAndSet(true, false)) {
