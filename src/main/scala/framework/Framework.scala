@@ -216,7 +216,12 @@ class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String,
       }
     }
   }
-  tf.text.onChange(onchange())
+  tf.text.onChange({
+    if (disableEnter) {
+      tf.text = tf.getText.replaceAll("((\r\n)|\r|\n)+", " ")
+    }
+    onchange()
+  })
   GridPane.setConstraints(tf, 1, gpRow, 2, 1)
 
   override def content: Seq[javafx.scene.Node] = Seq(label, tf)
