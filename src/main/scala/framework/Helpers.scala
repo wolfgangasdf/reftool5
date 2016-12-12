@@ -31,7 +31,7 @@ object Helpers extends Logging {
   }
 
   def isMac: Boolean = System.getProperty("os.name").toLowerCase.contains("mac")
-  def isLinux: Boolean = System.getProperty("os.name").toLowerCase.contains("nix")
+  def isLinux: Boolean = System.getProperty("os.name").toLowerCase.matches("(.*nix)|(.*nux)")
   def isWin: Boolean = System.getProperty("os.name").toLowerCase.contains("win")
 
   def toHexString(s: String, encoding: String): String = {
