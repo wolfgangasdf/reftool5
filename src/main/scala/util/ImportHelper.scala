@@ -309,8 +309,9 @@ object ImportHelper extends Logging {
   private def updateBibtexFromArxiv(article: Article, aid: String): Article = {
     import scalaj.http._
     var a = article
-    debug("getting http://esoads.eso.org/cgi-bin/bib_query?arXiv:" + aid)
-    val resp1 = Http("http://esoads.eso.org/cgi-bin/bib_query?arXiv:" + aid).timeout(3000, 5000).asString
+    val url1 = "http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:" + aid
+    debug("getting " + url1)
+    val resp1 = Http(url1).timeout(3000, 5000).asString
     if (resp1.code == 200) {
       val re1 = """(?s).*<a href="(.*)">Bibtex entry for this abstract</a>.*""".r
       resp1.body match {
