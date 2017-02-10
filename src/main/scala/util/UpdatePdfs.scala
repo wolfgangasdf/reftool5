@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import db.{Article, ReftoolDB, Topic}
-import framework.{ApplicationController, Logging}
+import framework.{ApplicationController, Helpers, Logging}
 import org.squeryl.PrimitiveTypeMode._
 
 import scala.collection.mutable.ArrayBuffer
@@ -166,15 +166,17 @@ object UpdatePdfs extends Logging {
       if (folder != null) if (folder.exists) initialDirectory = folder.toFile
     }.showDialog(window))
     if (res != null) {
-      val entries = new ObservableBuffer[UEntry]()
+      var orphanedFiles = res.listFiles.filter(_.isFile).filter(!_.getName.startsWith(".")).toBuffer
+      val differentFiles = new ObservableBuffer[UEntry]()
       articles.foreach(a => {
         val fileReftool = FileHelper.getDocumentFileAbs(a.getFirstDocRelative)
         val fileExternal = new MFile(res.getPath + "/" + fileReftool.getName)
+        orphanedFiles = orphanedFiles.filterNot(f => f.isSameFileAs(fileExternal))
         if (fileExternal.exists) {
           if (MFile.compare(fileReftool, fileExternal)) info("equal file: " + fileExternal.getPath)
           else {
             info("different file: " + fileExternal.getPath)
-            entries += new UEntry(fileReftool, fileExternal, a)
+            differentFiles += new UEntry(fileReftool, fileExternal, a)
           }
         } else {
           info("target doesn't exist, copy: " + fileExternal)
@@ -185,8 +187,8 @@ object UpdatePdfs extends Logging {
       ApplicationController.showNotification(s"Copied documents to folder!")
 
       // present results
-      entries.foreach(e => debug("changed: " + e.toString + "\n"))
-      if (entries.nonEmpty) {
+      differentFiles.foreach(e => debug("changed: " + e.toString + "\n"))
+      if (differentFiles.nonEmpty) {
         val dialog = new Dialog[ButtonType]() {
           title = "Export PDFs"
           headerText = "Export PDFs: existing but unequal target files.\nRemove those which should not be overwritten!"
@@ -194,7 +196,7 @@ object UpdatePdfs extends Logging {
           width = 800
         }
 
-        val tableview = new MyTableView(entries)
+        val tableview = new MyTableView(differentFiles)
 
         dialog.dialogPane().buttonTypes = Seq(ButtonType.OK, ButtonType.Cancel)
         dialog.dialogPane().content = tableview
@@ -203,13 +205,42 @@ object UpdatePdfs extends Logging {
           case Some(ButtonType.OK) =>
             info("syncing pdfs...")
 
-            entries.foreach(e => {
+            differentFiles.foreach(e => {
               info("copying " + e.fReftool.getPath + " -> " + e.fExternal.getPath)
               MFile.copy(e.fReftool, e.fExternal, replaceExisting = true, copyAttrs = true)
             })
           case _ => debug("cancel: ")
         }
       }
+
+      // check for orphaned files that exist in reftool
+      val orphanedExistingEqualFiles = orphanedFiles.filter { fileExternal =>
+        inTransaction {
+          val ares = ReftoolDB.articles.where(a => a.pdflink like s"%/${fileExternal.getName}%")
+          ares.size match {
+            case 1 =>
+              val fileReftool = FileHelper.getDocumentFileAbs(ares.head.getDocuments.filter(doc => doc.docPath.endsWith(fileExternal.getName)).head.docPath)
+              if (MFile.compare(fileReftool, fileExternal))
+                true
+              else
+                false
+            case _ => false
+          }
+        }
+      }
+      // present orphaned existing files
+      if (orphanedExistingEqualFiles.nonEmpty)
+        if (Helpers.showTextAlert(Alert.AlertType.Warning, "Orphaned files", "Found existing files that were not exported, but which " +
+          "exist binary-equal in reftool. Should I delete the external files (you might have removed them from the export folder)?",
+          "", orphanedExistingEqualFiles.mkString("\n"), Seq(ButtonType.Yes, ButtonType.No)).contains(ButtonType.Yes)) {
+          orphanedExistingEqualFiles.foreach(f => f.delete())
+        }
+      orphanedFiles --= orphanedExistingEqualFiles
+      // present orphaned files
+      if (orphanedFiles.nonEmpty)
+        Helpers.showTextAlert(Alert.AlertType.Warning, "Orphaned files", "Found existing files that were not exported and " +
+          "which are not in reftool (filename might have been changed):", "", orphanedFiles.mkString("\n"))
+
       ApplicationController.showNotification(s"Finished export PDFs!")
       FileHelper.revealFile(res)
     }

@@ -33,6 +33,7 @@ class MFile(file: io.File) extends Logging {
   def canRead: Boolean = file.canRead
   def isDirectory: Boolean = file.isDirectory
   def isFile: Boolean = file.isFile
+  def isSameFileAs(file2: MFile): Boolean = file.getCanonicalPath == file2.toFile.getCanonicalPath
 
   def mkdir(): Boolean = file.mkdir()
   def delete(): Boolean = file.delete()
