@@ -330,18 +330,16 @@ object ImportHelper extends Logging {
   }
 
   private def updateBibtexFromDoi(article: Article, doi: String): Article = {
-    // see http://labs.crossref.org/citation-formatting-service/
+    // http://citation.crosscite.org/docs.html
     import scalaj.http._
     var a = article
     // val doienc = java.net.URLEncoder.encode(doi, "utf-8")
-    // debug(s"""# curl "http://crosscite.org/citeproc/format?doi=$doienc&style=bibtex&lang=en-US" """)
-    debug(s"""# curl -LH "Accept: text/bibliography; style=bibtex" http://dx.doi.org/${a.doi} """)
+    debug(s"""# curl https://api.crossref.org/works/${a.doi}/transform/application/x-bibtex""")
     var doit = 6
     while (doit > 0) {
       val responseo = try {
-        // Some(Http(s"http://crosscite.org/citeproc/format?doi=$doienc&style=bibtex&lang=en-US").asString)
-        Some(Http("http://dx.doi.org/" + doi).timeout(connTimeoutMs = 2000, readTimeoutMs = 5000).
-          header("Accept", "text/bibliography; style=bibtex; locale=en-US.UTF-8").option(HttpOptions.followRedirects(shouldFollow = true)).asBytes)
+        Some(Http(s"https://api.crossref.org/works/${a.doi}/transform/application/x-bibtex").timeout(connTimeoutMs = 2000, readTimeoutMs = 5000).
+          option(HttpOptions.followRedirects(shouldFollow = true)).asBytes)
       } catch {
         case _: SocketTimeoutException =>
           debug("tryhttp: got SocketTimeoutException...")
@@ -355,7 +353,7 @@ object ImportHelper extends Logging {
           a = generateUpdateBibtexID(rb, a)
           doit = 0 // becomes -1 below
         } else {
-          debug("updatebibtexfromdoi: response = " + response)
+          debug("updatebibtexfromdoi: response = " + response + " code=" + response.code + "\nbody:\n" + response.body)
         }
       } else {
         debug("updatebibtexfromdoi: received empty response")

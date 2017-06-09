@@ -2,6 +2,7 @@ package main
 
 
 import java.io
+import javafx.{event => jfxe, scene => jfxs}
 
 import buildinfo.BuildInfo
 import db.ReftoolDB
@@ -10,9 +11,11 @@ import framework.{ApplicationController, Helpers, Logging, ViewContainer}
 import util._
 import views._
 
-import scala.concurrent.Future
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.language.{implicitConversions, reflectiveCalls}
+import scala.util.Random
 import scalafx.Includes._
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
@@ -20,13 +23,15 @@ import scalafx.event.ActionEvent
 import scalafx.geometry.{Insets, Orientation}
 import scalafx.scene.Scene
 import scalafx.scene.control.Alert.AlertType
-import scalafx.scene.control._
 import scalafx.scene.control.Button._
-import scalafx.scene.control.TextField._
 import scalafx.scene.control.ComboBox._
+import scalafx.scene.control.TextField._
+import scalafx.scene.control._
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout._
-import scalafx.stage.{DirectoryChooser, Stage, WindowEvent}
+import scalafx.scene.shape.Line
+import scalafx.scene.shape.Line._
+import scalafx.stage.{DirectoryChooser, Screen, Stage, WindowEvent}
 
 
 class MainScene(stage: Stage) extends Scene with Logging {
@@ -61,7 +66,100 @@ class MainScene(stage: Stage) extends Scene with Logging {
               info("Reload application CSS stylesheets")
               stylesheets = List(AppStorage.config.csspath)
             }
+          },
+        new MenuItem("Show all tooltips") {
+          onAction = (_: ActionEvent) => {
+            class MyTT(var x: Double, var y: Double, var w: Double, var h: Double) {
+              override def toString: String = s"$x,$y,$w,$h"
+            }
+            val controls = new ArrayBuffer[Control]()
+            val tts = new ArrayBuffer[MyTT]()
+            val rnd = new Random()
+            def findControlsOf(parent: jfxs.Node): Unit = {
+              parent match {
+                case p: jfxs.layout.Pane => p.children.foreach(pc => findControlsOf(pc))
+                case p: jfxs.Group => p.getChildren.foreach(pc => findControlsOf(pc))
+                case p: jfxs.control.SplitPane => p.getItems.foreach(pc => findControlsOf(pc))
+                case c: jfxs.control.Control =>
+                  //debug(sss + "control!")
+                  if (c.getTooltip != null) controls += c
+                case _ => debug("unknown! " + parent)
+              }
+            }
+            findControlsOf(maincontent)
+            // add controls areas to excluded areas
+            controls.foreach( c => {
+              val p = c.localToScene(0.0, 0.0)
+              tts += new MyTT(p.getX + c.getScene.getX + c.getScene.getWindow.getX,
+                p.getY + c.getScene.getY + c.getScene.getWindow.getY,
+                c.getWidth, c.getHeight)
+            })
+            // distribute tooltips
+            val screenbounds = Screen.primary.bounds
+//            controls.sortWith( (c1, c2) => {
+//              c1.localToScene()
+//            }
+//
+            controls.foreach( c => {
+              if (c.getTooltip != null) {
+                val p = c.localToScene(0.0, 0.0)
+                val tt = c.getTooltip
+                val xtt = new MyTT(p.getX + c.getScene.getX + c.getScene.getWindow.getX,
+                  p.getY + c.getScene.getY + c.getScene.getWindow.getY, tt.getWidth, tt.getHeight)
+                //debug("xtt: " + xtt)
+                tt.show(stage, xtt.x, xtt.y)
+                val ntt = new MyTT(tt.getX, tt.getY, tt.getWidth, tt.getHeight)
+                //debug("tt: " + ntt)
+                tt.hide()
+                // now I have width&height in ntt
+                var ok = tts.isEmpty
+                var iii = 0
+                while (!ok /*&& iii < 200*/) {
+                  /* TODO better algorithm:
+                    start with controls furthest away from center
+                    [iterate over 10 angles, then radius, find closest nonoverlapping position]
+                   */
+                  iii += 1
+                  if (iii > 300) iii = 300
+                  ok = true
+                  val s = 5.0 // spacing
+                  tts.foreach(ttsx => {
+                    if (ttsx.x <= (ntt.x+ntt.w+s) && (ttsx.x+ttsx.w+s) >= ntt.x &&
+                      ttsx.y <= (ntt.y+ntt.h+s) && (ttsx.y+ttsx.h+s) >= ntt.y) ok = false
+                  })
+                  if (!ok) {
+                    ntt.x += 2.0*iii*(rnd.nextDouble()-0.5)
+                    ntt.x = scala.math.min(screenbounds.maxX - ntt.w, scala.math.max(screenbounds.minX, ntt.x))
+                    ntt.y += 2.0*iii*(rnd.nextDouble()-0.5)
+                    ntt.y = scala.math.min(screenbounds.maxY - ntt.h, scala.math.max(screenbounds.minY, ntt.y))
+                    //debug("  not ok, new ntt=" + ntt)
+                  }
+                }
+                if (ok) {
+                  tt.show(stage, ntt.x, ntt.y)
+                  val l = new Line {
+                    startX = (c.localToScene(c.getBoundsInLocal).getMinX + c.localToScene(c.getBoundsInLocal).getMaxX)/2
+                    startY = (c.localToScene(c.getBoundsInLocal).getMinY + c.localToScene(c.getBoundsInLocal).getMaxY)/2
+                    endX = tt.getX + tt.getWidth/2 - c.getScene.getX - c.getScene.getWindow.getX
+                    endY = tt.getY + tt.getHeight/2 - c.getScene.getY - c.getScene.getWindow.getY
+                    strokeWidth = 3.5
+                  }
+                  content += l
+                  tt.setOnAutoHide( new jfxe.EventHandler[jfxe.Event]() { // TODO not called
+                    override def handle(event: jfxe.Event): Unit = {
+                      content -= l
+                      debug("removing line after =" + content.length)
+                      unit()
+                    }
+                  })
+
+                  tts += ntt
+                } else
+                  debug("CANT SHOW " + c + " -> " + tt.getText)
+              }
+            })
           }
+        }
         )
       }
     )
