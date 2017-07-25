@@ -384,6 +384,7 @@ object ApplicationController extends Logging {
   val obsRevealTopic = new Observable[Topic]("oRevealTopic")
   val obsTopicRenamed = new Observable[Long]("oTopicRenamed")
   val obsTopicRemoved = new Observable[Long]("oTopicRemoved")
+  val obsBookmarksChanged = new Observable[List[Topic]]("oBookmarksChanged")
 
   val notificationTimer = new java.util.Timer()
   def showNotification(string: String): Unit = {

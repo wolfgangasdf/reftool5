@@ -39,6 +39,7 @@ class BookmarksView extends GenericView("bookmarksview") {
   def updateList(): Unit = {
     lv.items.get().clear()
     lv.items = new ObservableBuffer[Topic]() ++ folders(currentFolderIdx).topics
+    ApplicationController.obsBookmarksChanged(folders(currentFolderIdx).topics.toList)
   }
 
   val cbfolder = new ChoiceBox[Folder] {
@@ -209,6 +210,7 @@ class BookmarksView extends GenericView("bookmarksview") {
     })
     // debug("store:\n" + s)
     ReftoolDB.setSetting(ReftoolDB.SBOOKMARKS, s)
+    ReftoolDB.setSetting(ReftoolDB.SBOOKMARKLASTFOLDERIDX, cbfolder.getSelectionModel.getSelectedIndex.toString)
   }
 
   def restoreSettings(): Unit = {
@@ -243,7 +245,7 @@ class BookmarksView extends GenericView("bookmarksview") {
   }
   override def setUIsettings(s: String): Unit = {
     restoreSettings()
-    cbfolder.getSelectionModel.select(0)
+    cbfolder.getSelectionModel.select(ReftoolDB.getSetting(ReftoolDB.SBOOKMARKLASTFOLDERIDX).getOrElse("0").toInt)
   }
 
   override val uisettingsID: String = "bmv"
