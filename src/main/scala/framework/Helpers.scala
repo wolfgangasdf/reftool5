@@ -42,10 +42,8 @@ object Helpers extends Logging {
 
   // enqueue f in UI thread queue
   def runUI( f: => Unit ) {
-    scalafx.application.Platform.runLater( new Runnable() {
-      def run() {
-        f
-      }
+    scalafx.application.Platform.runLater(() => {
+      f
     })
   }
 

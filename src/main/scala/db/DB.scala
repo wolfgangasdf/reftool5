@@ -1,15 +1,13 @@
 package db
 
-import java.sql.{SQLNonTransientConnectionException, SQLException}
+import java.sql.{SQLException, SQLNonTransientConnectionException}
 import java.text.SimpleDateFormat
 import java.time.Instant
 
 import org.squeryl.adapters.DerbyAdapter
-import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.dsl._
 import org.squeryl._
 import org.squeryl.annotations.Transient
-
 import util._
 import util.AppStorage
 import framework.Logging
@@ -27,6 +25,9 @@ import scala.collection.mutable.ArrayBuffer
 
 */
 
+object SquerylEntrypointForMyApp extends PrimitiveTypeMode
+
+import SquerylEntrypointForMyApp._
 
 class BaseEntity extends KeyedEntity[Long] {
   var id: Long = 0
@@ -192,7 +193,7 @@ object ReftoolDB extends Schema with Logging {
     a.modtime.is(dbType("bigint"), named("LASTTIMESTAMP")), a.modtime.defaultsTo(0.toLong)
   ))
 
-  val topics2articles: ManyToManyRelationImpl[Topic, Article, Topic2Article] = manyToManyRelation(topics, articles, "TOPIC2ARTICLE").
+  val topics2articles: SquerylEntrypointForMyApp.ManyToManyRelationImpl[Topic, Article, Topic2Article] = manyToManyRelation(topics, articles, "TOPIC2ARTICLE").
     via[Topic2Article]((t, a, ta) => (ta.TOPIC === t.id, a.id === ta.ARTICLE))
 
   on(topics2articles)(a => declare(

@@ -4,7 +4,7 @@ import db.{Article, Topic}
 import main.MainScene
 import util.{AppStorage, MFile}
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
 import scalafx.beans.property.BooleanProperty
@@ -308,7 +308,7 @@ object ApplicationController extends Logging {
   }
 
   def afterShown(): Unit = {
-    java.lang.management.ManagementFactory.getRuntimeMXBean.getInputArguments.foreach( s => info("jvm runtime parm: " + s))
+    java.lang.management.ManagementFactory.getRuntimeMXBean.getInputArguments.asScala.foreach( s => info("jvm runtime parm: " + s))
 
     debug("main ui thread: " + Thread.currentThread.getId + " isUI:" + scalafx.application.Platform.isFxApplicationThread)
 
@@ -351,7 +351,7 @@ object ApplicationController extends Logging {
   workerTimer.schedule(
     new java.util.TimerTask {
       override def run(): Unit = {
-        if (workerQueue.nonEmpty) {
+        if (workerQueue.asScala.nonEmpty) {
           if ((System.nanoTime()-lastWorkEnd)/1e6 < 100) stressCounter += 1 else stressCounter = 0
           if (stressCounter > 5) Helpers.runUIwait { stressAlert.show() }
           val work = workerQueue.remove(0)

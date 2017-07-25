@@ -1,12 +1,12 @@
 package views
 
 import db.{ReftoolDB, Document, Article}
+import db.SquerylEntrypointForMyApp._
 import framework.{Logging, ApplicationController, GenericView, MyAction}
-import org.squeryl.PrimitiveTypeMode._
 import util.FileHelper._
 import util.{MFile, ImportHelper}
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 import scalafx.Includes._
 import scalafx.scene.control.Alert.AlertType
@@ -59,13 +59,13 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
 
     onDragOver = (de: DragEvent) => {
       if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
-        if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].length == 1) // only one file at a time!
+        if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].size == 1) // only one file at a time!
           de.acceptTransferModes(TransferMode.Copy, TransferMode.Move, TransferMode.Link)
       }
     }
     onDragDropped = (de: DragEvent) => {
       if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
-        val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
+        val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].asScala
         val f = MFile(files.head)
         ImportHelper.importDocument(f, null, article, Some(de.transferMode == TransferMode.Copy), isAdditionalDoc = true)
       }

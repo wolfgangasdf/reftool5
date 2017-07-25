@@ -3,7 +3,7 @@ package views
 import db.{ReftoolDB, Topic}
 import framework.{ApplicationController, GenericView, MyAction}
 
-import org.squeryl.PrimitiveTypeMode._
+import db.SquerylEntrypointForMyApp._
 import util.StringHelper
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._

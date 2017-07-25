@@ -25,8 +25,8 @@ import scalafx.scene.Scene
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control.Button._
 import scalafx.scene.control.ComboBox._
-import scalafx.scene.control.TextField._
 import scalafx.scene.control._
+import scalafx.scene.control.TextField._
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout._
 import scalafx.scene.shape.Line
@@ -145,12 +145,10 @@ class MainScene(stage: Stage) extends Scene with Logging {
                     strokeWidth = 3.5
                   }
                   content += l
-                  tt.setOnAutoHide( new jfxe.EventHandler[jfxe.Event]() { // TODO not called
-                    override def handle(event: jfxe.Event): Unit = {
-                      content -= l
-                      debug("removing line after =" + content.length)
-                      unit()
-                    }
+                  tt.setOnAutoHide((event: jfxe.Event) => {
+                    content -= l
+                    debug("removing line after =" + content.length)
+                    unit()
                   })
 
                   tts += ntt
@@ -303,12 +301,10 @@ object Main extends JFXApp with Logging {
   val logfile = MFile.createTempFile("reftool5log",".txt")
   logps = new io.FileOutputStream(logfile.toFile)
 
-  Thread.currentThread().setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler {
-    override def uncaughtException(t: Thread, e: Throwable): Unit = {
-      error("Exception: " + e.getMessage)
-      e.printStackTrace()
-      if (stage.isShowing) Helpers.showExceptionAlert("", e)
-    }
+  Thread.currentThread().setUncaughtExceptionHandler((t: Thread, e: Throwable) => {
+    error("Exception: " + e.getMessage)
+    e.printStackTrace()
+    if (stage.isShowing) Helpers.showExceptionAlert("", e)
   })
 
   class MyConsole(errchan: Boolean) extends io.OutputStream {

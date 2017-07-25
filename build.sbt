@@ -4,14 +4,15 @@ name := "reftool5"
 organization := "com.reftool5"
 version := "0.1-SNAPSHOT"
 javaOptions ++= Seq("-Xms100m", "-Xmx300m")
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.2"
 scalacOptions ++= Seq("-feature", "-unchecked", "-deprecation", "-encoding", "UTF-8")
 
 libraryDependencies ++= Seq(
-  "org.scalafx" %% "scalafx" % "8.0.92-R10",
-  "org.apache.derby" % "derby" % "10.12.1.1",
-  "org.squeryl" %% "squeryl" % "0.9.5-7" withSources() withJavadoc(),
-  "org.apache.pdfbox" % "pdfbox" % "1.8.10",
+  "org.scalafx" %% "scalafx" % "8.0.102-R11",
+  "org.apache.derby" % "derby" % "10.13.1.1",
+  "org.squeryl" %% "squeryl" % "0.9.9" withSources() withJavadoc(),
+  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6",
+  "org.apache.pdfbox" % "pdfbox" % "2.0.7",
   "org.jbibtex" % "jbibtex" % "1.0.15",
   "org.scalaj" %% "scalaj-http" % "2.3.0"
 )
