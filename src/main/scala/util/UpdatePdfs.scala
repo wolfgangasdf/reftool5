@@ -5,7 +5,7 @@ import java.util.Date
 
 import db.{Article, ReftoolDB, Topic}
 import framework.{ApplicationController, Helpers, Logging}
-import org.squeryl.PrimitiveTypeMode._
+import db.SquerylEntrypointForMyApp._
 
 import scala.collection.mutable.ArrayBuffer
 import scalafx.beans.property.{BooleanProperty, StringProperty}

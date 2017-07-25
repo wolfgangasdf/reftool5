@@ -41,7 +41,7 @@ class PreferencesView extends GenericView("prefsview") {
 
   val lShowStartupdialog = new MyInputCheckbox(2, "Show startup dialog", true, "If not selected, the last database will be opened automatically.")
 
-  List(lAutoimport, lDebug, lShowStartupdialog).foreach(_.onchange = onchange)
+  List(lAutoimport, lDebug, lShowStartupdialog).foreach(_.onchange = PreferencesView.this.onchange)
 
   val grid1 = new MyGridPane {
     children ++= lAutoimport.content ++ lDebug.content ++ lShowStartupdialog.content

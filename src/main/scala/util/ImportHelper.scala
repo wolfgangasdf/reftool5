@@ -4,12 +4,12 @@ import java.io
 import java.net.SocketTimeoutException
 
 import db.{Article, Document, ReftoolDB, Topic}
+import db.SquerylEntrypointForMyApp._
 import framework.{ApplicationController, Helpers, Logging, MyWorker}
 import org.jbibtex._
-import org.squeryl.PrimitiveTypeMode._
 import util.bibtex.AuthorNamesExtractor
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scalafx.Includes._
 import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
@@ -389,7 +389,7 @@ object ImportHelper extends Logging {
     val btdb = btparser.parse(new io.StringReader(bibtexentry))
     val btentries = btdb.getEntries
     if (btentries.size == 1)
-      btentries.head
+      btentries.asScala.head
     else {
       warn("error parsing bibtex for bibtexentry=\n" + bibtexentry)
       (null, null)

@@ -5,11 +5,10 @@ import java.util.Date
 
 import db.{Topic, Article, ReftoolDB}
 import framework._
-import org.squeryl.PrimitiveTypeMode._
+import db.SquerylEntrypointForMyApp._
 import util._
 
 import scala.collection.mutable.ArrayBuffer
-import scalafx.Includes._
 import scalafx.geometry.Insets
 import scalafx.scene.control._
 import scalafx.scene.image.Image
@@ -95,7 +94,7 @@ class InfoView extends GenericView("toolview") {
       addToInfo("find all used documents...")
       val alladocs = new ArrayBuffer[String]()
       inTransaction {
-        ReftoolDB.articles.foreach(a => alladocs ++= a.getDocuments.filter(d => d.docPath.nonEmpty).map(d => d.docPath))
+        ReftoolDB.articles.allRows.foreach(a => alladocs ++= a.getDocuments.filter(d => d.docPath.nonEmpty).map(d => d.docPath))
       }
       addToInfo("  found " + alladocs.length + " article documents!")
       addToInfo("find pdf orphans...")
@@ -123,7 +122,7 @@ class InfoView extends GenericView("toolview") {
       inTransaction {
         var tocheck = ReftoolDB.articles.Count.toLong
         val ares = new ArrayBuffer[Article]()
-        ReftoolDB.articles.foreach(a => {
+        ReftoolDB.articles.allRows.foreach(a => {
           tocheck -= 1
           if (tocheck % 100 == 0) debug(s"still $tocheck articles to check!")
           a.getDocuments.foreach(d => {

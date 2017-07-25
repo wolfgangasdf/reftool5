@@ -2,8 +2,8 @@ package views
 
 import db.{Article, ReftoolDB}
 import framework._
-import org.squeryl.PrimitiveTypeMode._
 import util.{FileHelper, ImportHelper}
+import db.SquerylEntrypointForMyApp._
 
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._

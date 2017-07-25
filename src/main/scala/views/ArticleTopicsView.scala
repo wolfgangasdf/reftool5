@@ -2,7 +2,7 @@ package views
 
 import db.{Article, Topic}
 import framework.{MyAction, ApplicationController, GenericView}
-import org.squeryl.PrimitiveTypeMode._
+import db.SquerylEntrypointForMyApp._
 
 import scalafx.Includes._
 import scalafx.scene.control._

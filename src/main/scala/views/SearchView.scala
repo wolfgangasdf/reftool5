@@ -4,7 +4,7 @@ import java.time._
 
 import db.{Article, ReftoolDB, Topic}
 import framework.{ApplicationController, GenericView}
-import org.squeryl.PrimitiveTypeMode._
+import db.SquerylEntrypointForMyApp._
 import org.squeryl.{Query, Queryable}
 import util.SearchUtil
 
@@ -55,11 +55,11 @@ class SearchView extends GenericView("searchview") {
       val terms = SearchUtil.getSearchTerms(tfSearch.getText)
       val canSearchWithoutTerms = cbModifiedSince.selected.value
       if (terms.exists(_.length > 2) || canSearchWithoutTerms) {
-        var res: Query[Article] = if (cbOnlyTopic.selected.value && currentTopic != null)
+        val res1: Queryable[Article] = if (cbOnlyTopic.selected.value && currentTopic != null)
           currentTopic.articles
         else
           ReftoolDB.articles
-        res = dynamicWhere(res, terms(0), millis1, millis2)
+        var res = dynamicWhere(res1, terms(0), millis1, millis2)
         for (i <- 1 until terms.length) res = dynamicWhere(res, terms(i), millis1, millis2)
         if (res.isEmpty)
           ApplicationController.showNotification("Search returned no results!")

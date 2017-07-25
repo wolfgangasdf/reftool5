@@ -1,12 +1,13 @@
 package util
 
-import org.apache.pdfbox.util.PDFTextStripper
+import org.apache.pdfbox.text.PDFTextStripper
 import org.apache.pdfbox.pdmodel.PDDocument
 
 import framework.Logging
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.util.matching.Regex
+import scala.util.matching.Regex._
 
 object PdfHelper extends Logging {
 
@@ -27,7 +28,7 @@ object PdfHelper extends Logging {
         doi = info.getCustomMetadataValue("DOI")
       } else {
         // parse for DOI in all keys...
-        for (k <- info.getMetadataKeys) {
+        for (k <- info.getMetadataKeys.asScala) {
           val v = Option(info.getCustomMetadataValue(k)).getOrElse("").toUpperCase
           debug(s"pdf metadata [$k]: " + v)
           v match {

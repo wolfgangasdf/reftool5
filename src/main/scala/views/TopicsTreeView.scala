@@ -6,12 +6,11 @@ import javafx.scene.{control => jfxsc}
 
 import db.{Article, ReftoolDB, Topic}
 import framework._
-import org.squeryl.PrimitiveTypeMode._
+import db.SquerylEntrypointForMyApp._
 import org.squeryl.Queryable
 import util._
 
-import scala.collection.JavaConversions._
-import scala.collection.mutable
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
 import scalafx.event.ActionEvent
@@ -48,28 +47,24 @@ class MyTreeItem(vv: Topic, ttv: TopicsTreeView) extends TreeItem[Topic](vv) wit
   }
 
   // lazy-load via this:
-  delegate.addEventHandler(jfxsc.TreeItem.branchExpandedEvent[Topic](), new javafx.event.EventHandler[jfxsc.TreeItem.TreeModificationEvent[Topic]]() {
-    def handle(p1: jfxsc.TreeItem.TreeModificationEvent[Topic]): Unit = {
-      if (!hasloadedchilds) {
-        children.clear() // to remove dummy topic!
-        inTransaction {
-          for (newt <- vv.orderedChilds) {
-            val doit = if (ttv.searchActive) { if (newt.expanded) true else false } else true
-            if (doit) children += new MyTreeItem(newt, ttv)
-          }
-          vv.expanded = true
-          ReftoolDB.topics.update(vv)
-        }
-        hasloadedchilds = true
-      }
-    }
-  })
-  delegate.addEventHandler(jfxsc.TreeItem.branchCollapsedEvent[Topic](), new javafx.event.EventHandler[jfxsc.TreeItem.TreeModificationEvent[Topic]]() {
-    def handle(p1: jfxsc.TreeItem.TreeModificationEvent[Topic]): Unit = {
+  delegate.addEventHandler(jfxsc.TreeItem.branchExpandedEvent[Topic](), (_: jfxsc.TreeItem.TreeModificationEvent[Topic]) => {
+    if (!hasloadedchilds) {
+      children.clear() // to remove dummy topic!
       inTransaction {
-        vv.expanded = false
+        for (newt <- vv.orderedChilds) {
+          val doit = if (ttv.searchActive) {if (newt.expanded) true else false } else true
+          if (doit) children += new MyTreeItem(newt, ttv)
+        }
+        vv.expanded = true
         ReftoolDB.topics.update(vv)
       }
+      hasloadedchilds = true
+    }
+  })
+  delegate.addEventHandler(jfxsc.TreeItem.branchCollapsedEvent[Topic](), (_: jfxsc.TreeItem.TreeModificationEvent[Topic]) => {
+    inTransaction {
+      vv.expanded = false
+      ReftoolDB.topics.update(vv)
     }
   })
 
@@ -155,7 +150,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
         MyTreeCell.lastDragoverCell = this
         de.acceptTransferModes(TransferMode.Copy, TransferMode.Link)
       } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
-        if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].length == 1) // only one file at a time!
+        if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].size  == 1) // only one file at a time!
           de.acceptTransferModes(TransferMode.Copy, TransferMode.Move, TransferMode.Link)
       }
     }
@@ -187,17 +182,17 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
         dropOk = true
         for (a <- DnDHelper.articles) {
           if (de.transferMode == TransferMode.Copy) {
-            if (!a.topics.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue)
+            if (!a.topics.toList.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue)
           } else {
             a.topics.dissociate(DnDHelper.articlesTopic)
-            if (!a.topics.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue)
+            if (!a.topics.toList.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue)
           }
           ApplicationController.obsArticleModified(a)
         }
       }
       ApplicationController.obsTopicSelected(DnDHelper.articlesTopic)
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
-      val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]]
+      val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].asScala
       val f = MFile(files.head)
       ImportHelper.importDocument(f, treeItem.value.getValue, null, Some(de.transferMode == TransferMode.Copy), isAdditionalDoc = false)
       dropOk = true
@@ -224,14 +219,15 @@ object MyTreeCell {
 
 // an iterator over all *displayed* tree items! (not the lazy ones)
 class TreeIterator[T](root: TreeItem[T]) extends Iterator[TreeItem[T]] with Logging {
-  val stack = new mutable.Stack[TreeItem[T]]()
-  stack.push(root)
+  var stack: List[TreeItem[T]] = List[TreeItem[T]]()
+  stack = root :: stack
 
   def hasNext: Boolean = stack.nonEmpty
 
   def next(): TreeItem[T] = {
-    val nextItem = stack.pop()
-    for (ti <- nextItem.children) stack.push(ti)
+    val nextItem = stack.head
+    stack = stack.tail
+    for (ti <- nextItem.children) stack = ti :: stack
     nextItem
   }
 }
@@ -569,23 +565,21 @@ class TopicsTreeView extends GenericView("topicsview") {
           ApplicationController.showNotification("Searching...")
 
           new MyWorker( "Searching...",
-            atask = new javafx.concurrent.Task[Unit] {
-              override def call(): Unit = {
-                val found = inTransaction {
-                  if (e.metaDown) findRecursive(terms) else findSql(terms)
-                }
-                Helpers.runUI {
-                  ApplicationController.showNotification("Search done, found " + found.length + " topics.")
-                  if (found.length > 0) inTransaction {
-                    collapseAllTopics()
-                    found.foreach(t => {
-                      t.expanded = true // also for leaves if in search!
-                      ReftoolDB.topics.update(t)
-                      expandAllParents(t)
-                    })
-                    searchActive = true
-                    loadTopics(revealLastTopic = false)
-                  }
+            atask = () => {
+              val found = inTransaction {
+                if (e.metaDown) findRecursive(terms) else findSql(terms)
+              }
+              Helpers.runUI {
+                ApplicationController.showNotification("Search done, found " + found.length + " topics.")
+                if (found.length > 0) inTransaction {
+                  collapseAllTopics()
+                  found.foreach(t => {
+                    t.expanded = true // also for leaves if in search!
+                    ReftoolDB.topics.update(t)
+                    expandAllParents(t)
+                  })
+                  searchActive = true
+                  loadTopics(revealLastTopic = false)
                 }
               }
             },
