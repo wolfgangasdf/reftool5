@@ -155,6 +155,7 @@ object ReftoolDB extends Schema with Logging {
   val SLASTTOPICID = "lasttopicid"
   val SLASTARTICLEID = "lastarticleid"
   val SBOOKMARKS = "bookmarks"
+  val SBOOKMARKLASTFOLDERIDX = "bookmarkslastfolder"
 
   var rootTopic: Topic = _
   var stackTopic: Topic = _
@@ -285,6 +286,7 @@ object ReftoolDB extends Schema with Logging {
       assert(new MFile(AppStorage.config.dbpath).exists, "Cannot find database path below data directory!")
       assert(pp.exists, "Cannot find pdf path below data directory")
       // upgrade DB schema if needed
+      assert(dbGetSchemaVersion <= lastschemaversion, "DB schema version is higher than reftool can handle - old reftool version?")
       while (dbGetSchemaVersion != lastschemaversion) dbSetSchemaVersion(DBupgrades.upgradeSchema(dbGetSchemaVersion))
     }
 

@@ -82,6 +82,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
     }
 
     override def toString(t: Topic): String = {
+      if (TopicsTreeView.bookmarksTopics.contains(t)) style="-fx-background: #ffff55" else style = ""
       t.title
     }
   }
@@ -483,6 +484,11 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   ApplicationController.obsRevealTopic += ((t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t) )
 
+  ApplicationController.obsBookmarksChanged += { case ((bl: List[Topic])) => {
+    TopicsTreeView.bookmarksTopics = bl
+    loadTopics(revealLastTopic = true)
+  } }
+
   toolbaritems ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aExportTopicPDFs.toolbarButton,
     aUpdatePDFs.toolbarButton, aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton
   )
@@ -636,4 +642,8 @@ class TopicsTreeView extends GenericView("topicsview") {
   }
 
   override val uisettingsID: String = "ttv"
+}
+
+object TopicsTreeView {
+  var bookmarksTopics: List[Topic] = List[Topic]()
 }
