@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import javafx.scene.{control => jfxsc}
 
-import db.{Article, ReftoolDB, Topic}
+import db.{Article, ReftoolDB, Topic, Topic2Article}
 import framework._
 import db.SquerylEntrypointForMyApp._
 import org.squeryl.Queryable
@@ -183,10 +183,10 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
         dropOk = true
         for (a <- DnDHelper.articles) {
           if (de.transferMode == TransferMode.Copy) {
-            if (!a.topics.toList.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue)
+            if (!a.topics.toList.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue, new Topic2Article())
           } else {
             a.topics.dissociate(DnDHelper.articlesTopic)
-            if (!a.topics.toList.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue)
+            if (!a.topics.toList.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue, new Topic2Article())
           }
           ApplicationController.obsArticleModified(a)
         }
@@ -233,7 +233,7 @@ class TreeIterator[T](root: TreeItem[T]) extends Iterator[TreeItem[T]] with Logg
   }
 }
 
-class TopicsTreeView extends GenericView("topicsview") {
+class TopicsTreeView extends GenericView("topicsview") with Logging {
 
   var troot: Topic = _
   var tiroot: MyTreeItem = _
@@ -349,7 +349,7 @@ class TopicsTreeView extends GenericView("topicsview") {
         val t = ReftoolDB.topics.get(si.getValue.id)
         val a = new Article(title = "new content")
         ReftoolDB.articles.insert(a)
-        a.topics.associate(t)
+        a.topics.associate(t, new Topic2Article())
         ApplicationController.obsTopicSelected(t)
         ApplicationController.obsRevealArticleInList(a)
       }
@@ -484,10 +484,10 @@ class TopicsTreeView extends GenericView("topicsview") {
 
   ApplicationController.obsRevealTopic += ((t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t) )
 
-  ApplicationController.obsBookmarksChanged += { case ((bl: List[Topic])) => {
+  ApplicationController.obsBookmarksChanged += { case ((bl: List[Topic])) =>
     TopicsTreeView.bookmarksTopics = bl
-    loadTopics(revealLastTopic = true)
-  } }
+    loadTopics()
+  }
 
   toolbaritems ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aExportTopicPDFs.toolbarButton,
     aUpdatePDFs.toolbarButton, aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton
@@ -541,7 +541,7 @@ class TopicsTreeView extends GenericView("topicsview") {
     def dynamicWhere(q: Queryable[Topic], s: String) = q.where(t => upper(t.title) like s"%$s%")
     var rest = dynamicWhere(ReftoolDB.topics, terms(0))
     for (i <- 1 until terms.length) rest = dynamicWhere(rest, terms(i))
-    rest.toArray
+    rest.toList.toArray
   }
 
   // search matching full topic path, slow (how to do with squeryl?)

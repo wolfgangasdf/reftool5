@@ -3,7 +3,7 @@ package util
 import java.io
 import java.net.SocketTimeoutException
 
-import db.{Article, Document, ReftoolDB, Topic}
+import db._
 import db.SquerylEntrypointForMyApp._
 import framework.{ApplicationController, Helpers, Logging, MyWorker}
 import org.jbibtex._
@@ -184,7 +184,7 @@ object ImportHelper extends Logging {
           inTransaction {
             a = ReftoolDB.renameDocuments(a)
             ReftoolDB.articles.insertOrUpdate(a)
-            if (topic != null) a.topics.associate(topic)
+            if (topic != null) a.topics.associate(topic, new Topic2Article())
           }
           ApplicationController.obsArticleModified(a)
           ApplicationController.showNotification("import successful of " + a)
