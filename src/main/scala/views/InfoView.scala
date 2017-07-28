@@ -3,7 +3,7 @@ package views
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import db.{Topic, Article, ReftoolDB}
+import db.{Article, ReftoolDB, Topic, Topic2Article}
 import framework._
 import db.SquerylEntrypointForMyApp._
 import util._
@@ -72,7 +72,7 @@ class InfoView extends GenericView("toolview") {
           review = stats
         )
         ReftoolDB.articles.insert(a)
-        a.topics.associate(st)
+        a.topics.associate(st, new Topic2Article())
         ApplicationController.obsRevealTopic(st)
         ApplicationController.obsRevealArticleInList(a)
       }

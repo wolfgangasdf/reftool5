@@ -1,7 +1,7 @@
 package views
 
 
-import db.{Article, ReftoolDB, Topic}
+import db.{Article, ReftoolDB, Topic, Topic2Article}
 import framework.{ApplicationController, GenericView, Helpers, MyAction}
 import db.SquerylEntrypointForMyApp._
 import util._
@@ -153,7 +153,7 @@ class ArticleListView extends GenericView("articlelistview") {
       val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
       as.foreach( a => {
         a.topics.dissociate(currentTopic)
-        if (!a.topics.toList.contains(ReftoolDB.stackTopic)) a.topics.associate(ReftoolDB.stackTopic)
+        if (!a.topics.toList.contains(ReftoolDB.stackTopic)) a.topics.associate(ReftoolDB.stackTopic, new Topic2Article())
         ApplicationController.obsArticleModified(a)
       })
       ApplicationController.showNotification(s"Moved ${as.length} articles to stack!")
@@ -166,7 +166,7 @@ class ArticleListView extends GenericView("articlelistview") {
     action = (_) => inTransaction {
       val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
       as.foreach( a => {
-        if (!a.topics.toList.contains(ReftoolDB.stackTopic)) a.topics.associate(ReftoolDB.stackTopic)
+        if (!a.topics.toList.contains(ReftoolDB.stackTopic)) a.topics.associate(ReftoolDB.stackTopic, new Topic2Article())
         ApplicationController.obsArticleModified(a)
       })
       ApplicationController.showNotification(s"Copied ${as.length} articles to stack!")
@@ -178,7 +178,7 @@ class ArticleListView extends GenericView("articlelistview") {
     action = (_) => inTransaction {
       ReftoolDB.stackTopic.articles.foreach( a => {
         a.topics.dissociate(ReftoolDB.stackTopic)
-        if (!a.topics.toList.contains(currentTopic)) a.topics.associate(currentTopic)
+        if (!a.topics.toList.contains(currentTopic)) a.topics.associate(currentTopic, new Topic2Article())
         ApplicationController.obsArticleModified(a)
       })
       ApplicationController.showNotification(s"Moved articles from stack!")
@@ -190,7 +190,7 @@ class ArticleListView extends GenericView("articlelistview") {
     image = new Image(getClass.getResource("/images/stackcopytohere.gif").toExternalForm)
     action = (_) => inTransaction {
       ReftoolDB.stackTopic.articles.foreach( a => {
-        if (!a.topics.toList.contains(currentTopic)) a.topics.associate(currentTopic)
+        if (!a.topics.toList.contains(currentTopic)) a.topics.associate(currentTopic, new Topic2Article())
         ApplicationController.obsArticleModified(a)
       } )
       ApplicationController.showNotification(s"Copied articles from stack!")

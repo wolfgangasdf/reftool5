@@ -131,11 +131,10 @@ class Topic(var title: String = "", var parent: Long = 0, var expanded: Boolean 
     childrenTopics.toList.sortWith( (s1, s2) => StringHelper.AlphaNumStringSorter(s1.title, s2.title))
   }
   override def toString: String = title
-
 }
 
-class Topic2Article(val TOPIC: Long, val ARTICLE: Long, var color: Int) extends KeyedEntity[CompositeKey2[Long, Long]] {
-   def id: CompositeKey2[Long, Long] = compositeKey(TOPIC, ARTICLE)
+class Topic2Article(val TOPIC: Long = 0, val ARTICLE: Long = 0, var color: Int = 0) extends KeyedEntity[CompositeKey2[Long, Long]] {
+  def id: CompositeKey2[Long, Long] = compositeKey(TOPIC, ARTICLE)
 }
 
 object ReftoolDB extends Schema with Logging {
@@ -199,6 +198,7 @@ object ReftoolDB extends Schema with Logging {
 
   on(topics2articles)(a => declare(
     a.color.is(named("COLOR")), a.color.defaultsTo(0)
+    // TODO defaultsTo(0) doesn't work here after squeryl 0.9.5-7, workaround: all calls to associate(t) changed to associate(t, new Topic2Article())
   ))
 
   // manually auto-increment ids.
@@ -274,6 +274,7 @@ object ReftoolDB extends Schema with Logging {
   def initialize(startwithempty: Boolean) {
 
     System.setProperty("derby.stream.error.method", "db.DerbyUtil.getOS")
+    // System.setProperty("derby.language.logStatementText", "true")
 
     val pp = new MFile(AppStorage.config.pdfpath)
     if (!pp.exists) pp.mkdir()
@@ -301,6 +302,7 @@ object ReftoolDB extends Schema with Logging {
     SessionFactory.concreteFactory = Some(() => Session.create(java.sql.DriverManager.getConnection(dbs), new DerbyAdapter))
 
     transaction {
+      // Session.currentSession.setLogger( s => debug("sq: " + s) )
       // ReftoolDB.printDdl
       if (startwithempty) {
         ReftoolDB.create
@@ -331,11 +333,11 @@ object ReftoolDB extends Schema with Logging {
     val ta2 = topics.insert(new Topic("demo subtopic A2", ta.id))
     val tb1 = topics.insert(new Topic("demo subtopic B1", tb.id))
     val a1 = articles.insert(new Article(title = "article 1"))
-    a1.topics.associate(ta1)
-    a1.topics.associate(ta2)
+    a1.topics.associate(ta1, new Topic2Article())
+    a1.topics.associate(ta2, new Topic2Article())
     val a2 = articles.insert(new Article(title = "article 2"))
-    a2.topics.associate(tb)
-    a2.topics.associate(tb1)
+    a2.topics.associate(tb, new Topic2Article())
+    a2.topics.associate(tb1, new Topic2Article())
   }
 
 }

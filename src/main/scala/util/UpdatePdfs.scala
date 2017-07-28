@@ -3,7 +3,7 @@ package util
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import db.{Article, ReftoolDB, Topic}
+import db.{Article, ReftoolDB, Topic, Topic2Article}
 import framework.{ApplicationController, Helpers, Logging}
 import db.SquerylEntrypointForMyApp._
 
@@ -145,7 +145,7 @@ object UpdatePdfs extends Logging {
               e.fExternal.delete()
             }
             inTransaction {
-              e.article.topics.associate(topicUpdated)
+              e.article.topics.associate(topicUpdated, new Topic2Article())
               if (cbRemoveFromTopic.selected.value) topic.foreach(t => e.article.topics.dissociate(t))
             }
           } )
