@@ -7,7 +7,6 @@ import framework.Logging
 
 import scala.collection.JavaConverters._
 import scala.util.matching.Regex
-import scala.util.matching.Regex._
 
 object PdfHelper extends Logging {
 
@@ -30,7 +29,7 @@ object PdfHelper extends Logging {
         // parse for DOI in all keys...
         for (k <- info.getMetadataKeys.asScala) {
           val v = Option(info.getCustomMetadataValue(k)).getOrElse("").toUpperCase
-          debug(s"pdf metadata [$k]: " + v)
+          // debug(s"pdf metadata [$k]: " + v)
           v match {
             case doire.unanchored(sd) => debug("   match!!!"); doi = sd
             case _ =>

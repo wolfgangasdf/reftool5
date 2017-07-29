@@ -190,7 +190,7 @@ object ImportHelper extends Logging {
           ApplicationController.showNotification("import successful of " + a)
           debug(" import successful of " + sourceFile.getName)
           // show article
-          if (topic != null) ApplicationController.obsRevealTopic(topic)
+          if (topic != null) ApplicationController.obsRevealTopic((topic, false))
           ApplicationController.obsRevealArticleInList(a)
         }
         if (!backgroundImportRunning.compareAndSet(true, false)) {

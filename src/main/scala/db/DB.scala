@@ -48,8 +48,8 @@ class Document(var docName: String, var docPath: String) extends Ordered[Documen
   }
 }
 object Document {
-  val NMAIN = "0-main"
-  val NOTHER = "1-other"
+  val NMAIN = "0"
+  val NOTHER = "1"
 }
 
 class Article(var entrytype: String = "",

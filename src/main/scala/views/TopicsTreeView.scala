@@ -436,10 +436,12 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
   }
 
   def collapseAllTopics(): Unit = {
-    update(ReftoolDB.topics)(t =>
-      where(t.expanded === true and t.parent <> 0)
-        set(t.expanded := false)
-    )
+    inTransaction {
+      update(ReftoolDB.topics)(t =>
+        where(t.expanded === true and t.parent <> 0)
+          set (t.expanded := false)
+      )
+    }
   }
   val aCollapseAll: MyAction = new MyAction("Topic", "Collapse all") {
     image = new Image(getClass.getResource("/images/collapse.png").toExternalForm)
@@ -482,7 +484,10 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     }
   }
 
-  ApplicationController.obsRevealTopic += ((t: Topic) => loadTopics(revealLastTopic = false, revealTopic = t) )
+  ApplicationController.obsRevealTopic += { case (t: Topic, collapseBefore: Boolean) =>
+    if (collapseBefore) collapseAllTopics()
+    loadTopics(revealLastTopic = false, revealTopic = t)
+  }
 
   ApplicationController.obsBookmarksChanged += { case ((bl: List[Topic])) =>
     TopicsTreeView.bookmarksTopics = bl

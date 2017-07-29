@@ -150,7 +150,7 @@ object UpdatePdfs extends Logging {
             }
           } )
 
-          ApplicationController.obsRevealTopic(topicUpdated)
+          ApplicationController.obsRevealTopic((topicUpdated, false))
 
         case _ => debug("cancel: ")
       }
