@@ -82,13 +82,17 @@ class ArticleListView extends GenericView("articlelistview") {
     sortType = TableColumn.SortType.Descending
     cellValueFactory = (a) => new StringProperty(a.value.getModtimeString)
   }
+  val defaultSortOrder = List(cPubdate, cTitle)
 
   val articles = new ObservableBuffer[Article]()
 
   val alv: TableView[Article] = new TableView[Article](articles) {
     columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview, cModtime)
     columns.foreach(tc => tc.setPrefWidth(120.0))
-    sortOrder += (cPubdate, cTitle)
+    // columnResizePolicy = TableView.ConstrainedResizePolicy doesn't work with programmatic resizing: https://bugs.openjdk.java.net/browse/JDK-8091269
+    tableMenuButtonVisible = true
+    sortOrder.clear()
+    defaultSortOrder.foreach(sc => sortOrder += sc)
     selectionModel.value.selectionMode = SelectionMode.Multiple
   }
 
@@ -446,10 +450,7 @@ class ArticleListView extends GenericView("articlelistview") {
       firstRun = false
     }
     alv.sortOrder.clear()
-    if (sortCols != null)
-      sortCols.foreach(sc => alv.sortOrder += sc)
-    else
-      alv.sortOrder += (cPubdate, cTitle)
+    (if (sortCols != null) sortCols else defaultSortOrder).foreach(sc => alv.sortOrder += sc)
     alv.sort()
   }
 

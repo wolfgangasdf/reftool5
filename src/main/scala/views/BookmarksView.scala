@@ -60,11 +60,10 @@ class BookmarksView extends GenericView("bookmarksview") {
 
   def checkFolders(): Any = if (folders.isEmpty) folders += new Folder { name = "New Folder" }
 
-
   lv.onMouseClicked = (me: MouseEvent) => {
     if (me.clickCount == 2) {
       if (lv.getSelectionModel.getSelectedItems.length > 0) {
-        ApplicationController.obsRevealTopic(lv.getSelectionModel.getSelectedItems.head)
+        ApplicationController.obsRevealTopic((lv.getSelectionModel.getSelectedItems.head, false))
       }
     }
   }
@@ -97,6 +96,23 @@ class BookmarksView extends GenericView("bookmarksview") {
     }
   }
 
+
+  val aExpandTopics = new MyAction("Bookmarks", "Expand bookmarked topics") {
+    tooltipString = "Expand all bookmarked topics of current bookmark folder"
+    image = new Image(getClass.getResource("/images/expandall.gif").toExternalForm)
+    action = (_) => {
+      val topics = folders(currentFolderIdx).topics
+      topics.headOption.foreach(t => {
+        debug("t = " + t)
+        ApplicationController.obsRevealTopic((t, true))
+        topics.tail.foreach(tt => {
+          debug("tt = " + tt)
+          ApplicationController.obsRevealTopic((tt, false))
+        })
+      })
+    }
+    enabled = true
+  }
 
   val aRemoveFolder = new MyAction("Bookmarks", "Remove folder") {
     tooltipString = "Remove whole bookmarks folder"
@@ -175,7 +191,7 @@ class BookmarksView extends GenericView("bookmarksview") {
     enabled = true
   }
 
-  toolbaritems ++= Seq(aEditFolder.toolbarButton, aRemoveFolder.toolbarButton, aNewFolder.toolbarButton, aRemoveBookmark.toolbarButton, aAddBookmark.toolbarButton)
+  toolbaritems ++= Seq(aExpandTopics.toolbarButton, aEditFolder.toolbarButton, aRemoveFolder.toolbarButton, aNewFolder.toolbarButton, aRemoveBookmark.toolbarButton, aAddBookmark.toolbarButton)
 
   ApplicationController.obsTopicSelected += ((t: Topic) => {
     currentTopic = t
@@ -208,14 +224,14 @@ class BookmarksView extends GenericView("bookmarksview") {
       f.topics.foreach(t => s += t.id + ",")
       s += "\r\n"
     })
-    // debug("store:\n" + s)
+    debug("store bookmarks:\n" + s)
     ReftoolDB.setSetting(ReftoolDB.SBOOKMARKS, s)
     ReftoolDB.setSetting(ReftoolDB.SBOOKMARKLASTFOLDERIDX, cbfolder.getSelectionModel.getSelectedIndex.toString)
   }
 
   def restoreSettings(): Unit = {
     ReftoolDB.getSetting(ReftoolDB.SBOOKMARKS).foreach(s => {
-      // debug("restore:\n" + s)
+      debug("restore bookmarks:\n" + s)
       var fs = new ObservableBuffer[Folder]()
       val lines = s.split("\r\n")
       lines.foreach(line => {

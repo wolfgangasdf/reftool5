@@ -107,7 +107,7 @@ class SearchView extends GenericView("searchview") {
   val hours1 = new HourTextField("00")
   val hours2 = new HourTextField("23")
   val selAll = List(cbTitle, cbAuthors, cbReview, cbBibtexID, cbBibtex, cbPubdate, cbJournal, cbDOI, cbDocuments)
-  val selNotDefault = Seq(cbBibtex, cbPubdate, cbDOI, cbDocuments, cbOnlyTopic)
+  val selNotDefault = Seq(cbBibtex, cbPubdate, cbDOI, cbDocuments, cbOnlyTopic, cbModifiedSince)
   val btSelectDefault = new Button("Select default") {
     onAction = (_: ActionEvent) => {
       selAll.foreach( _.selected = true)

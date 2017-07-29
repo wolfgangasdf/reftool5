@@ -52,7 +52,7 @@ class InfoView extends GenericView("toolview") {
               these ++ these.filter(_.isDirectory).flatMap(walkThroughAll(_, thisTopic))
             }
             walkThroughAll(res, tbase)
-            ApplicationController.obsRevealTopic(tbase)
+            ApplicationController.obsRevealTopic((tbase, false))
           }
         }.start()
       }
@@ -73,7 +73,7 @@ class InfoView extends GenericView("toolview") {
         )
         ReftoolDB.articles.insert(a)
         a.topics.associate(st, new Topic2Article())
-        ApplicationController.obsRevealTopic(st)
+        ApplicationController.obsRevealTopic((st, false))
         ApplicationController.obsRevealArticleInList(a)
       }
     }

@@ -19,7 +19,7 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
     onMouseClicked = (me: MouseEvent) => {
       if (me.clickCount == 2) {
         if (selectionModel.value.getSelectedItems.length > 0) {
-          ApplicationController.obsRevealTopic(selectionModel.value.getSelectedItems.head)
+          ApplicationController.obsRevealTopic((selectionModel.value.getSelectedItems.head, false))
           ApplicationController.obsRevealArticleInList(article)
         }
       }
