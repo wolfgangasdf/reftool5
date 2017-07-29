@@ -14,7 +14,8 @@ libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6",
   "org.apache.pdfbox" % "pdfbox" % "2.0.7",
   "org.jbibtex" % "jbibtex" % "1.0.15",
-  "org.scalaj" %% "scalaj-http" % "2.3.0"
+  "org.scalaj" %% "scalaj-http" % "2.3.0",
+  "org.openmole" %% "toolxit-bibtex" % "0.4" exclude("macros", "macros_2.12") exclude("core", "core_2.12")
 )
 
 lazy val root = (project in file(".")).

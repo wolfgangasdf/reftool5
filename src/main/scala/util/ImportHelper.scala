@@ -7,7 +7,7 @@ import db._
 import db.SquerylEntrypointForMyApp._
 import framework.{ApplicationController, Helpers, Logging, MyWorker}
 import org.jbibtex._
-import util.bibtex.AuthorNamesExtractor
+import toolxit.bibtex.AuthorNamesExtractor
 
 import scala.collection.JavaConverters._
 import scalafx.Includes._
