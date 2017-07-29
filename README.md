@@ -1,7 +1,7 @@
 # Reftool 5
 
 Reftool is a scientific reference manager, similar to [Zotero](https://www.zotero.org) and 
-[Mendeley](https://www.mendeley.com), but focussed on scientific paper management. I use it since 2006, [the old reftool](https://bitbucket.org/wolfgang/reftool)
+[Mendeley](https://www.mendeley.com), but focussed on scientific article management. I use it since 2006, [the old reftool](https://bitbucket.org/wolfgang/reftool)
 was Eclipse RCP based, Reftool 5 now uses simply JavaFX that is included in Java 8, making it much smaller and faster
 (reftool 4 data is automatically migrated); but most important, development is very easy. Reftool 5 is stable and 
 constantly improved because I use it daily. The code is pretty clean and you can easily modify it if you wish. 
@@ -57,8 +57,8 @@ Hints:
 
 ### How to run ###
 
-* Get Java JRE >= 8u60 (don't forget to untick the yahoo [crapware](https://www.google.com/search?q=java+crapware) installer!)
-* [Download the zip](https://bitbucket.org/wolfgang/reftool5/downloads) for Mac or (Windows, Linux), extract it somewhere and double-click the app (Mac) or 
+* Get the [Java JRE](http://www.oracle.com/technetwork/java/javase/downloads/index.html) >= 8u101. Don't forget to untick the [crapware](https://www.google.com/search?q=java+crapware) installer, and/or [disable it permanently](https://www.java.com/en/download/faq/disable_offers.xml)!
+* [Download the zip](https://bitbucket.org/wolfgang/reftool5/downloads) for Mac or (Windows, Linux), extract it somewhere and double-click the app (Mac) or
   jar file (Windows, Linux).
 
 Everything should be self-explanatory (watch out for tooltips) and if you create a new "reftool data dir", the 
@@ -66,7 +66,7 @@ database is populated with a few demo topics and articles.
 
 ### How to develop, compile & package ###
 
-* Get Java JDK >= 8u60
+* Get Java JDK >= 8u101
 * check out the code (`hg clone ...` or download a zip) 
 * I use the free community version of [IntelliJ IDEA](https://www.jetbrains.com/idea/download/) with the scala 
 plugin for development, just open the project to get started.
@@ -89,6 +89,7 @@ contact: http://quphotonics.org
 * [Squeryl](http://squeryl.org) as database ORM & DSL, using [Apache Derby](http://db.apache.org/derby) embedded as backend
 * [Apache Pdfbox](https://pdfbox.apache.org) to access PDF files
 * [JBibtex](https://github.com/jbibtex/jbibtex) to parse and write bibtex and latex
+* [ToolXiT BibTeX tools in Scala](https://github.com/gnieh/toolxit-bibtex) via [toolxit-bibtex](https://github.com/jopasserat/toolxit-bibtex) to parse authors
 * [scalaj-http](https://github.com/scalaj/scalaj-http) to make http connections
 * [sbt-javafx](https://github.com/kavedaa/sbt-javafx) to create the runnable Reftool jar file
 * [sbt-buildinfo](https://github.com/sbt/sbt-buildinfo) to access build information
@@ -96,8 +97,7 @@ contact: http://quphotonics.org
 * a modified version of [universalJavaApplicationStub](https://github.com/tofi86/universalJavaApplicationStub) to launch Reftool on Mac 
 * [Crossref](http://labs.crossref.org/citation-formatting-service) to get bibtex entries from DOIs and search
 * [SAO/NASA ADS arXiv e-prints Abstract Service](http://adsabs.harvard.edu/) to get bibtex entries for arxiv papers
-
-* Scalafx GUI Application framework: I couldn't find one (yet), so reftool contains its own GUI app framework 
+* Scalafx GUI Application framework: I couldn't find one (yet), so reftool contains its own GUI app framework
   with, e.g., buttons next to tabs (`Framework.scala`)
 
 ### License ###
