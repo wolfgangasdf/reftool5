@@ -183,14 +183,18 @@ object FileHelper extends Logging {
       , 70))
     else None
   }
-  def getUniqueDocFile(lastfolder: MFile, a: Article, docname: String, startfilename: String): MFile = {
+  def getUniqueDocFile(lastfolder: MFile, a: Article, docname: String, startfilename: String, oldfile: MFile = null): MFile = {
     // choose nice filename if possible
     val (sourceName, sourceExt) = FileHelper.splitName(startfilename)
     val newFileName = getDocumentFilenameBase(a, docname).getOrElse(FileHelper.cleanFileNameString(sourceName, 30))
 
-    // get unique file
     var newFile1 = new MFile(lastfolder.getPath + "/" + newFileName + "." + sourceExt)
-    while (newFile1.exists) {
+
+    // check if equal to old file
+    val equal = if (oldfile != null) newFile1.isSameFileAs(oldfile) else false
+
+    // get unique file
+    while (!equal && newFile1.exists) {
       newFile1 = new MFile(lastfolder.getPath + "/" + newFileName + "-" + Random.nextInt(1000) + "." + sourceExt)
     }
     newFile1

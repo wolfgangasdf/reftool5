@@ -311,13 +311,13 @@ object ImportHelper extends Logging {
     var a = article
     val url1 = "http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:" + aid
     debug("getting " + url1)
-    val resp1 = Http(url1).timeout(3000, 5000).asString
+    val resp1 = Http(url1).timeout(15000, 30000).asString
     if (resp1.code == 200) {
       val re1 = """(?s).*<a href="(.*)">Bibtex entry for this abstract</a>.*""".r
       resp1.body match {
         case re1(biblink) =>
           debug("found biblink: " + biblink)
-          val resp2 = Http(biblink).timeout(3000, 8000).asString
+          val resp2 = Http(biblink).timeout(15000, 30000).asString
           if (resp2.code == 200) {
             if (resp2.body.contains("@")) {
               val be = resp2.body.substring(resp2.body.indexOf("@"))
@@ -338,7 +338,7 @@ object ImportHelper extends Logging {
     var doit = 6
     while (doit > 0) {
       val responseo = try {
-        Some(Http(s"https://api.crossref.org/works/${a.doi}/transform/application/x-bibtex").timeout(connTimeoutMs = 2000, readTimeoutMs = 5000).
+        Some(Http(s"https://api.crossref.org/works/${a.doi}/transform/application/x-bibtex").timeout(connTimeoutMs = 15000, readTimeoutMs = 30000).
           option(HttpOptions.followRedirects(shouldFollow = true)).asBytes)
       } catch {
         case _: SocketTimeoutException =>
