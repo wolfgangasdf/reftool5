@@ -395,7 +395,11 @@ class ArticleListView extends GenericView("articlelistview") {
     if (articles.contains(a)) {
       Helpers.runUI {
         alv.getSelectionModel.select(a)
-        alv.scrollTo(a)
+        // make row visible if not already https://stackoverflow.com/questions/17268529/javafx-tableview-keep-selected-row-in-current-view
+        val vflow = alv.delegate.getSkin.asInstanceOf[com.sun.javafx.scene.control.skin.TableViewSkin[_]].
+          getChildren.get(1).asInstanceOf[com.sun.javafx.scene.control.skin.VirtualFlow[_]]
+        val idx = alv.getSelectionModel.getSelectedIndex
+        vflow.show(idx)
       }
     } else debug("revealarticle: not found: " + a)
   }
@@ -445,13 +449,14 @@ class ArticleListView extends GenericView("articlelistview") {
     aOpenPDF.enabled = false // req selection
     aRemoveFromTopic.enabled = false // req selection
     aRemoveArticle.enabled = false // req selection
-    if (firstRun) {
-      ReftoolDB.getSetting(ReftoolDB.SLASTARTICLEID) foreach(s => selectRevealArticleByID(s.toLong) )
-      firstRun = false
-    }
     alv.sortOrder.clear()
     (if (sortCols != null) sortCols else defaultSortOrder).foreach(sc => alv.sortOrder += sc)
     alv.sort()
+    if (firstRun) {
+      ReftoolDB.getSetting(ReftoolDB.SLASTARTICLEID) foreach(s =>
+        ApplicationController.workerAdd(() => selectRevealArticleByID(s.toLong), uithread = true) )
+      firstRun = false
+    }
   }
 
   def setArticlesTopic(topic: Topic) {

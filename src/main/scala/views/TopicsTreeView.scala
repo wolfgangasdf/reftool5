@@ -143,7 +143,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       getDropPositionScroll(de)
       if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "topic") {
         val dti = DnDHelper.topicTreeItem
-        if (dti.getParent != treeItem.value) {
+        if (dti.getParent != treeItem.value && dti.delegate != treeItem.value) {
           MyTreeCell.lastDragoverCell = this
           de.acceptTransferModes(TransferMode.Move)
         }
