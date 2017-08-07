@@ -2,6 +2,7 @@ package main
 
 
 import java.io
+import java.io.PrintStream
 import javafx.{event => jfxe, scene => jfxs}
 
 import buildinfo.BuildInfo
@@ -145,7 +146,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
                     strokeWidth = 3.5
                   }
                   content += l
-                  tt.setOnAutoHide((event: jfxe.Event) => {
+                  tt.setOnAutoHide((_: jfxe.Event) => {
                     content -= l
                     debug("removing line after =" + content.length)
                     unit()
@@ -292,16 +293,16 @@ class MainScene(stage: Stage) extends Scene with Logging {
 object Main extends JFXApp with Logging {
 
   // redirect console output, must happen on top of this object!
-  val oldOut = System.out
-  val oldErr = System.err
+  val oldOut: PrintStream = System.out
+  val oldErr: PrintStream = System.err
   var logps: io.FileOutputStream = _
   System.setOut(new io.PrintStream(new MyConsole(false), true))
   System.setErr(new io.PrintStream(new MyConsole(true), true))
 
-  val logfile = MFile.createTempFile("reftool5log",".txt")
+  val logfile: MFile = MFile.createTempFile("reftool5log",".txt")
   logps = new io.FileOutputStream(logfile.toFile)
 
-  Thread.currentThread().setUncaughtExceptionHandler((t: Thread, e: Throwable) => {
+  Thread.currentThread().setUncaughtExceptionHandler((_: Thread, e: Throwable) => {
     error("Exception: " + e.getMessage)
     e.printStackTrace()
     if (stage.isShowing) Helpers.showExceptionAlert("", e)
