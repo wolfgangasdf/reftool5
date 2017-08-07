@@ -361,7 +361,7 @@ class ArticleListView extends GenericView("articlelistview") {
       onDragDetected = (me: MouseEvent) => {
         ApplicationController.showNotification("Drag'n'drop: 'link' means 'move'!")
         val db = if (currentTopic == null) startDragAndDrop(TransferMode.Copy) else {
-          startDragAndDrop(TransferMode.Any:_*) // TODO workaround, MOVE and COPY does not work! I use LINK therefore...
+          startDragAndDrop(TransferMode.Any:_*) // workaround, MOVE and COPY does not work! I use LINK therefore...
         }
         val cont = new ClipboardContent {
           putString("articles") // can't easily make custom DataFormats on mac (!)

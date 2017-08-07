@@ -71,36 +71,51 @@ class MyTreeItem(vv: Topic, ttv: TopicsTreeView) extends TreeItem[Topic](vv) wit
 }
 
 
-// https://gist.github.com/andytill/4009620
-class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
+// DnD: https://gist.github.com/andytill/4009620
+// workaround: use javafx because scala doesn't work properly: https://github.com/scalafx/scalafx/issues/256
+class MyTreeCell extends javafx.scene.control.cell.TextFieldTreeCell[Topic] with Logging {
+
+  val self: TextFieldTreeCell[Topic] = this
 
   val myStringConverter = new StringConverter[Topic]() {
     override def fromString(string: String): Topic = {
-      val t = treeItem.value.getValue
+      val t = self.treeItem.value.getValue
       t.title = string
       t
     }
 
     override def toString(t: Topic): String = {
-      if (TopicsTreeView.bookmarksTopics.contains(t)) style="-fx-background: #ffff55" else style = ""
       t.title
     }
   }
-//  converter = myStringConverter // scalafx bug doesn't work
-  delegate.setConverter(myStringConverter)
 
-  treeItem.onChange((_, _, newti) => {
-    text = if (newti != null) newti.getValue.title else null
+  setConverter(myStringConverter)
+
+  self.treeItem.onChange((_, _, newti) => {
+    self.text = if (newti != null) newti.getValue.title else null
   })
 
   // drag'n'drop
-  onDragDetected = (me: MouseEvent) => {
-    val db = treeView.value.startDragAndDrop(TransferMode.Move)
+  self.onDragDetected = (me: MouseEvent) => {
+    val db = self.treeView.value.startDragAndDrop(TransferMode.Move)
     val cont = new ClipboardContent()
     cont.putString("topic") // can't easily make custom DataFormats on mac (!)
     db.delegate.setContent(cont)
-    DnDHelper.topicTreeItem = treeItem.value
+    DnDHelper.topicTreeItem = self.treeItem.value
     me.consume()
+  }
+
+
+  override def updateItem(item: Topic, empty: Boolean): Unit = {
+    super.updateItem(item, empty)
+    self.graphic = null
+    if (empty || item == null) {
+      self.text = null
+      self.style = null
+    } else {
+      self.text = myStringConverter.toString(item)
+      self.style = if (TopicsTreeView.bookmarksTopics.contains(item)) "-fx-background: #ffff55" else null
+    }
   }
 
   def clearDnDFormatting() {
@@ -113,42 +128,42 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
   // 1-ontop of item, 2-below item
   def getDropPositionScroll(de: DragEvent): Int = {
     var res = 0
-    val tvpossc = treeView.value.localToScene(0d, 0d)
-    val tvheight = treeView.value.getHeight
+    val tvpossc = self.treeView.value.localToScene(0d, 0d)
+    val tvheight = self.treeView.value.getHeight
     val tipossc = MyTreeCell.this.localToScene(0d, 0d)
     val tiheight = MyTreeCell.this.getHeight
     val tirely = de.getSceneY - tipossc.getY
     if (de.getSceneY - tvpossc.getY < tiheight) { // javafx can't really scroll yet...
-      treeView.value.scrollTo(treeView.value.row(treeItem.value) - 1)
+      self.treeView.value.scrollTo(self.treeView.value.row(self.treeItem.value) - 1)
     } else if (de.getSceneY - tvpossc.getY > tvheight - tiheight) {
-      val newtopindex = 2 + treeView.value.getRow(treeItem.value) - tvheight / tiheight
-      treeView.value.scrollTo(newtopindex.toInt)
+      val newtopindex = 2 + self.treeView.value.getRow(self.treeItem.value) - tvheight / tiheight
+      self.treeView.value.scrollTo(newtopindex.toInt)
     } else {
-      MyTreeCell.lastDragoverCell = this
+      MyTreeCell.lastDragoverCell = self
       if (tirely < (tiheight * .25d)) { // determine drop position: onto or below
-        effect = MyTreeCell.effectDropshadow
+        self.effect = MyTreeCell.effectDropshadow
         res = 2
       } else {
-        effect = MyTreeCell.effectInnershadow
+        self.effect = MyTreeCell.effectInnershadow
         res = 1
       }
     }
     res
   }
 
-  onDragOver = (de: DragEvent) => {
+  self.onDragOver = (de: DragEvent) => {
     //debug(s"dragover: de=${de.dragboard.contentTypes}  textc=${de.dragboard.content(DataFormat.PlainText)}  tm = " + de.transferMode)
     clearDnDFormatting()
-    if (treeItem.value != null) {
+    if (self.treeItem.value != null) {
       getDropPositionScroll(de)
       if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "topic") {
         val dti = DnDHelper.topicTreeItem
-        if (dti.getParent != treeItem.value && dti.delegate != treeItem.value) {
-          MyTreeCell.lastDragoverCell = this
+        if (dti.getParent != self.treeItem.value && dti.delegate != self.treeItem.value) {
+          MyTreeCell.lastDragoverCell = self
           de.acceptTransferModes(TransferMode.Move)
         }
       } else if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "articles") {
-        MyTreeCell.lastDragoverCell = this
+        MyTreeCell.lastDragoverCell = self
         de.acceptTransferModes(TransferMode.Copy, TransferMode.Link)
       } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
         if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].size  == 1) // only one file at a time!
@@ -157,7 +172,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
     }
   }
 
-  onDragDropped = (de: DragEvent) => {
+  self.onDragDropped = (de: DragEvent) => {
     clearDnDFormatting()
     val dropPos = getDropPositionScroll(de)
     var dropOk = false
@@ -167,26 +182,26 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
       inTransaction {
         val dt = ReftoolDB.topics.get(dti.getValue.id)
         val newParent = if (dropPos == 2) {
-          treeItem.value.getValue.parentTopic.head
+          self.treeItem.value.getValue.parentTopic.head
         } else {
-          treeItem.value.getValue
+          self.treeItem.value.getValue
         }
         dt.parent = newParent.id
         ReftoolDB.topics.update(dt)
         newParent.expanded = true
         ReftoolDB.topics.update(newParent)
         dropOk = true
-        treeView.value.getUserData.asInstanceOf[TopicsTreeView].loadTopics(revealLastTopic = false, revealTopic = dt)
+        self.treeView.value.getUserData.asInstanceOf[TopicsTreeView].loadTopics(revealLastTopic = false, revealTopic = dt)
       }
     } else if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "articles") {
       inTransaction {
         dropOk = true
         for (a <- DnDHelper.articles) {
           if (de.transferMode == TransferMode.Copy) {
-            if (!a.topics.toList.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue, new Topic2Article())
+            if (!a.topics.toList.contains(self.treeItem.value.getValue)) a.topics.associate(self.treeItem.value.getValue, new Topic2Article())
           } else {
             a.topics.dissociate(DnDHelper.articlesTopic)
-            if (!a.topics.toList.contains(treeItem.value.getValue)) a.topics.associate(treeItem.value.getValue, new Topic2Article())
+            if (!a.topics.toList.contains(self.treeItem.value.getValue)) a.topics.associate(self.treeItem.value.getValue, new Topic2Article())
           }
           ApplicationController.obsArticleModified(a)
         }
@@ -195,7 +210,7 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
     } else if (de.dragboard.getContentTypes.contains(DataFormat.Files)) {
       val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].asScala
       val f = MFile(files.head)
-      ImportHelper.importDocument(f, treeItem.value.getValue, null, Some(de.transferMode == TransferMode.Copy), isAdditionalDoc = false)
+      ImportHelper.importDocument(f, self.treeItem.value.getValue, null, Some(de.transferMode == TransferMode.Copy), isAdditionalDoc = false)
       dropOk = true
     }
 
@@ -203,9 +218,9 @@ class MyTreeCell extends TextFieldTreeCell[Topic] with Logging {
     de.consume()
   }
 
-  onDragExited = (_: DragEvent) => clearDnDFormatting()
+  self.onDragExited = (_: DragEvent) => clearDnDFormatting()
 
-  onDragDone = (_: DragEvent) => clearDnDFormatting()
+  self.onDragDone = (_: DragEvent) => clearDnDFormatting()
 
 }
 object MyTreeCell {
@@ -258,7 +273,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
       (me: MouseEvent) => if (me.clickCount == 1) me.consume() // but enable double click to expand/collapse
     }
 
-    cellFactory = (_: TreeView[Topic]) => new MyTreeCell()
+    delegate.setCellFactory(_ => new MyTreeCell())
   }
 
   def expandAllParents(t: Topic): Unit = {
