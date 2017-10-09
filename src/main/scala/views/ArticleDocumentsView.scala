@@ -23,13 +23,13 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
 
   var article: Article = _
 
-  class MyListCell extends TextFieldListCell[Document] {
+  private class MyListCell extends TextFieldListCell[Document] {
 
     item.onChange { // this is how to override updateItem !
       (_, _, newd) => if (newd != null) tooltip = new Tooltip { text = newd.docPath }
     }
 
-    val myConverter = new StringConverter[Document] {
+    private val myConverter = new StringConverter[Document] {
       override def fromString(string: String): Document = {
         val d = item.value
         d.docName = string
@@ -43,7 +43,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
       (me: MouseEvent) => me.consume()
     }
   }
-  val lv = new ListView[Document] {
+  private val lv = new ListView[Document] {
     editable = true
     selectionModel.value.setSelectionMode(SelectionMode.Single)
     //    val converter = StringConverter.toStringConverter[Document](_.docName)
@@ -75,7 +75,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     }
   }
 
-  val aDeletePDF = new MyAction("Documents", "Delete document") {
+  private val aDeletePDF = new MyAction("Documents", "Delete document") {
     tooltipString = "Delete selected documents from article and delete document"
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
     action = (_) => {
@@ -93,7 +93,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     }
   }
 
-  val aAddDocument = new MyAction("Documents", "Add document") {
+  private val aAddDocument = new MyAction("Documents", "Add document") {
     tooltipString = "Add document to article"
     image = new Image(getClass.getResource("/images/add_correction.png").toExternalForm)
     action = (_) => {
@@ -106,7 +106,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     }
   }
 
-  val aRevealPDF = new MyAction("Article", "Reveal document") {
+  private val aRevealPDF = new MyAction("Article", "Reveal document") {
     tooltipString = "Reveal document in file browser"
     image = new Image(getClass.getResource("/images/Finder_icon.png").toExternalForm)
     action = (_) => {
@@ -116,7 +116,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     }
   }
 
-  val aOpenPDF = new MyAction("Article", "Open document") {
+  private val aOpenPDF = new MyAction("Article", "Open document") {
     tooltipString = "Open document"
     image = new Image(getClass.getResource("/images/pdf.png").toExternalForm)
     action = (_) => {
@@ -134,7 +134,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     aOpenPDF.enabled = lv.selectionModel.value.getSelectedItems.length == 1
   }
 
-  def setArticle(a: Article): Unit = {
+  private def setArticle(a: Article): Unit = {
     logCall(a)
     lv.getItems.clear()
     if (a != null) {
@@ -148,7 +148,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     }
   }
 
-  def updateArticle(): Unit = {
+  private def updateArticle(): Unit = {
     article.setDocuments(lv.getItems.toList)
     inTransaction {
       article = ReftoolDB.renameDocuments(article)

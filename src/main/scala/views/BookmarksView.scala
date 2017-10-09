@@ -18,31 +18,31 @@ class BookmarksView extends GenericView("bookmarksview") {
 
   text = "Bookmarks"
 
-  var currentFolderIdx: Int = -1
+  private var currentFolderIdx: Int = -1
 
-  var currentTopic: Topic = _
+  private var currentTopic: Topic = _
 
-  class Folder {
+  private class Folder {
     var name: String = ""
     var topics = new ArrayBuffer[Topic]()
 
     override def toString: String = name
   }
 
-  var folders = new ObservableBuffer[Folder]()
+  private var folders = new ObservableBuffer[Folder]()
   folders += new Folder { name = "New folder" }
 
-  val lv = new ListView[Topic]() {
+  private val lv = new ListView[Topic]() {
     tooltip = "Use shift+UP/DOWN to reorder topics!"
   }
 
-  def updateList(): Unit = {
+  private def updateList(): Unit = {
     lv.items.get().clear()
     lv.items = new ObservableBuffer[Topic]() ++ folders(currentFolderIdx).topics
     ApplicationController.obsBookmarksChanged(folders(currentFolderIdx).topics.toList)
   }
 
-  val cbfolder = new ChoiceBox[Folder] {
+  private val cbfolder = new ChoiceBox[Folder] {
     maxWidth = 1000
     hgrow = Priority.Always
     onAction = (_: ActionEvent) => {
@@ -56,9 +56,9 @@ class BookmarksView extends GenericView("bookmarksview") {
 
   cbfolder.selectionModel.value.select(0)
 
-  def selectCurrent(): Unit = cbfolder.getSelectionModel.select(currentFolderIdx)
+  private def selectCurrent(): Unit = cbfolder.getSelectionModel.select(currentFolderIdx)
 
-  def checkFolders(): Any = if (folders.isEmpty) folders += new Folder { name = "New Folder" }
+  private def checkFolders(): Any = if (folders.isEmpty) folders += new Folder { name = "New Folder" }
 
   lv.onMouseClicked = (me: MouseEvent) => {
     if (me.clickCount == 2) {
@@ -97,7 +97,7 @@ class BookmarksView extends GenericView("bookmarksview") {
   }
 
 
-  val aExpandTopics = new MyAction("Bookmarks", "Expand bookmarked topics") {
+  private val aExpandTopics = new MyAction("Bookmarks", "Expand bookmarked topics") {
     tooltipString = "Expand all bookmarked topics of current bookmark folder"
     image = new Image(getClass.getResource("/images/expandall.gif").toExternalForm)
     action = (_) => {
@@ -114,7 +114,7 @@ class BookmarksView extends GenericView("bookmarksview") {
     enabled = true
   }
 
-  val aRemoveFolder = new MyAction("Bookmarks", "Remove folder") {
+  private val aRemoveFolder = new MyAction("Bookmarks", "Remove folder") {
     tooltipString = "Remove whole bookmarks folder"
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
     action = (_) => {
@@ -126,7 +126,7 @@ class BookmarksView extends GenericView("bookmarksview") {
     enabled = true
   }
 
-  val aNewFolder = new MyAction("Bookmarks", "New folder") {
+  private val aNewFolder = new MyAction("Bookmarks", "New folder") {
     tooltipString = "Add new Folder"
     image = new Image(getClass.getResource("/images/new_con.gif").toExternalForm)
     action = (_) => {
@@ -138,7 +138,7 @@ class BookmarksView extends GenericView("bookmarksview") {
     enabled = true
   }
 
-  val aEditFolder = new MyAction("Bookmarks", "Edit folder") {
+  private val aEditFolder = new MyAction("Bookmarks", "Edit folder") {
     tooltipString = "Edit Folder"
     image = new Image(getClass.getResource("/images/edit.png").toExternalForm)
     action = (_) => {
@@ -162,7 +162,7 @@ class BookmarksView extends GenericView("bookmarksview") {
     enabled = true
   }
 
-  val aRemoveBookmark = new MyAction("Bookmarks", "Remove bookmark") {
+  private val aRemoveBookmark = new MyAction("Bookmarks", "Remove bookmark") {
     tooltipString = "Remove selected bookmarks"
     image = new Image(getClass.getResource("/images/remove_correction.gif").toExternalForm)
     action = (_) => {
@@ -176,7 +176,7 @@ class BookmarksView extends GenericView("bookmarksview") {
     enabled = true
   }
 
-  val aAddBookmark = new MyAction("Bookmarks", "Add bookmark") {
+  private val aAddBookmark = new MyAction("Bookmarks", "Add bookmark") {
     tooltipString = "Add bookmark to current topic"
     image = new Image(getClass.getResource("/images/add_correction.png").toExternalForm)
     action = (_) => {

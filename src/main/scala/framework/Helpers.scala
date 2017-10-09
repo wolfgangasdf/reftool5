@@ -59,16 +59,22 @@ object Helpers extends Logging {
 
   // enqueue in UI thread queue and wait until finished
   def runUIwait[T]( f: => T) : T = {
-    @volatile var stat: T = null.asInstanceOf[T]
-    val runnable = new Runnable() {
-      def run() {
-        stat = f
+    if (!scalafx.application.Platform.isFxApplicationThread) {
+      @volatile var stat: T = null.asInstanceOf[T]
+      val runnable = new Runnable() {
+        def run() {
+          try {
+            stat = f
+          } catch {
+            case e: Exception => Helpers.showExceptionAlert("Exception", e)
+          }
+        }
       }
-    }
-    val future = new FutureTask[Any](runnable, null)
-    scalafx.application.Platform.runLater( future )
-    future.get()
-    stat
+      val future = new FutureTask[Any](runnable, null)
+      scalafx.application.Platform.runLater( future )
+      future.get()
+      stat
+    } else f
   }
 
   def showExceptionAlert(what: String, t: Throwable): Option[ButtonType] = {

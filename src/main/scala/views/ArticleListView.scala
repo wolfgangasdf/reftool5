@@ -22,16 +22,13 @@ import scalafx.scene.control.TableColumn._
 
 class ArticleListView extends GenericView("articlelistview") {
 
-  var currentTopic: Topic = _
-  val topicHistory = new ArrayBuffer[Long]()
+  private var currentTopic: Topic = _
+  private val topicHistory = new ArrayBuffer[Long]()
 
-  val colors = List("-fx-background-color: white", "-fx-background-color: red", "-fx-background-color: LightSalmon", "-fx-background-color: LightGreen")
-  val colorsn = List(Color.White, Color.Salmon, Color.LightSalmon, Color.LightGreen)
-
-  var onSelectionChangedDoAction = true
+  private val colorsn = List(Color.White, Color.Salmon, Color.LightSalmon, Color.LightGreen)
 
   // for coloring of cells.
-  class MyTableCell extends TableCell[Article, String] {
+  private class MyTableCell extends TableCell[Article, String] {
     item.onChange { (_, b, c) => {
       val idx = index.value
       background = new Background(Array[BackgroundFill]()) // remove old background
@@ -48,45 +45,41 @@ class ArticleListView extends GenericView("articlelistview") {
     } }
   }
 
-  val cTitle = new TableColumn[Article, String] {
+  private val cTitle = new TableColumn[Article, String] {
     text = "Title"
     cellValueFactory = (a) => new StringProperty(a.value.title.trim.replaceAll("((\r\n)|\r|\n)+", " "))
     cellFactory = { (_: TableColumn[Article, String]) => new MyTableCell }
   }
-  val cPubdate = new TableColumn[Article, String] {
+  private val cPubdate = new TableColumn[Article, String] {
     text = "Date"
     cellValueFactory = (a) => new StringProperty(a.value.pubdate)
   }
-  val cEntrytype = new TableColumn[Article, String] {
-    text = "Type"
-    cellValueFactory = (a) => new StringProperty(a.value.entrytype)
-  }
-  val cAuthors = new TableColumn[Article, String] {
+  private val cAuthors = new TableColumn[Article, String] {
     text = "Authors"
     cellValueFactory = (a) => new StringProperty(a.value.authors.trim.replaceAll("((\r\n)|\r|\n)+", " "))
   }
-  val cJournal = new TableColumn[Article, String] {
+  private val cJournal = new TableColumn[Article, String] {
     text = "Journal"
     cellValueFactory = (a) => new StringProperty(a.value.journal)
   }
-  val cReview = new TableColumn[Article, String] {
+  private val cReview = new TableColumn[Article, String] {
     text = "Review"
     cellValueFactory = (a) => new StringProperty(StringHelper.headString(a.value.review.trim.replaceAll("((\r\n)|\r|\n)+", "|"), 50))
   }
-  val cBibtexid = new TableColumn[Article, String] {
+  private val cBibtexid = new TableColumn[Article, String] {
     text = "BibtexID"
     cellValueFactory = (a) => new StringProperty(a.value.bibtexid)
   }
-  val cModtime = new TableColumn[Article, String] {
+  private val cModtime = new TableColumn[Article, String] {
     text = "Modtime"
     sortType = TableColumn.SortType.Descending
     cellValueFactory = (a) => new StringProperty(a.value.getModtimeString)
   }
-  val defaultSortOrder = List(cPubdate, cTitle)
+  private val defaultSortOrder = List(cPubdate, cTitle)
 
-  val articles = new ObservableBuffer[Article]()
+  private val articles = new ObservableBuffer[Article]()
 
-  val alv: TableView[Article] = new TableView[Article](articles) {
+  private val alv: TableView[Article] = new TableView[Article](articles) {
     columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview, cModtime)
     columns.foreach(tc => tc.setPrefWidth(120.0))
     // columnResizePolicy = TableView.ConstrainedResizePolicy doesn't work with programmatic resizing: https://bugs.openjdk.java.net/browse/JDK-8091269
@@ -98,9 +91,9 @@ class ArticleListView extends GenericView("articlelistview") {
 
   text = "Article list"
 
-  val lbCurrentTitle = new Label("<title>")
+  private val lbCurrentTitle = new Label("<title>")
 
-  val aPreviousTopic = new MyAction("Article", "Go to previous topic") {
+  private val aPreviousTopic = new MyAction("Article", "Go to previous topic") {
     tooltipString = "Go to previous topic in history without changing topic view"
     image = new Image(getClass.getResource("/images/backward_nav.gif").toExternalForm)
     action = (_) => {
@@ -121,7 +114,7 @@ class ArticleListView extends GenericView("articlelistview") {
     }
     enabled = true
   }
-  val aRecentChanges = new MyAction("Article", "Show recently changed articles") {
+  private val aRecentChanges = new MyAction("Article", "Show recently changed articles") {
     tooltipString = "Show recently changed articles (max 100)"
     image = new Image(getClass.getResource("/images/clock.png").toExternalForm)
     action = (_) => inTransaction {
@@ -130,7 +123,7 @@ class ArticleListView extends GenericView("articlelistview") {
     }
     enabled = true
   }
-  val aSetColor = new MyAction("Article", "Cycle article color") {
+  private val aSetColor = new MyAction("Article", "Cycle article color") {
     tooltipString = "Cycle article color for article in this topic"
     image = new Image(getClass.getResource("/images/colors.png").toExternalForm)
     action = (_) => {
@@ -139,7 +132,7 @@ class ArticleListView extends GenericView("articlelistview") {
         a.getT2a(currentTopic) match {
           case Some(t2a) =>
             var col = t2a.color + 1 // cycle through colors
-            if (col >= colors.length) col = 0
+            if (col >= colorsn.length) col = 0
             t2a.color = col
             ReftoolDB.topics2articles.update(t2a)
 
@@ -150,7 +143,7 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   }
 
-  val aMoveToStack = new MyAction("Article", "Move to stack") {
+  private val aMoveToStack = new MyAction("Article", "Move to stack") {
     tooltipString = "Move selected articles to stack"
     image = new Image(getClass.getResource("/images/stackmove.gif").toExternalForm)
     action = (_) => inTransaction {
@@ -164,7 +157,7 @@ class ArticleListView extends GenericView("articlelistview") {
       Helpers.runUIdelayed(alv.requestFocus())
     }
   }
-  val aCopyToStack = new MyAction("Article", "Copy to stack") {
+  private val aCopyToStack = new MyAction("Article", "Copy to stack") {
     tooltipString = "Copy selected articles to stack"
     image = new Image(getClass.getResource("/images/stackadd.gif").toExternalForm)
     action = (_) => inTransaction {
@@ -176,7 +169,7 @@ class ArticleListView extends GenericView("articlelistview") {
       ApplicationController.showNotification(s"Copied ${as.length} articles to stack!")
     }
   }
-  val aStackMoveHere = new MyAction("Article", "Move stack articles here") {
+  private val aStackMoveHere = new MyAction("Article", "Move stack articles here") {
     tooltipString = "Move all stack articles here"
     image = new Image(getClass.getResource("/images/stackmovetohere.gif").toExternalForm)
     action = (_) => inTransaction {
@@ -189,7 +182,7 @@ class ArticleListView extends GenericView("articlelistview") {
       setArticlesTopic(currentTopic)
     }
   }
-  val aStackCopyHere = new MyAction("Article", "Copy stack here") {
+  private val aStackCopyHere = new MyAction("Article", "Copy stack here") {
     tooltipString = "Copy all stack articles here"
     image = new Image(getClass.getResource("/images/stackcopytohere.gif").toExternalForm)
     action = (_) => inTransaction {
@@ -201,7 +194,7 @@ class ArticleListView extends GenericView("articlelistview") {
       setArticlesTopic(currentTopic)
     }
   }
-  val aShowStack = new MyAction("Article", "Show stack") {
+  private val aShowStack = new MyAction("Article", "Show stack") {
     tooltipString = "Show articles on stack"
     image = new Image(getClass.getResource("/images/stack.gif").toExternalForm)
     action = (_) => inTransaction {
@@ -209,7 +202,7 @@ class ArticleListView extends GenericView("articlelistview") {
     }
     enabled = true
   }
-  val aShowOrphans = new MyAction("Article", "Show orphans") {
+  private val aShowOrphans = new MyAction("Article", "Show orphans") {
     tooltipString = "Show orphaned articles without topic"
     image = new Image(getClass.getResource("/images/orphans.png").toExternalForm)
     action = (_) => inTransaction {
@@ -220,7 +213,7 @@ class ArticleListView extends GenericView("articlelistview") {
     }
     enabled = true
   }
-  val aOpenPDF = new MyAction("Article", "Open PDF") {
+  private val aOpenPDF = new MyAction("Article", "Open PDF") {
     tooltipString = "Opens main document of article"
     image = new Image(getClass.getResource("/images/pdf.png").toExternalForm)
     action = (_) => {
@@ -228,7 +221,7 @@ class ArticleListView extends GenericView("articlelistview") {
       FileHelper.openDocument(a.getFirstDocRelative)
     }
   }
-  val aOpenURL = new MyAction("Article", "Open URL") {
+  private val aOpenURL = new MyAction("Article", "Open URL") {
     tooltipString = "Opens URL of article"
     image = new Image(getClass.getResource("/images/external_browser.gif").toExternalForm)
     action = (_) => {
@@ -236,7 +229,7 @@ class ArticleListView extends GenericView("articlelistview") {
       FileHelper.openURL(a.getURL)
     }
   }
-  val aRevealPDF = new MyAction("Article", "Reveal document") {
+  private val aRevealPDF = new MyAction("Article", "Reveal document") {
     tooltipString = "Reveal document in file browser"
     image = new Image(getClass.getResource("/images/Finder_icon.png").toExternalForm)
     action = (_) => {
@@ -245,7 +238,7 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   }
 
-  val aRemoveFromTopic = new MyAction("Article", "Remove from topic") {
+  private val aRemoveFromTopic = new MyAction("Article", "Remove from topic") {
     tooltipString = "Remove articles from current topic"
     image = new Image(getClass.getResource("/images/remove_correction.gif").toExternalForm)
     action = (_) => inTransaction {
@@ -258,7 +251,7 @@ class ArticleListView extends GenericView("articlelistview") {
       Helpers.runUIdelayed(alv.requestFocus())
     }
   }
-  val aRemoveArticle = new MyAction("Article", "Delete article") {
+  private val aRemoveArticle = new MyAction("Article", "Delete article") {
     tooltipString = "Deletes articles completely"
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
     action = (_) => inTransaction {
@@ -282,7 +275,7 @@ class ArticleListView extends GenericView("articlelistview") {
       }
     }
   }
-  val aCopyURLs = new MyAction("Article", "Copy article URLs") {
+  private val aCopyURLs = new MyAction("Article", "Copy article URLs") {
     tooltipString = "Copy article bibtexid+URL+title to clipboard (shift: text format only)"
     image = new Image(getClass.getResource("/images/copyurls.png").toExternalForm)
     action = (m) => {
@@ -298,14 +291,14 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   }
 
-  val aCopyPDFs = new MyAction("Article", "Copy documents") {
+  private val aCopyPDFs = new MyAction("Article", "Copy documents") {
     tooltipString = "Copy documents of articles somewhere"
     image = new Image(getClass.getResource("/images/copypdfs.png").toExternalForm)
     action = (_) => {
       UpdatePdfs.exportPdfs(alv.selectionModel.value.getSelectedItems.toList, null, toolbarButton.getParent.getScene.getWindow)
     }
   }
-  val aUpdateDocumentFilenames = new MyAction("Article", "Update document filenames") {
+  private val aUpdateDocumentFilenames = new MyAction("Article", "Update document filenames") {
     tooltipString = "use [bibtexid]-[title]-[docname]"
     action = (_) => inTransaction {
       val as = new ArrayBuffer[Article] ++ alv.selectionModel.value.getSelectedItems
@@ -385,13 +378,13 @@ class ArticleListView extends GenericView("articlelistview") {
     center = alv
   }
 
-  def selectRevealArticleByID(id: Long): Unit = {
+  private def selectRevealArticleByID(id: Long): Unit = {
     inTransaction {
       ReftoolDB.articles.lookup(id) foreach(a => selectRevealArticle(a))
     }
   }
 
-  def selectRevealArticle(a: Article): Unit = {
+  private def selectRevealArticle(a: Article): Unit = {
     if (articles.contains(a)) {
       Helpers.runUI {
         alv.getSelectionModel.select(a)
@@ -404,7 +397,7 @@ class ArticleListView extends GenericView("articlelistview") {
     } else debug("revealarticle: not found: " + a)
   }
 
-  def safeSelect(oldidx: Int): Unit = {
+  private def safeSelect(oldidx: Int): Unit = {
     val newidx = if (articles.length > oldidx) oldidx
     else { if (articles.length > 0) math.max(0, oldidx - 1) else -1 }
     if (newidx > -1) alv.getSelectionModel.select(newidx)
@@ -435,8 +428,8 @@ class ArticleListView extends GenericView("articlelistview") {
     articles -= a
   })
 
-  var firstRun = true
-  def setArticles(al: List[Article], title: String, topic: Topic, sortCols: List[TableColumn[Article, String]]): Unit = {
+  private var firstRun = true
+  private def setArticles(al: List[Article], title: String, topic: Topic, sortCols: List[TableColumn[Article, String]]): Unit = {
     logCall(s"num=${al.length} topic=$topic")
     currentTopic = topic
     articles.clear()
@@ -459,7 +452,7 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   }
 
-  def setArticlesTopic(topic: Topic) {
+  private def setArticlesTopic(topic: Topic) {
     if (topic != null) inTransaction {
       if (topicHistory.isEmpty || topicHistory.last != topic.id)
         topicHistory += topic.id

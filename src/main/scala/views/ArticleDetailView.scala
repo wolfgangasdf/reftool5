@@ -18,9 +18,9 @@ import scalafx.scene.layout._
 
 class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
-  val lines = new ArrayBuffer[MyLine]()
+  private val lines = new ArrayBuffer[MyLine]()
 
-  val title = "Article details"
+  private val title = "Article details"
 
   text = title
 
@@ -46,9 +46,9 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     } else true
   }
 
-  var article: Article = _
+  private var article: Article = _
 
-  def setArticle(aa: Article) {
+  private def setArticle(aa: Article) {
     logCall("" + aa)
     val doit = if (isDirty.value) {
       val res = new Alert(AlertType.Confirmation) {
@@ -88,7 +88,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
-  def saveArticle(): Unit = {
+  private def saveArticle(): Unit = {
     try {
       article.title = lTitle.tf.getText
       article.authors = lAuthors.tf.getText
@@ -119,13 +119,13 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
-  class MyLine(gpRow: Int, labelText: String, rows: Int = 1, disableEnter: Boolean = false) extends MyInputTextArea(gpRow, labelText, rows, "", "", disableEnter) {
+  private class MyLine(gpRow: Int, labelText: String, rows: Int = 1, disableEnter: Boolean = false) extends MyInputTextArea(gpRow, labelText, rows, "", "", disableEnter) {
     val lineidx: Int = lines.size
     onchange = () => { isDirty.value = true }
     lines += this
   }
 
-  class MyGridPane extends GridPane {
+  private class MyGridPane extends GridPane {
     // margin = Insets(18)
     hgap = 4
     vgap = 6
@@ -133,34 +133,34 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     columnConstraints += new ColumnConstraints { hgrow = Priority.Always }
   }
 
-  val lTitle = new MyLine(0, "Title", 2, disableEnter = true)
-  val lAuthors = new MyLine(1, "Authors", 2, disableEnter = true)
-  val lPubdate = new MyLine(2, "Pubdate", disableEnter = true)
-  val lBibtexid = new MyLine(3, "Bibtex ID", disableEnter = true)
-  val lJournal = new MyLine(4, "Journal", disableEnter = true)
+  private val lTitle = new MyLine(0, "Title", 2, disableEnter = true)
+  private val lAuthors = new MyLine(1, "Authors", 2, disableEnter = true)
+  private val lPubdate = new MyLine(2, "Pubdate", disableEnter = true)
+  private val lBibtexid = new MyLine(3, "Bibtex ID", disableEnter = true)
+  private val lJournal = new MyLine(4, "Journal", disableEnter = true)
 
-  val lReview = new MyLine(0, "Review", 10)
+  private val lReview = new MyLine(0, "Review", 10)
 
-  val lEntryType = new MyLine(0, "Entry type", disableEnter = true)
-  val lLinkURL = new MyLine(2, "Link URL", disableEnter = true)
-  val lDOI = new MyLine(3, "DOI", disableEnter = true)
-  val lBibtexentry = new MyLine(4, "Bibtex entry", 10)
+  private val lEntryType = new MyLine(0, "Entry type", disableEnter = true)
+  private val lLinkURL = new MyLine(2, "Link URL", disableEnter = true)
+  private val lDOI = new MyLine(3, "DOI", disableEnter = true)
+  private val lBibtexentry = new MyLine(4, "Bibtex entry", 10)
 
-  val grid1 = new MyGridPane {
+  private val grid1 = new MyGridPane {
     children ++= lTitle.content ++ lAuthors.content ++ lPubdate.content ++ lBibtexid.content ++ lJournal.content
   }
 
-  val grid2 = new MyGridPane {
+  private val grid2 = new MyGridPane {
     children ++= lReview.content
   }
 
-  val grid3 = new MyGridPane {
+  private val grid3 = new MyGridPane {
     children ++= lEntryType.content ++ lLinkURL.content ++ lDOI.content ++ lBibtexentry.content
   }
 
-  val lbCurrentArticle = new Label("<article>")
+  private val lbCurrentArticle = new Label("<article>")
 
-  val aSave = new MyAction("Article", "Save") {
+  private val aSave = new MyAction("Article", "Save") {
     tooltipString = "Save changes to current article"
     image = new Image(getClass.getResource("/images/save_edit.gif").toExternalForm)
     accelerator = KeyCombination.keyCombination("shortcut +S")
@@ -170,7 +170,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
-  val aUpdateFromBibtex = new MyAction("Article", "Update from bibtex") {
+  private val aUpdateFromBibtex = new MyAction("Article", "Update from bibtex") {
     tooltipString = "Update article fields from bibtex, not overwriting review"
     image = new Image(getClass.getResource("/images/bib2article.png").toExternalForm)
     action = (_) => {
@@ -185,7 +185,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
-  val aGenerateBibtexID = new MyAction("Article", "Generate bibtex ID") {
+  private val aGenerateBibtexID = new MyAction("Article", "Generate bibtex ID") {
     tooltipString = "Generate new bibtex ID\n<last name><year><alphabeticically incrementing counter>"
     image = new Image(getClass.getResource("/images/genbibid.png").toExternalForm)
     action = (_) => {
@@ -200,7 +200,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
-  val aUpdateMetadatafromPDF = new MyAction("Article", "Update metadata") {
+  private val aUpdateMetadatafromPDF = new MyAction("Article", "Update metadata") {
     tooltipString = "Update article metadata from first PDF or manually (force with shift)"
     image = new Image(getClass.getResource("/images/pdf2meta.png").toExternalForm)
     action = (m) => {
@@ -208,7 +208,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     }
   }
 
-  val aCreateBibtex = new MyAction("Article", "Create bibtex entry") {
+  private val aCreateBibtex = new MyAction("Article", "Create bibtex entry") {
     tooltipString = "(Re-)create the article's bibtex entry from article fields"
     image = new Image(getClass.getResource("/images/article2bib.png").toExternalForm)
     action = (_) => {
