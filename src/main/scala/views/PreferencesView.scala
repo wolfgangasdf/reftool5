@@ -22,9 +22,9 @@ class PreferencesView extends GenericView("prefsview") {
     aSave.enabled = isDirty.value
   })
 
-  def onchange(): Unit = { isDirty.value = true }
+  private def onchange(): Unit = { isDirty.value = true }
 
-  class MyGridPane extends GridPane {
+  private class MyGridPane extends GridPane {
     // margin = Insets(18)
     hgap = 4
     vgap = 6
@@ -32,29 +32,28 @@ class PreferencesView extends GenericView("prefsview") {
     columnConstraints += new ColumnConstraints { hgrow = Priority.Always }
   }
 
-  val lAutoimport = new MyInputDirchooser(0, "Auto import dir", "",
+  private val lAutoimport = new MyInputDirchooser(0, "Auto import dir", "",
     """This folder is watched for files like 'reftool5import*.pdf', and automatic import initiated.
       |Designed to work with the browser extension.""".stripMargin)
 
-  val lDebug = new MyInputTextField(1, "Debug level", "", "add up: 0-off 1-debug 2-function call log") {
-  }
+  private val lDebug = new MyInputTextField(1, "Debug level", "", "add up: 0-off 1-debug 2-function call log")
 
-  val lShowStartupdialog = new MyInputCheckbox(2, "Show startup dialog", true, "If not selected, the last database will be opened automatically.")
+  private val lShowStartupdialog = new MyInputCheckbox(2, "Show startup dialog", true, "If not selected, the last database will be opened automatically.")
 
-  List(lAutoimport, lDebug, lShowStartupdialog).foreach(_.onchange = () => PreferencesView.this.onchange())
+  List(lAutoimport, lDebug, lShowStartupdialog).foreach(_.onchange = () => onchange())
 
-  val grid1 = new MyGridPane {
+  private val grid1 = new MyGridPane {
     children ++= lAutoimport.content ++ lDebug.content ++ lShowStartupdialog.content
   }
 
-  def load(): Unit = {
+  private def load(): Unit = {
     lAutoimport.tf.text = AppStorage.config.autoimportdir
     lDebug.tf.text = AppStorage.config.debuglevel.toString
     lShowStartupdialog.cb.selected = AppStorage.config.showstartupdialog
     isDirty.value = false
   }
 
-  val aSave = new MyAction("Preferences", "Save") {
+  private val aSave = new MyAction("Preferences", "Save") {
     tooltipString = "Save changes"
     image = new Image(getClass.getResource("/images/save_edit.gif").toExternalForm)
     action = (_) => {

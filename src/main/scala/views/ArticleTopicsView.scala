@@ -13,9 +13,9 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
 
   text = "A-topics"
 
-  var article: Article = _
+  private var article: Article = _
 
-  val lv = new ListView[Topic] {
+  private val lv = new ListView[Topic] {
     onMouseClicked = (me: MouseEvent) => {
       if (me.clickCount == 2) {
         if (selectionModel.value.getSelectedItems.length > 0) {
@@ -26,7 +26,7 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
     }
   }
 
-  val aRemoveFromTopic = new MyAction("Article", "Remove from topic") {
+  private val aRemoveFromTopic = new MyAction("Article", "Remove from topic") {
     tooltipString = "Remove articles from current topic"
     image = new Image(getClass.getResource("/images/remove_correction.gif").toExternalForm)
     action = (_) => inTransaction {
@@ -45,7 +45,7 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
     aRemoveFromTopic.enabled = lv.selectionModel.value.getSelectedItems.length > 0
   }
 
-  def setArticle(a: Article): Unit = {
+  private def setArticle(a: Article): Unit = {
     logCall(a)
     inTransaction {
       lv.getItems.clear()

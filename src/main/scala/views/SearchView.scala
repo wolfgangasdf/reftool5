@@ -20,18 +20,18 @@ class SearchView extends GenericView("searchview") {
 
   text = "Search"
 
-  val tfSearch = new TextField {
+  private val tfSearch = new TextField {
     hgrow = Priority.Always
     var millis1: Long = 0
     var millis2: Long = 0
     tooltip = new Tooltip { text = "Sspace-separated search terms (group with single quote), articles matching all terms are returned if you press Enter!" }
-    this.promptText = "Enter search string"
+    this.promptText = "Enter search text"
     onAction = (_: ActionEvent) => {
       doSearch()
     }
   }
 
-  def dynamicWhere(q: Queryable[Article], sstr: String, millis1: Long, millis2: Long): Query[Article] = q.where(a =>
+  private def dynamicWhere(q: Queryable[Article], sstr: String, millis1: Long, millis2: Long): Query[Article] = q.where(a =>
     (
       (upper(a.title) like s"%$sstr%".inhibitWhen(!cbTitle.selected.value))
         or (upper(a.authors) like s"%$sstr%".inhibitWhen(!cbAuthors.selected.value))
@@ -47,7 +47,7 @@ class SearchView extends GenericView("searchview") {
       and (a.modtime <= millis2.inhibitWhen(!cbModifiedSince.selected.value))
   )
 
-  def doSearch() {
+  private def doSearch() {
     val millis1 = date1.getValue.atTime(hours1.getText.toInt, 0).toInstant(ZonedDateTime.now().getOffset).toEpochMilli
     val millis2 = date2.getValue.atTime(hours2.getText.toInt, 59).toInstant(ZonedDateTime.now().getOffset).toEpochMilli
     inTransaction {
@@ -77,7 +77,7 @@ class SearchView extends GenericView("searchview") {
     }
   }
 
-  class HourTextField(initxt: String) extends TextField {
+  private class HourTextField(initxt: String) extends TextField {
     textFormatter = new TextFormatter(new IntStringConverter {
       override def toString(i: Int): String = "%02d".format(i)
       override def fromString(string: String): Int = {
@@ -89,45 +89,46 @@ class SearchView extends GenericView("searchview") {
     prefWidth = 50
   }
 
-  var currentTopic: Topic = _
-  val tfCurrentTopic = new TextField() { text = "<topic>" ; editable = false }
-  val cbOnlyTopic = new CheckBox("Only search current topic") { selected = false }
-  val cbTitle = new CheckBox("Title") { selected = true }
-  val cbAuthors = new CheckBox("Authors") { selected = true }
-  val cbReview = new CheckBox("Review") { selected = true }
-  val cbBibtexID = new CheckBox("Bibtex ID") { selected = true }
-  val cbBibtex = new CheckBox("Bibtex") { selected = true }
-  val cbPubdate = new CheckBox("Publication date") { selected = true }
-  val cbJournal = new CheckBox("Journal") { selected = true }
-  val cbDOI = new CheckBox("DOI") { selected = true }
-  val cbDocuments = new CheckBox("Document filenames") { selected = false }
-  val cbModifiedSince = new CheckBox("Modified between: ") { selected = false }
-  val date1 = new DatePicker(LocalDate.now.minusDays(1)) { prefWidth = 130 }
-  val date2 = new DatePicker(LocalDate.now()) { prefWidth = 130 }
-  val hours1 = new HourTextField("00")
-  val hours2 = new HourTextField("23")
-  val selAll = List(cbTitle, cbAuthors, cbReview, cbBibtexID, cbBibtex, cbPubdate, cbJournal, cbDOI, cbDocuments)
-  val selNotDefault = Seq(cbBibtex, cbPubdate, cbDOI, cbDocuments, cbOnlyTopic, cbModifiedSince)
-  val btSelectDefault = new Button("Select default") {
+  private var currentTopic: Topic = _
+  private val tfCurrentTopic = new TextField() { text = "<topic>" ; editable = false }
+  private val cbOnlyTopic = new CheckBox("Only search current topic") { selected = false }
+  private val cbTitle = new CheckBox("Title") { selected = true }
+  private val cbAuthors = new CheckBox("Authors") { selected = true }
+  private val cbReview = new CheckBox("Review") { selected = true }
+  private val cbBibtexID = new CheckBox("Bibtex ID") { selected = true }
+  private val cbBibtex = new CheckBox("Bibtex") { selected = true }
+  private val cbPubdate = new CheckBox("Publication date") { selected = true }
+  private val cbJournal = new CheckBox("Journal") { selected = true }
+  private val cbDOI = new CheckBox("DOI") { selected = true }
+  private val cbDocuments = new CheckBox("Document filenames") { selected = false }
+  private val cbModifiedSince = new CheckBox("Modified between: ") { selected = false }
+  private val date1 = new DatePicker(LocalDate.now.minusDays(1)) { prefWidth = 130 }
+  private val date2 = new DatePicker(LocalDate.now()) { prefWidth = 130 }
+  private val hours1 = new HourTextField("00")
+  private val hours2 = new HourTextField("23")
+  private val selAll = List(cbTitle, cbAuthors, cbReview, cbBibtexID, cbBibtex, cbPubdate, cbJournal, cbDOI, cbDocuments)
+  private val selNotDefault = Seq(cbBibtex, cbPubdate, cbDOI, cbDocuments, cbOnlyTopic, cbModifiedSince)
+  private val btSelectDefault = new Button("Select default") {
     onAction = (_: ActionEvent) => {
       selAll.foreach( _.selected = true)
       selNotDefault.foreach( _.selected = false)
       date1.value = LocalDate.now.minusDays(1)
       date2.value = LocalDate.now
+      tfSearch.text = ""
     }
   }
-  val btSelectNone = new Button("Select none") {
+  private val btSelectNone = new Button("Select none") {
     onAction = (_: ActionEvent) => {
       selAll.foreach( _.selected = false)
     }
   }
-  val btSearch = new Button("Search!") {
+  private val btSearch = new Button("Search!") {
     onAction = (_: ActionEvent) => doSearch()
   }
   content = new BorderPane {
     margin = Insets(5.0)
     top = new HBox { children = List(
-      new Label("Search string: "),
+      new Label("Search text: "),
       tfSearch
     )}
     center = new VBox {
@@ -144,7 +145,7 @@ class SearchView extends GenericView("searchview") {
     }
   }
 
-  def setCurrentTopic(t: Topic): Unit = {
+  private def setCurrentTopic(t: Topic): Unit = {
     currentTopic = t
     tfCurrentTopic.text = if (currentTopic != null) currentTopic.toString else ""
   }

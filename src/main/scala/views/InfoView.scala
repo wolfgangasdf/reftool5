@@ -19,9 +19,9 @@ class InfoView extends GenericView("toolview") {
 
   text = "Tools"
 
-  val taInfo = new TextArea()
+  private val taInfo = new TextArea()
 
-  val aImportPDFTree: MyAction = new MyAction("Tools", "Import PDF tree") {
+  new MyAction("Tools", "Import PDF tree") {
     tooltipString = "Imports a whole PDF folder structure into database\n(under new toplevel-topic)"
     action = (_) => {
       val res = MFile(new DirectoryChooser { title = "Select base import directory" }.showDialog(main.Main.stage))
@@ -60,7 +60,7 @@ class InfoView extends GenericView("toolview") {
     enabled = true
   }
 
-  val aDBstats: MyAction = new MyAction("Tools", "Generate DB statistics") {
+  private val aDBstats: MyAction = new MyAction("Tools", "Generate DB statistics") {
     image = new Image(getClass.getResource("/images/dbstats.png").toExternalForm)
     tooltipString = "Generate DB statistics in " + ReftoolDB.TSPECIAL
     action = (_) => {
@@ -80,11 +80,11 @@ class InfoView extends GenericView("toolview") {
     enabled = true
   }
 
-  def addToInfo(s: String): Unit = {
+  private def addToInfo(s: String): Unit = {
     taInfo.appendText(s + "\n")
     debug("i: " + s)
   }
-  val aFindOrphanedPDFs: MyAction = new MyAction("Tools", "Find orphaned documents") {
+  private val aFindOrphanedPDFs: MyAction = new MyAction("Tools", "Find orphaned documents") {
     image = new Image(getClass.getResource("/images/checkpdfs.png").toExternalForm)
     tooltipString = "List orphaned and multiple times used documents\nTakes a long time!"
     action = (_) => {
@@ -114,7 +114,7 @@ class InfoView extends GenericView("toolview") {
     enabled = true
   }
 
-  val aCheckArticleDocs: MyAction = new MyAction("Tools", "Check article documents") {
+  private val aCheckArticleDocs: MyAction = new MyAction("Tools", "Check article documents") {
     image = new Image(getClass.getResource("/images/articledocs.png").toExternalForm)
     tooltipString = "Check for articles with documents that are missing"
     action = (_) => {
@@ -140,7 +140,7 @@ class InfoView extends GenericView("toolview") {
     enabled = true
   }
 
-  val aMemory: MyAction = new MyAction("Tools", "Memory info") {
+  private val aMemory: MyAction = new MyAction("Tools", "Memory info") {
     image = new Image(getClass.getResource("/images/meminfo.png").toExternalForm)
     tooltipString = "Memory cleanup and statistics"
     action = (_) => {
@@ -156,7 +156,7 @@ class InfoView extends GenericView("toolview") {
     enabled = true
   }
 
-  val aClear: MyAction = new MyAction("Tools", "Clear output") {
+  private val aClear: MyAction = new MyAction("Tools", "Clear output") {
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
     tooltipString = "Clear info output"
     action = (_) => {
