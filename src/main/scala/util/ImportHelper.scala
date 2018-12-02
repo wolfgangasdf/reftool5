@@ -309,22 +309,30 @@ object ImportHelper extends Logging {
   private def updateBibtexFromArxiv(article: Article, aid: String): Article = {
     import scalaj.http._
     var a = article
-    val url1 = "http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:" + aid
+    val url1 = "https://arxiv.org/abs/" + aid
     debug("getting " + url1)
-    val resp1 = Http(url1).timeout(15000, 30000).asString
+    val resp1 = Http(url1).timeout(15000, 10000).asString
     if (resp1.code == 200) {
-      val re1 = """(?s).*<a href="(.*)">Bibtex entry for this abstract</a>.*""".r
-      resp1.body match {
-        case re1(biblink) =>
-          debug("found biblink: " + biblink)
-          val resp2 = Http(biblink).timeout(15000, 30000).asString
-          if (resp2.code == 200) {
-            if (resp2.body.contains("@")) {
-              val be = resp2.body.substring(resp2.body.indexOf("@"))
-              a = generateUpdateBibtexID(be, a)
-            }
-          }
+      val title = """(?m)<meta name="citation_title" content="(.*)"/>""".r.findFirstMatchIn(resp1.body).map(_ group 1).getOrElse("")
+      val authors = """(?m)<meta name="citation_author" content="(.*)"/>""".r.findAllMatchIn(resp1.body).toList.map(_ group 1)
+      val arxivid = """(?m)<meta name="citation_arxiv_id" content="(.*)"/>""".r.findFirstMatchIn(resp1.body).map(_ group 1).getOrElse("")
+      val date = """(?m)<meta name="citation_date" content="(.*)"/>""".r.findFirstMatchIn(resp1.body).map(_ group 1).getOrElse("")
+      val datere = "([0-9]+)/([0-9]+)/.*".r
+      val be = new BibTeXEntry(new Key("article"), new Key(arxivid))
+      be.addField(BibTeXEntry.KEY_TITLE, new StringValue(title, StringValue.Style.BRACED))
+      be.addField(BibTeXEntry.KEY_AUTHOR, new StringValue(authors.mkString(" and "), StringValue.Style.BRACED))
+      be.addField(BibTeXEntry.KEY_JOURNAL, new StringValue("ArXiv e-prints", StringValue.Style.BRACED))
+      be.addField(BibTeXEntry.KEY_DOI, new StringValue(a.doi, StringValue.Style.BRACED))
+      date match {
+        case datere(year, month) =>
+          be.addField(BibTeXEntry.KEY_YEAR, new StringValue(year, StringValue.Style.BRACED))
+          be.addField(BibTeXEntry.KEY_MONTH, new StringValue(months(month.toInt - 1), StringValue.Style.BRACED))
       }
+      be.addField(new Key("eid"), new StringValue(arxivid, StringValue.Style.BRACED))
+      be.addField(new Key("pages"), new StringValue(arxivid, StringValue.Style.BRACED))
+      be.addField(new Key("eprint"), new StringValue(arxivid, StringValue.Style.BRACED))
+      be.addField(new Key("archivePrefix"), new StringValue("arXiv", StringValue.Style.BRACED))
+      a = generateUpdateBibtexID(bibtexFromBtentry(be), a)
     }
     a
   }
