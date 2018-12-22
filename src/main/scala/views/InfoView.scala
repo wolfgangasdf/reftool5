@@ -23,7 +23,7 @@ class InfoView extends GenericView("toolview") {
 
   new MyAction("Tools", "Import PDF tree") {
     tooltipString = "Imports a whole PDF folder structure into database\n(under new toplevel-topic)"
-    action = (_) => {
+    action = _ => {
       val res = MFile(new DirectoryChooser { title = "Select base import directory" }.showDialog(main.Main.stage))
       if (res != null) {
         // must run from background task, otherwise hangs on UI update!
@@ -63,7 +63,7 @@ class InfoView extends GenericView("toolview") {
   private val aDBstats: MyAction = new MyAction("Tools", "Generate DB statistics") {
     image = new Image(getClass.getResource("/images/dbstats.png").toExternalForm)
     tooltipString = "Generate DB statistics in " + ReftoolDB.TSPECIAL
-    action = (_) => {
+    action = _ => {
       val stats = ReftoolDB.getDBstats
       inTransaction {
         val st = ReftoolDB.topics.where(t => t.title === ReftoolDB.TSPECIAL).head
@@ -87,7 +87,7 @@ class InfoView extends GenericView("toolview") {
   private val aFindOrphanedPDFs: MyAction = new MyAction("Tools", "Find orphaned documents") {
     image = new Image(getClass.getResource("/images/checkpdfs.png").toExternalForm)
     tooltipString = "List orphaned and multiple times used documents\nTakes a long time!"
-    action = (_) => {
+    action = _ => {
       addToInfo("Retrieving all documents...")
       val alldocs = FileHelper.listFilesRec(new MFile(AppStorage.config.pdfpath)).filter(_.isFile)
       addToInfo("  found " + alldocs.length + " files!")
@@ -117,7 +117,7 @@ class InfoView extends GenericView("toolview") {
   private val aCheckArticleDocs: MyAction = new MyAction("Tools", "Check article documents") {
     image = new Image(getClass.getResource("/images/articledocs.png").toExternalForm)
     tooltipString = "Check for articles with documents that are missing"
-    action = (_) => {
+    action = _ => {
       taInfo.text = "Articles with missing documents:\n"
       inTransaction {
         var tocheck = ReftoolDB.articles.Count.toLong
@@ -143,7 +143,7 @@ class InfoView extends GenericView("toolview") {
   private val aMemory: MyAction = new MyAction("Tools", "Memory info") {
     image = new Image(getClass.getResource("/images/meminfo.png").toExternalForm)
     tooltipString = "Memory cleanup and statistics"
-    action = (_) => {
+    action = _ => {
       System.gc()
       val formatter = java.text.NumberFormat.getIntegerInstance
       taInfo.appendText("max, total, free, total-free memory (bytes) : " +
@@ -159,7 +159,7 @@ class InfoView extends GenericView("toolview") {
   private val aClear: MyAction = new MyAction("Tools", "Clear output") {
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
     tooltipString = "Clear info output"
-    action = (_) => {
+    action = _ => {
       taInfo.clear()
     }
     enabled = true

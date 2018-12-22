@@ -20,7 +20,7 @@ class SearchView extends GenericView("searchview") {
 
   text = "Search"
 
-  private val tfSearch = new TextField {
+  private val tfSearch: TextField = new TextField {
     hgrow = Priority.Always
     var millis1: Long = 0
     var millis2: Long = 0

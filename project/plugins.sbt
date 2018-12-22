@@ -7,6 +7,9 @@ addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.6.1")
 ///////////////// mac bundle
 addSbtPlugin("de.sciss" % "sbt-appbundle" % "1.0.2")
 
+///////////////// run dependencyUpdates
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")
+
 ////////// to find dependency problems
 //addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.4")
 

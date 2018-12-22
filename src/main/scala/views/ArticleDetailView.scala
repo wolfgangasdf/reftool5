@@ -164,7 +164,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
     tooltipString = "Save changes to current article"
     image = new Image(getClass.getResource("/images/save_edit.gif").toExternalForm)
     accelerator = KeyCombination.keyCombination("shortcut +S")
-    action = (_) => {
+    action = _ => {
       saveArticle()
       ApplicationController.showNotification("Saved article!")
     }
@@ -173,7 +173,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   private val aUpdateFromBibtex = new MyAction("Article", "Update from bibtex") {
     tooltipString = "Update article fields from bibtex, not overwriting review"
     image = new Image(getClass.getResource("/images/bib2article.png").toExternalForm)
-    action = (_) => {
+    action = _ => {
       var newa = ImportHelper.updateArticleFromBibtex(article)
       inTransaction {
         newa = ReftoolDB.renameDocuments(newa)
@@ -188,7 +188,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   private val aGenerateBibtexID = new MyAction("Article", "Generate bibtex ID") {
     tooltipString = "Generate new bibtex ID\n<last name><year><alphabeticically incrementing counter>"
     image = new Image(getClass.getResource("/images/genbibid.png").toExternalForm)
-    action = (_) => {
+    action = _ => {
       var newa = ImportHelper.generateUpdateBibtexID(article.bibtexentry, article, resetBibtexID = true)
       inTransaction {
         newa = ReftoolDB.renameDocuments(newa)
@@ -203,7 +203,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   private val aUpdateMetadatafromPDF = new MyAction("Article", "Update metadata") {
     tooltipString = "Update article metadata from first PDF or manually (force with shift)"
     image = new Image(getClass.getResource("/images/pdf2meta.png").toExternalForm)
-    action = (m) => {
+    action = m => {
       ImportHelper.updateMetadataFromDoc(article, FileHelper.getDocumentFileAbs(article.getFirstDocRelative), parsePdf = m != MyAction.MSHIFT)
     }
   }
@@ -211,7 +211,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   private val aCreateBibtex = new MyAction("Article", "Create bibtex entry") {
     tooltipString = "(Re-)create the article's bibtex entry from article fields"
     image = new Image(getClass.getResource("/images/article2bib.png").toExternalForm)
-    action = (_) => {
+    action = _ => {
       val newa = ImportHelper.createBibtexFromArticle(article)
       inTransaction {
         ReftoolDB.articles.update(newa)

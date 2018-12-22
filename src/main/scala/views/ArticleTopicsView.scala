@@ -29,7 +29,7 @@ class ArticleTopicsView extends GenericView("articletopicsview") {
   private val aRemoveFromTopic = new MyAction("Article", "Remove from topic") {
     tooltipString = "Remove articles from current topic"
     image = new Image(getClass.getResource("/images/remove_correction.gif").toExternalForm)
-    action = (_) => inTransaction {
+    action = _ => inTransaction {
       lv.selectionModel.value.getSelectedItems.foreach( t => {
         article.topics.dissociate(t)
       })
