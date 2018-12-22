@@ -271,7 +271,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     }
 
     filterEvent(MouseEvent.MouseReleased) { // disable edit by mouse click
-      (me: MouseEvent) => if (me.clickCount == 1) me.consume() // but enable double click to expand/collapse
+      me: MouseEvent => if (me.clickCount == 1) me.consume() // but enable double click to expand/collapse
     }
 
     delegate.setCellFactory(_ => new MyTreeCell())
@@ -359,7 +359,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
   private val aAddArticle: MyAction = new MyAction("Topic", "Add new article") {
     image = new Image(getClass.getResource("/images/new_con.gif").toExternalForm)
     tooltipString = "Create new article in current topic"
-    action = (_) => {
+    action = _ => {
       val si = tv.getSelectionModel.getSelectedItem
       inTransaction {
         val t = ReftoolDB.topics.get(si.getValue.id)
@@ -378,7 +378,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
       val t2 = inTransaction { ReftoolDB.topics.insert(new Topic(title = "new topic", parent = parendID, expanded = searchActive)) }
       loadTopics(revealLastTopic = false, revealTopic = t2, editTopic = true)
     }
-    action = (m) => {
+    action = m => {
       if (m == MyAction.MSHIFT) {
         addNewTopic(troot.id)
       } else {
@@ -392,7 +392,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     image = new Image(getClass.getResource("/images/export2bib.png").toExternalForm)
     tooltipString = "Export all articles in current topic to bibtex file\n" +
       "shift: overwrite last export filename"
-    action = (m) => {
+    action = m => {
       val t = tv.getSelectionModel.getSelectedItem.getValue
       val fn = if (m == MyAction.MSHIFT && new MFile(t.exportfn).exists) {
         new MFile(t.exportfn)
@@ -430,7 +430,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     image = new Image(getClass.getResource("/images/copypdfs.png").toExternalForm)
     tooltipString = "Export documents of all articles in current topic to folder\n" +
       "If duplicate, compare files and ask user."
-    action = (_) => {
+    action = _ => {
       val t = tv.getSelectionModel.getSelectedItem.getValue
       val articles = inTransaction { t.articles.toList }
       debug(s"aexppdfs: topicfn=${t.exportfn}")
@@ -446,7 +446,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     image = new Image(getClass.getResource("/images/updatepdfs.png").toExternalForm)
     tooltipString = "Update pdfs from a folder.\nFilename must not be changed in reftool or outside, or you have to do update them manually!"
 
-    action = (_) => UpdatePdfs.updatePdfs(toolbarButton.getScene.getWindow(),
+    action = _ => UpdatePdfs.updatePdfs(toolbarButton.getScene.getWindow(),
       Option(tv.getSelectionModel.getSelectedItem).map(ti => ti.getValue))
     enabled = true
   }
@@ -463,7 +463,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     image = new Image(getClass.getResource("/images/collapse.png").toExternalForm)
     tooltipString = "Collapse all topics\nshift: collapse all but current topic"
 
-    action = (m) => {
+    action = m => {
       if (m != MyAction.MSHIFT) tiroot.expanded = false
       inTransaction { collapseAllTopics() }
       loadTopics(clearSearch = true)
@@ -473,7 +473,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
   private val aRemoveTopic: MyAction = new MyAction("Topic", "Collapse all") {
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
     tooltipString = "Remove topic"
-    action = (_) => {
+    action = _ => {
       val t = tv.getSelectionModel.getSelectedItem.getValue
       inTransaction {
         if (t.childrenTopics.nonEmpty) {
@@ -505,7 +505,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     loadTopics(revealLastTopic = false, revealTopic = t)
   }
 
-  ApplicationController.obsBookmarksChanged += { case ((bl: List[Topic])) =>
+  ApplicationController.obsBookmarksChanged += { bl: List[Topic] =>
     TopicsTreeView.bookmarksTopics = bl
     loadTopics()
   }

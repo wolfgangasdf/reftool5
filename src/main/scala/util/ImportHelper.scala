@@ -7,6 +7,7 @@ import db._
 import db.SquerylEntrypointForMyApp._
 import framework.{ApplicationController, Helpers, Logging, MyWorker}
 import org.jbibtex._
+import org.jsoup.Jsoup
 import toolxit.bibtex.AuthorNamesExtractor
 
 import scala.collection.JavaConverters._
@@ -93,10 +94,10 @@ object ImportHelper extends Logging {
         }
       )
     }
-    val dialogStage = new Stage {
+    val dialogStage: Stage = new Stage {
       width = 800
       height = 600
-      val initModality = Modality.WindowModal
+      val initModality: Modality = Modality.WindowModal
       initOwner(main.Main.stage)
       scene = new Scene {
         content = new ScrollPane {
@@ -313,20 +314,22 @@ object ImportHelper extends Logging {
     debug("getting " + url1)
     val resp1 = Http(url1).timeout(15000, 10000).asString
     if (resp1.code == 200) {
-      val title = """(?m)<meta name="citation_title" content="(.*)"/>""".r.findFirstMatchIn(resp1.body).map(_ group 1).getOrElse("")
-      val authors = """(?m)<meta name="citation_author" content="(.*)"/>""".r.findAllMatchIn(resp1.body).toList.map(_ group 1)
-      val arxivid = """(?m)<meta name="citation_arxiv_id" content="(.*)"/>""".r.findFirstMatchIn(resp1.body).map(_ group 1).getOrElse("")
-      val date = """(?m)<meta name="citation_date" content="(.*)"/>""".r.findFirstMatchIn(resp1.body).map(_ group 1).getOrElse("")
+      val doc = Jsoup.parse(resp1.body)
+      val title = doc.select("meta[name=citation_title]").attr("content")
+      val authors = doc.select("meta[name=citation_author]").eachAttr("content").toArray().mkString(" and ")
+      val arxivid = doc.select("meta[name=citation_arxiv_id]").attr("content")
+      val date = doc.select("meta[name=citation_date]").attr("content")
       val datere = "([0-9]+)/([0-9]+)/.*".r
       val be = new BibTeXEntry(new Key("article"), new Key(arxivid))
       be.addField(BibTeXEntry.KEY_TITLE, new StringValue(title, StringValue.Style.BRACED))
-      be.addField(BibTeXEntry.KEY_AUTHOR, new StringValue(authors.mkString(" and "), StringValue.Style.BRACED))
+      be.addField(BibTeXEntry.KEY_AUTHOR, new StringValue(authors, StringValue.Style.BRACED))
       be.addField(BibTeXEntry.KEY_JOURNAL, new StringValue("ArXiv e-prints", StringValue.Style.BRACED))
       be.addField(BibTeXEntry.KEY_DOI, new StringValue(a.doi, StringValue.Style.BRACED))
       date match {
         case datere(year, month) =>
           be.addField(BibTeXEntry.KEY_YEAR, new StringValue(year, StringValue.Style.BRACED))
           be.addField(BibTeXEntry.KEY_MONTH, new StringValue(months(month.toInt - 1), StringValue.Style.BRACED))
+        case _ =>
       }
       be.addField(new Key("eid"), new StringValue(arxivid, StringValue.Style.BRACED))
       be.addField(new Key("pages"), new StringValue(arxivid, StringValue.Style.BRACED))

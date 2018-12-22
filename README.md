@@ -54,6 +54,7 @@ Import / export possibilities:
 Hints:
 
 * Don't use a "read later" folder. You'll never do.
+* Fix for [bug](https://bugs.openjdk.java.net/browse/JDK-8213498) in JDK 8u181, 8u192 on macos X Mojave: Add Reftool5.app to system settings Security&Privacy/Privacy/Accessibility
 
 ### How to run ###
 
@@ -91,12 +92,12 @@ contact: http://quphotonics.org
 * [JBibtex](https://github.com/jbibtex/jbibtex) to parse and write bibtex and latex
 * [ToolXiT BibTeX tools in Scala](https://github.com/gnieh/toolxit-bibtex) via [toolxit-bibtex](https://github.com/jopasserat/toolxit-bibtex) to parse authors
 * [scalaj-http](https://github.com/scalaj/scalaj-http) to make http connections
+* [jsoup](https://jsoup.org/) to parse html
 * [sbt-javafx](https://github.com/kavedaa/sbt-javafx) to create the runnable Reftool jar file
 * [sbt-buildinfo](https://github.com/sbt/sbt-buildinfo) to access build information
 * [sbt-appbundle](https://github.com/Sciss/sbt-appbundle) to create the mac app bundle
 * a modified version of [universalJavaApplicationStub](https://github.com/tofi86/universalJavaApplicationStub) to launch Reftool on Mac 
 * [Crossref](http://labs.crossref.org/citation-formatting-service) to get bibtex entries from DOIs and search
-* [SAO/NASA ADS arXiv e-prints Abstract Service](http://adsabs.harvard.edu/) to get bibtex entries for arxiv papers
 * Scalafx GUI Application framework: I couldn't find one (yet), so reftool contains its own GUI app framework
   with, e.g., buttons next to tabs (`Framework.scala`)
 

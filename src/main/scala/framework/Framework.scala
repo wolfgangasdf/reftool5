@@ -53,7 +53,7 @@ class ViewContainer extends Pane with Logging {
 
   val views = new ArrayBuffer[GenericView]()
 
-  val toolbar = new HBox() { // ToolBar doesn't work
+  val toolbar: HBox = new HBox() { // ToolBar doesn't work
     alignment = Pos.Center
   }
   def updateToolbar(viewno: Int): Unit = {
@@ -105,7 +105,7 @@ class MyAction(val category: String, val title: String) extends Logging {
   private var _enabled: Boolean = false
   private var _accelerator: KeyCombination = _
 
-  var action: (String) => Unit = _ // argument: modifier key
+  var action: String => Unit = _ // argument: modifier key
 
   // must use getter & setter because toolbarbutton etc has to be modified after it's instantiated
   def image: Image = _image
@@ -162,7 +162,7 @@ object MyAction {
 
 
 class MyInputTextField(gpRow: Int, labelText: String, iniText: String, helpString: String) extends MyFlexInput(gpRow, labelText, rows=1, helpString) {
-  val tf = new TextField() {
+  val tf: TextField = new TextField() {
     text = iniText
     editable = true
   }
@@ -173,13 +173,13 @@ class MyInputTextField(gpRow: Int, labelText: String, iniText: String, helpStrin
 }
 
 class MyInputDirchooser(gpRow: Int, labelText: String, iniText: String, helpString: String) extends MyFlexInput(gpRow, labelText, rows=1, helpString) {
-  val tf = new TextField() {
+  val tf: TextField = new TextField() {
     text = iniText
     editable = true
   }
   tf.text.onChange(onchange())
 
-  val bt = new Button("Browse...") {
+  val bt: Button = new Button("Browse...") {
     onAction = (_: ActionEvent) => {
       val dc = MFile(new DirectoryChooser {
         title = "Choose directory..."
@@ -196,7 +196,7 @@ class MyInputDirchooser(gpRow: Int, labelText: String, iniText: String, helpStri
 }
 
 class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String, helpString: String, disableEnter: Boolean) extends MyFlexInput(gpRow, labelText, rows, helpString) {
-  val tf = new TextArea() {
+  val tf: TextArea = new TextArea() {
     text = iniText
     prefRowCount = rows - 1
     minHeight = 10
@@ -206,7 +206,7 @@ class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String,
   }
   if (disableEnter) {
     tf.filterEvent(KeyEvent.KeyPressed) {
-      (ke: KeyEvent) => ke.code match {
+      ke: KeyEvent => ke.code match {
         case KeyCode.Enter => ke.consume()
         case KeyCode.Tab =>
           val beh = tf.skin.value.asInstanceOf[com.sun.javafx.scene.control.skin.TextAreaSkin].getBehavior
@@ -240,7 +240,7 @@ class MyInputCheckbox(gpRow: Int, labelText: String, iniStatus: Boolean, helpStr
 // imode: 0-textarea 1-textfield 2-tf with dir sel 3-checkbox
 abstract class MyFlexInput(gpRow: Int, labelText: String, rows: Int = 1, helpString: String) {
 
-  val label = new Label(labelText) {
+  val label: Label = new Label(labelText) {
     style = "-fx-font-weight:bold"
     alignmentInParent = Pos.CenterRight
     tooltip = new Tooltip { text = helpString }
@@ -260,8 +260,8 @@ class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () 
     override def createTask(): javafx.concurrent.Task[Unit] = atask
   })
   val lab = new Label("")
-  val progress = new ProgressBar { minWidth = 250 }
-  val al = new Dialog[Unit] {
+  val progress: ProgressBar = new ProgressBar { minWidth = 250 }
+  val al: Dialog[Unit] = new Dialog[Unit] {
     initOwner(main.Main.stage)
     title = atitle
     dialogPane.value.content = new VBox { children ++= Seq(lab, progress) }
@@ -298,9 +298,7 @@ object ApplicationController extends Logging {
     views.exists(v => v.isDirty.value)
   }
 
-  def canClose: Boolean = {
-    !views.exists(v => !v.canClose)
-  }
+  def canClose: Boolean = views.forall(v => v.canClose)
 
   def beforeClose(): Unit = {
     views.foreach(c => AppStorage.config.uiSettings.put(c.uisettingsID, c.getUIsettings))
@@ -347,7 +345,7 @@ object ApplicationController extends Logging {
   val workerTimer = new java.util.Timer()
   var lastWorkEnd: Long = 0
   var stressCounter = 0
-  val stressAlert = new Alert(AlertType.Information) { title = "Information" ; contentText = "I am busy..." }
+  val stressAlert: Alert = new Alert(AlertType.Information) { title = "Information" ; contentText = "I am busy..." }
   workerTimer.schedule(
     new java.util.TimerTask {
       override def run(): Unit = {
@@ -367,7 +365,7 @@ object ApplicationController extends Logging {
 
   // to keep order, runUIwait is used.
   class Observable[Payload](title: String) {
-    val listeners = new ArrayBuffer[(Payload) => Unit]()
+    val listeners = new ArrayBuffer[Payload => Unit]()
     def +=(fff: Payload => Unit): listeners.type = listeners += fff // easily add listener
     def apply(pl: Payload, addTop: Boolean = false): Unit = { // easily notify
       logCall(s"$title payload=$pl")

@@ -46,7 +46,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
               new Alert(AlertType.Information, "", ButtonType.Close) {
                 title = "About Reftool 5"
                 headerText = "Reftool 5 - a scientific reference manager"
-                val cont = new VBox {
+                val cont: VBox = new VBox {
                   padding = Insets(15)
                   spacing = 15
                   children ++= Seq(
@@ -166,7 +166,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
 
   val history = new VBox
 
-  val aListView = new ListView[String]() {
+  val aListView: ListView[String] = new ListView[String]() {
     //articlelist
   }
 
@@ -178,7 +178,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
   val infoView: InfoView = tryit { new InfoView }
   val prefsView: PreferencesView = tryit { new PreferencesView }
 
-  val bottomtabs = new ViewContainer {
+  val bottomtabs: ViewContainer = new ViewContainer {
     addView(articleDetailView)
     addView(searchView)
     addView(logView)
@@ -186,65 +186,65 @@ class MainScene(stage: Stage) extends Scene with Logging {
     addView(prefsView)
   }
 
-  val brtoptabs = new ViewContainer {
+  val brtoptabs: ViewContainer = new ViewContainer {
     addView(articleTopicsView)
   }
 
-  val brbottomtabs = new ViewContainer {
+  val brbottomtabs: ViewContainer = new ViewContainer {
     addView(articleDocumentsView)
   }
 
   val topicTreeView: TopicsTreeView = tryit { new TopicsTreeView }
   val bookmarksView: BookmarksView = tryit { new BookmarksView }
 
-  val toplefttabs = new ViewContainer {
+  val toplefttabs: ViewContainer = new ViewContainer {
     addView(topicTreeView)
   }
-  val bottomlefttabs = new ViewContainer {
+  val bottomlefttabs: ViewContainer = new ViewContainer {
     addView(bookmarksView)
   }
 
   val articleListView: ArticleListView = tryit { new ArticleListView }
 
-  val toptabs = new ViewContainer {
+  val toptabs: ViewContainer = new ViewContainer {
     addView(articleListView)
   }
 
-  val spleft = new SplitPane {
+  val spleft: SplitPane = new SplitPane {
     orientation = Orientation.Vertical
     dividerPositions = 0.5
     items += (toplefttabs, bottomlefttabs)
   }
 
-  val spbottomright = new SplitPane {
+  val spbottomright: SplitPane = new SplitPane {
     orientation = Orientation.Vertical
     dividerPositions = 0.5
     items += (brtoptabs, brbottomtabs)
   }
-  val spbottom = new SplitPane {
+  val spbottom: SplitPane = new SplitPane {
     orientation = Orientation.Horizontal
     dividerPositions = 0.7
     items += (bottomtabs, spbottomright)
   }
-  val spv = new SplitPane {
+  val spv: SplitPane = new SplitPane {
     orientation = Orientation.Vertical
     dividerPositions = 0.3
     items += (toptabs, spbottom)
   }
 
-  val sph = new SplitPane {
+  val sph: SplitPane = new SplitPane {
     orientation = Orientation.Horizontal
     dividerPositions = 0.15
     items +=(spleft, spv)
   }
 
-  val statusBarLabel = new Label("") { hgrow = Priority.Always }
-  val statusbar = new VBox {
+  val statusBarLabel: Label = new Label("") { hgrow = Priority.Always }
+  val statusbar: VBox = new VBox {
     children += statusBarLabel
   }
 
   val menuBar: MenuBar = createMenuBar
-  val maincontent = new BorderPane() {
+  val maincontent: BorderPane = new BorderPane() {
     top = menuBar
     center = sph
     bottom = statusbar

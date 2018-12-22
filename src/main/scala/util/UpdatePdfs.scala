@@ -1,5 +1,6 @@
 package util
 
+import java.lang
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -29,7 +30,7 @@ object UpdatePdfs extends Logging {
   }
 
   class MyTableView(items: ObservableBuffer[UEntry]) extends TableView[UEntry](items) {
-    val tcRemove = new TableColumn[UEntry, java.lang.Boolean] {
+    val tcRemove: TableColumn[UEntry, lang.Boolean] = new TableColumn[UEntry, java.lang.Boolean] {
       text = "Remove"
       cellValueFactory = { x => new BooleanProperty(x, " - ", false) {
         onChange( (_, _, _) => items.remove(x.value) )
@@ -38,7 +39,7 @@ object UpdatePdfs extends Logging {
     }
     tcRemove.setCellFactory(CheckBoxTableCell.forTableColumn(tcRemove))
 
-    val tcOpenboth = new TableColumn[UEntry, java.lang.Boolean] {
+    val tcOpenboth: TableColumn[UEntry, lang.Boolean] = new TableColumn[UEntry, java.lang.Boolean] {
       text = "Open"
       cellValueFactory = { x => new BooleanProperty(x, "open both", false) {
         onChange( (_, _, _) => {

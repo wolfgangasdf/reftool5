@@ -2,18 +2,19 @@ package util
 
 import org.apache.pdfbox.text.PDFTextStripper
 import org.apache.pdfbox.pdmodel.PDDocument
-
 import framework.Logging
 
 import scala.collection.JavaConverters._
-import scala.util.matching.Regex
+import scala.util.matching.{Regex, UnanchoredRegex}
 
 object PdfHelper extends Logging {
 
   // doi syntax: http://www.doi.org/doi_handbook/2_Numbering.html#2.2
   // regex from http://stackoverflow.com/questions/27910/finding-a-doi-in-a-document-or-page
   val doire: Regex = """(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'])\S)+)""".r
+  val doireua: UnanchoredRegex = doire.unanchored // intellij wrong syntax highlighting if done in case below
   val arxivre: Regex = """arXiv:([A-Za-z\-]+/\d+|\d+\.\d+)(?:v\d+)?""".r
+  val arxivreua: UnanchoredRegex = arxivre.unanchored
 
   def getDOI(file: MFile): String = {
     var doi = ""
@@ -31,7 +32,7 @@ object PdfHelper extends Logging {
           val v = Option(info.getCustomMetadataValue(k)).getOrElse("").toUpperCase
           // debug(s"pdf metadata [$k]: " + v)
           v match {
-            case doire.unanchored(sd) => debug("   match!!!"); doi = sd
+            case doireua(sd) => debug("   match!!!"); doi = sd
             case _ =>
           }
         }
@@ -50,7 +51,7 @@ object PdfHelper extends Logging {
           doi = doire.findFirstIn(text).getOrElse({
             debug("found no doi, check for vertical arxiv id...")
             text.replaceAll( """[\r\n]""", "") match {
-              case arxivre.unanchored(aaa) =>
+              case arxivreua(aaa) =>
                 debug("  found arxiv id: " + aaa)
                 "arXiv:" + aaa
               case _ =>

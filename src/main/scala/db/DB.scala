@@ -1,5 +1,6 @@
 package db
 
+import java.io.OutputStream
 import java.sql.{SQLException, SQLNonTransientConnectionException}
 import java.text.SimpleDateFormat
 import java.time.Instant
@@ -11,6 +12,7 @@ import org.squeryl.annotations.Transient
 import util._
 import util.AppStorage
 import framework.Logging
+import org.squeryl.internals.LifecycleEvent
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -202,7 +204,7 @@ object ReftoolDB extends Schema with Logging {
   ))
 
   // manually auto-increment ids.
-  override def callbacks = Seq(
+  override def callbacks: Seq[LifecycleEvent] = Seq(
     beforeInsert(articles).call((x:Article) => x.id = from(articles)(a => select(a).orderBy(a.id.desc)).headOption.getOrElse(new Article()).id + 1),
     beforeInsert(topics).call((x:Topic) => x.id = from(topics)(a => select(a).orderBy(a.id.desc)).headOption.getOrElse(new Topic()).id + 1),
     beforeUpdate(articles).call((x:Article) => x.modtime = Instant.now().toEpochMilli)
@@ -340,13 +342,11 @@ object ReftoolDB extends Schema with Logging {
 
 object DerbyUtil extends Logging {
   var sss = ""
-  def getOS = new java.io.OutputStream {
-    override def write(b: Int): Unit = {
-      sss += b.toChar
-      if (sss.endsWith("\n")) {
-        info("[derby] " + sss.replaceAll("[\\r\\n]", ""))
-        sss = ""
-      }
+  def getOS: OutputStream = (b: Int) => {
+    sss += b.toChar
+    if (sss.endsWith("\n")) {
+      info("[derby] " + sss.replaceAll("[\\r\\n]", ""))
+      sss = ""
     }
   }
 }

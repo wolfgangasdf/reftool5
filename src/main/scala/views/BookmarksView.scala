@@ -100,7 +100,7 @@ class BookmarksView extends GenericView("bookmarksview") {
   private val aExpandTopics = new MyAction("Bookmarks", "Expand bookmarked topics") {
     tooltipString = "Expand all bookmarked topics of current bookmark folder"
     image = new Image(getClass.getResource("/images/expandall.gif").toExternalForm)
-    action = (_) => {
+    action = _ => {
       val topics = folders(currentFolderIdx).topics
       topics.headOption.foreach(t => {
         debug("t = " + t)
@@ -117,7 +117,7 @@ class BookmarksView extends GenericView("bookmarksview") {
   private val aRemoveFolder = new MyAction("Bookmarks", "Remove folder") {
     tooltipString = "Remove whole bookmarks folder"
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
-    action = (_) => {
+    action = _ => {
       folders.remove(currentFolderIdx)
       checkFolders()
       cbfolder.getSelectionModel.select(0)
@@ -129,7 +129,7 @@ class BookmarksView extends GenericView("bookmarksview") {
   private val aNewFolder = new MyAction("Bookmarks", "New folder") {
     tooltipString = "Add new Folder"
     image = new Image(getClass.getResource("/images/new_con.gif").toExternalForm)
-    action = (_) => {
+    action = _ => {
       val newf = new Folder { name = "New Folder" }
       folders += newf
       cbfolder.getSelectionModel.select(newf)
@@ -141,7 +141,7 @@ class BookmarksView extends GenericView("bookmarksview") {
   private val aEditFolder = new MyAction("Bookmarks", "Edit folder") {
     tooltipString = "Edit Folder"
     image = new Image(getClass.getResource("/images/edit.png").toExternalForm)
-    action = (_) => {
+    action = _ => {
       val result = new TextInputDialog(defaultValue = folders(currentFolderIdx).name) {
         title = "Edit Folder"
         headerText = ""
@@ -165,7 +165,7 @@ class BookmarksView extends GenericView("bookmarksview") {
   private val aRemoveBookmark = new MyAction("Bookmarks", "Remove bookmark") {
     tooltipString = "Remove selected bookmarks"
     image = new Image(getClass.getResource("/images/remove_correction.gif").toExternalForm)
-    action = (_) => {
+    action = _ => {
       val tt = lv.getSelectionModel.getSelectedItems
       val f = folders(currentFolderIdx)
       f.topics --= tt
@@ -179,7 +179,7 @@ class BookmarksView extends GenericView("bookmarksview") {
   private val aAddBookmark = new MyAction("Bookmarks", "Add bookmark") {
     tooltipString = "Add bookmark to current topic"
     image = new Image(getClass.getResource("/images/add_correction.png").toExternalForm)
-    action = (_) => {
+    action = _ => {
       if (!folders(currentFolderIdx).topics.contains(currentTopic)) {
         val f = folders(currentFolderIdx)
         f.topics += currentTopic
