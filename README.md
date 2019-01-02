@@ -1,11 +1,8 @@
 # Reftool 5
 
 Reftool is a scientific reference manager, similar to [Zotero](https://www.zotero.org) and 
-[Mendeley](https://www.mendeley.com), but focussed on scientific article management. I use it since 2006, [the old reftool](https://bitbucket.org/wolfgang/reftool)
-was Eclipse RCP based, Reftool 5 now uses simply JavaFX that is included in Java 8, making it much smaller and faster
-(reftool 4 data is automatically migrated); but most important, development is very easy. Reftool 5 is stable and 
-constantly improved because I use it daily. The code is pretty clean and you can easily modify it if you wish. 
-
+[Mendeley](https://www.mendeley.com), but focused on scientific article management.
+Reftool 5 uses simply JavaFX that is included in Java 8, and it is pretty stable (I use it daily since 2006).
 Why do I not use Zotero? I would like to but: (i) Too slow for 10,000 articles. (ii) Daily work needs too many clicks, it doesn't fit my workflow. This appears to be design-based to me and can't
 be solved easily (also because of XUL...). Further, scala is a beautiful language worth learning; and it's cross-platform thanks to the Java VM!
 
@@ -44,7 +41,7 @@ Import / export possibilities:
 
 * You can import a tree-like folder structure containing PDFs.
 * You can export a topic to a bibtex database (e.g., for writing a paper).
-* If you need more, create an issue on bitbucketor just write your own routine!
+* If you need more, create an issue!
 * For synchronization with tablets for reading:
     * make a topic where you copy the documents that should be synchronized (e.g. "000-tablet")
     * Use `topic -> export documents` to copy PDFs to a certain folder. Existing files will be compared on the byte-level and reported, you can decide if they will be overwritten or ignored.
@@ -59,7 +56,7 @@ Hints:
 ### How to run ###
 
 * Get the [Java JRE](http://www.oracle.com/technetwork/java/javase/downloads/index.html) >= 8u101. Don't forget to untick the [crapware](https://www.google.com/search?q=java+crapware) installer, and/or [disable it permanently](https://www.java.com/en/download/faq/disable_offers.xml)!
-* [Download the zip](https://bitbucket.org/wolfgang/reftool5/downloads) for Mac or (Windows, Linux), extract it somewhere and double-click the app (Mac) or
+* [Download the zip](https://github.com/wolfgangasdf/reftool5/releases) for Mac or (Windows, Linux), extract it somewhere and double-click the app (Mac) or
   jar file (Windows, Linux).
 
 Everything should be self-explanatory (watch out for tooltips) and if you create a new "reftool data dir", the 
@@ -68,7 +65,7 @@ database is populated with a few demo topics and articles.
 ### How to develop, compile & package ###
 
 * Get Java JDK >= 8u101
-* check out the code (`hg clone ...` or download a zip) 
+* Clone the repository
 * I use the free community version of [IntelliJ IDEA](https://www.jetbrains.com/idea/download/) with the scala 
 plugin for development, just open the project to get started.
 
@@ -79,7 +76,7 @@ Run Reftool from terminal and package it:
 * Package for all platforms: `sbt dist`. The resulting files are in `target/`
 
 ### Suggestions, bug reports, pull requests, contact ###
-Please use the bitbucket-provided tools for bug reports and contributed code. Anything is welcome!
+Please use the standard tools for bug reports and contributed code. Anything is welcome!
 
 contact: http://quphotonics.org
 

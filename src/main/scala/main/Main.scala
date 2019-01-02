@@ -54,7 +54,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
                     new TextField { text = "Build time: " + BuildInfo.buildTime ; editable = false },
                     new Button("Open Reftool homepage") {
                       onAction = (_: ActionEvent) =>
-                        FileHelper.openURL("https://bitbucket.org/wolfgang/reftool5")
+                        FileHelper.openURL("https://github.com/wolfgangasdf/reftool5")
                     }
                   )
                 }
