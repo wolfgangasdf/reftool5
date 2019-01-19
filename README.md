@@ -71,9 +71,8 @@ plugin for development, just open the project to get started.
 
 Run Reftool from terminal and package it:
 
-* Install the [Scala Build Tool](http://www.scala-sbt.org/)
-* Compile and run manually: `sbt run`
-* Package for all platforms: `sbt dist`. The resulting files are in `target/`
+* Compile and run manually: `gradle run`
+* Package for all platforms: `gradle dist`. The resulting files are in `build/`
 
 ### Suggestions, bug reports, pull requests, contact ###
 Please use the standard tools for bug reports and contributed code. Anything is welcome!
@@ -82,7 +81,7 @@ contact: http://quphotonics.org
 
 ### Used technologies ###
 
-* [Scala](http://www.scala-lang.org) and [Scala Build Tool](http://www.scala-sbt.org)
+* [Scala](http://www.scala-lang.org)
 * [Scalafx](http://scalafx.org) as wrapper for [JavaFX](http://docs.oracle.com/javafx) for the graphical user interface
 * [Squeryl](http://squeryl.org) as database ORM & DSL, using [Apache Derby](http://db.apache.org/derby) embedded as backend
 * [Apache Pdfbox](https://pdfbox.apache.org) to access PDF files
@@ -90,10 +89,8 @@ contact: http://quphotonics.org
 * [ToolXiT BibTeX tools in Scala](https://github.com/gnieh/toolxit-bibtex) via [toolxit-bibtex](https://github.com/jopasserat/toolxit-bibtex) to parse authors
 * [scalaj-http](https://github.com/scalaj/scalaj-http) to make http connections
 * [jsoup](https://jsoup.org/) to parse html
-* [sbt-javafx](https://github.com/kavedaa/sbt-javafx) to create the runnable Reftool jar file
-* [sbt-buildinfo](https://github.com/sbt/sbt-buildinfo) to access build information
-* [sbt-appbundle](https://github.com/Sciss/sbt-appbundle) to create the mac app bundle
-* a modified version of [universalJavaApplicationStub](https://github.com/tofi86/universalJavaApplicationStub) to launch Reftool on Mac 
+* [Shadow](https://github.com/johnrengelman/shadow) to package
+* [Gradle-macappbundle](https://github.com/crotwell/gradle-macappbundle) to make mac app bundle
 * [Crossref](http://labs.crossref.org/citation-formatting-service) to get bibtex entries from DOIs and search
 * Scalafx GUI Application framework: I couldn't find one (yet), so reftool contains its own GUI app framework
   with, e.g., buttons next to tabs (`Framework.scala`)

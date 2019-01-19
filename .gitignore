@@ -1,7 +1,9 @@
-target/
 .idea
-glob:*.iml
+*.iml
 .DS_Store
+.gradle
+/build
+/out
+webremotecontrol.txt
 derby.log
 src/main/scala/snippets
-

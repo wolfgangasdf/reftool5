@@ -5,7 +5,6 @@ import java.io
 import java.io.PrintStream
 import javafx.{event => jfxe, scene => jfxs}
 
-import buildinfo.BuildInfo
 import db.ReftoolDB
 import framework.Helpers._
 import framework.{ApplicationController, Helpers, Logging, ViewContainer}
@@ -50,8 +49,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
                   padding = Insets(15)
                   spacing = 15
                   children ++= Seq(
-                    new TextField { text = "Reftool version: " + BuildInfo.version ; editable = false },
-                    new TextField { text = "Build time: " + BuildInfo.buildTime ; editable = false },
+                    new TextField { text = "Build time: " + Helpers.getClassBuildTime.toString ; editable = false },
                     new Button("Open Reftool homepage") {
                       onAction = (_: ActionEvent) =>
                         FileHelper.openURL("https://github.com/wolfgangasdf/reftool5")

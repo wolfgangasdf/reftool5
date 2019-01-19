@@ -1,10 +1,13 @@
 package framework
 
 import java.io
+import java.io.{File, IOException}
+import java.util.Date
 import java.util.concurrent.FutureTask
+import java.util.jar.JarFile
 
 import scalafx.scene.control.Alert.AlertType
-import scalafx.scene.control.{ButtonType, Alert, TextArea}
+import scalafx.scene.control.{Alert, ButtonType, TextArea}
 import scalafx.scene.layout.Priority
 
 object Helpers extends Logging {
@@ -114,5 +117,42 @@ object Helpers extends Logging {
       dialogPane().setExpanded(true)
     }.showAndWait()
   }
+
+  // https://stackoverflow.com/a/22404140
+  import java.net.URISyntaxException
+  def getClassBuildTime: Date = {
+    var d: Date = null
+    val currentClass = new Object() {}.getClass.getEnclosingClass
+    val resource = currentClass.getResource(currentClass.getSimpleName + ".class")
+    if (resource != null) {
+      if (resource.getProtocol.equals("file")) {
+        try {
+          d = new Date(new File(resource.toURI).lastModified)
+        } catch { case _: URISyntaxException => }
+      } else if (resource.getProtocol.equals("jar")) {
+        val path = resource.getPath
+        d = new Date( new File(path.substring(5, path.indexOf("!"))).lastModified )
+      } else if (resource.getProtocol.equals("zip")) {
+        val path = resource.getPath
+        val jarFileOnDisk = new File(path.substring(0, path.indexOf("!")))
+        //long jfodLastModifiedLong = jarFileOnDisk.lastModified ();
+        //Date jfodLasModifiedDate = new Date(jfodLastModifiedLong);
+
+        try{
+          val jf = new JarFile(jarFileOnDisk)
+          val ze = jf.getEntry (path.substring(path.indexOf("!") + 2)) //Skip the ! and the /
+          val zeTimeLong = ze.getTime
+          val zeTimeDate = new Date(zeTimeLong)
+          d = zeTimeDate
+        } catch {
+          case _: IOException =>
+          case _: RuntimeException =>
+        }
+      }
+    }
+    d
+  }
+
+
 
 }
