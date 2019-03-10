@@ -10,10 +10,12 @@ import scala.util.matching.{Regex, UnanchoredRegex}
 object PdfHelper extends Logging {
 
   // doi syntax: http://www.doi.org/doi_handbook/2_Numbering.html#2.2
-  // regex from http://stackoverflow.com/questions/27910/finding-a-doi-in-a-document-or-page
-  val doire: Regex = """(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'])\S)+)""".r
+  // regex adapted from http://stackoverflow.com/questions/27910/finding-a-doi-in-a-document-or-page
+  val doire: Regex = """(?:http[s]?\://(?:dx.)?doi.org/)?(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'])\S)+)""".r
   val doireua: UnanchoredRegex = doire.unanchored // intellij wrong syntax highlighting if done in case below
-  val arxivre: Regex = """arXiv:([A-Za-z\-]+/\d+|\d+\.\d+)(?:v\d+)?""".r
+  val arxividre: Regex = """([A-Za-z\-]+/\d+|\d+\.\d+)(?:v\d+)?""".r
+  val arxivreoid: Regex = ("(?:arXiv:)?" + arxividre.regex).r
+  val arxivre: Regex = ("arXiv:" + arxividre.regex).r
   val arxivreua: UnanchoredRegex = arxivre.unanchored
 
   def getDOI(file: MFile): String = {

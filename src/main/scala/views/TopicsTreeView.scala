@@ -361,14 +361,16 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     tooltipString = "Create new article in current topic"
     action = _ => {
       val si = tv.getSelectionModel.getSelectedItem
-      inTransaction {
+      val article = inTransaction {
         val t = ReftoolDB.topics.get(si.getValue.id)
         val a = new Article(title = "new content")
         ReftoolDB.articles.insert(a)
         a.topics.associate(t, new Topic2Article())
         ApplicationController.obsTopicSelected(t)
         ApplicationController.obsRevealArticleInList(a)
+        a
       }
+      ImportHelper.updateMetadataWithoutDoc(article)
     }
   }
   private val aAddTopic: MyAction = new MyAction("Topic", "Add new topic") {

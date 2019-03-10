@@ -3,14 +3,11 @@ package util
 import java.io
 import java.net.SocketTimeoutException
 
-import db._
 import db.SquerylEntrypointForMyApp._
+import db._
 import framework.{ApplicationController, Helpers, Logging, MyWorker}
 import org.jbibtex._
 import org.jsoup.Jsoup
-import toolxit.bibtex.AuthorNamesExtractor
-
-import scala.collection.JavaConverters._
 import scalafx.Includes._
 import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
@@ -20,8 +17,10 @@ import scalafx.scene.control.Button._
 import scalafx.scene.control._
 import scalafx.scene.layout.HBox._
 import scalafx.scene.layout.{HBox, Priority, VBox}
-import scalafx.scene.web.WebView
-import scalafx.stage.{Modality, Stage}
+import scalafx.stage.{Modality, Stage, WindowEvent}
+import toolxit.bibtex.AuthorNamesExtractor
+
+import scala.collection.JavaConverters._
 
 
 object ImportHelper extends Logging {
@@ -29,46 +28,28 @@ object ImportHelper extends Logging {
   // this variable is reset if import finished (successful or not)
   val backgroundImportRunning = new java.util.concurrent.atomic.AtomicBoolean(false)
 
-  private def getDOImanually(iniSearch: String, filepath: String): String = {
+  private def getDOImanually(file: MFile): String = {
     var doi = ""
-    val webView = new WebView {
-      prefHeight = 200
-      vgrow = Priority.Always
-    }
-    val webEngine = webView.engine
-
-    val tfSearch = new TextField {
-      hgrow = Priority.Always
-      text = iniSearch
-    }
-    val btSearch = new Button("Search!") {
+    val btSearch = new Button("Search crossref...") {
       onAction = (_: ActionEvent) => {
-        webEngine.load("http://search.crossref.org/?q=" + tfSearch.text.value)
+        FileHelper.openURL("http://search.crossref.org")
       }
     }
-    val tfDOI = new TextField {
+    val tfID = new TextField {
       hgrow = Priority.Always
-      onAction = (_: ActionEvent) => {
-        doi = text.value.trim.replaceAll(".*doi.org/", "")
-        scene.value.getWindow.asInstanceOf[javafx.stage.Stage].close()
-      }
-    }
-
-    val tfArxiv = new TextField {
-      hgrow = Priority.Always
-      text = "arXiv:"
       onAction = (_: ActionEvent) => {
         text.value.trim match {
-          case PdfHelper.arxivre(aid) =>
-            doi = "arXiv:" + aid
-            scene.value.getWindow.asInstanceOf[javafx.stage.Stage].close()
-          case _ => new Alert(AlertType.Error, "Cannot recognize arxiv id <" + text.value.trim + ">").showAndWait()
+          case PdfHelper.doire(id) => doi = id
+          case PdfHelper.arxivreoid(id) => doi = "arXiv:" + id
+          case _ => Helpers.showTextAlert(Alert.AlertType.Warning, "Wrong ID", "Can't parse id.", "", "")
         }
+        if (doi.nonEmpty) scene.value.getWindow.asInstanceOf[javafx.stage.Stage].close()
       }
     }
 
-    val btReveal = new Button("reveal") {
-      onAction = (_: ActionEvent) => FileHelper.revealFile(new MFile(filepath))
+    val btReveal = new Button("Reveal file") {
+      onAction = (_: ActionEvent) => FileHelper.revealFile(file)
+      disable = file == null
     }
 
     val myContent = new VBox {
@@ -76,16 +57,13 @@ object ImportHelper extends Logging {
       spacing = 10
       children ++= Seq(
         new HBox{ children ++= Seq(
-          new Label("Import file: " + filepath),
+          new Label("Update metadata: "),
           btReveal
         )},
-        new Label("Cannot extract the DOI from the pdf. Please either search for title or so, you can also enter the DOI manually here, or see below."),
-        new HBox { children ++= Seq(tfSearch, btSearch) },
-        webView,
+        new Label("Cannot extract the DOI or arXiv ID from the pdf."),
+        btSearch,
         new Separator(),
-        new HBox { children ++= Seq( new Label("Or enter DOI here:"), tfDOI ) },
-        new Separator(),
-        new HBox { children ++= Seq( new Label("Or enter arxiv ID here:"), tfArxiv ) },
+        new HBox { children ++= Seq( new Label("Enter DOI or arXiv ID:"), tfID ) },
         new Separator(),
         new Button("Do it later manually") {
           onAction = (_: ActionEvent) => {
@@ -95,8 +73,6 @@ object ImportHelper extends Logging {
       )
     }
     val dialogStage: Stage = new Stage {
-      width = 800
-      height = 600
       val initModality: Modality = Modality.WindowModal
       initOwner(main.Main.stage)
       scene = new Scene {
@@ -104,18 +80,9 @@ object ImportHelper extends Logging {
           content = myContent
         }
       }
+      sizeToScene()
     }
-    myContent.prefHeight <== dialogStage.getScene.height
-    myContent.prefWidth <== dialogStage.getScene.width
-
-    webEngine.location.onChange( {
-      val newl = webEngine.location.value
-      if (newl.contains("doi.org")) {
-        doi = newl.replaceAll(".*doi.org/", "")
-        dialogStage.close()
-      }
-    } )
-
+    dialogStage.setOnShown( (_: WindowEvent) => tfID.requestFocus() )
     dialogStage.showAndWait()
     debug(" returning doi=" + doi)
     doi
@@ -131,27 +98,28 @@ object ImportHelper extends Logging {
           updateProgress(0, 100)
           updateMessage("find document metadata...")
           var doi = ""
-          if (sourceFile.getName.toLowerCase.endsWith(".pdf")) {
-            if (parsePdf) doi = PdfHelper.getDOI(sourceFile)
-            debug(" pdf doi=" + doi)
-            if (doi == "" && interactive) Helpers.runUIwait {
-              doi = getDOImanually(sourceFile.getName, sourceFile.getPath)
+          if (sourceFile != null) {
+            if (sourceFile.getName.toLowerCase.endsWith(".pdf")) {
+              if (parsePdf) doi = PdfHelper.getDOI(sourceFile)
+              debug(" pdf doi=" + doi)
+              updateProgress(30, 100)
             }
-            updateProgress(30, 100)
-            doi match {
-              case PdfHelper.arxivre(_) =>
-                updateMessage("retrieve bibtex from arxiv ID...")
-                val arxivid = doi.replaceAllLiterally("arXiv:", "")
-                a.linkurl = "http://arxiv.org/abs/" + arxivid
-                a = updateBibtexFromArxiv(a, arxivid)
-                a = updateArticleFromBibtex(a)
-              case PdfHelper.doire(_) =>
-                a.doi = doi
-                updateMessage("retrieve bibtex from DOI...")
-                a = updateBibtexFromDoi(a, doi)
-                a = updateArticleFromBibtex(a)
-              case _ =>
-            }
+          }
+          if (doi == "" && interactive) Helpers.runUIwait {
+            doi = getDOImanually(sourceFile)
+          }
+          doi match {
+            case PdfHelper.arxivre(arxivid) =>
+              updateMessage("retrieve bibtex from arxiv ID...")
+              a.linkurl = "http://arxiv.org/abs/" + arxivid
+              a = updateBibtexFromArxiv(a, arxivid)
+              a = updateArticleFromBibtex(a)
+            case PdfHelper.doire(_) =>
+              a.doi = doi
+              updateMessage("retrieve bibtex from DOI...")
+              a = updateBibtexFromDoi(a, doi)
+              a = updateArticleFromBibtex(a)
+            case _ =>
           }
         } catch {
           case e: Exception =>
@@ -189,7 +157,7 @@ object ImportHelper extends Logging {
           }
           ApplicationController.obsArticleModified(a)
           ApplicationController.showNotification("import successful of " + a)
-          debug(" import successful of " + sourceFile.getName)
+          debug(" import successful of " + a)
           // show article
           if (topic != null) ApplicationController.obsRevealTopic((topic, false))
           ApplicationController.obsRevealArticleInList(a)
@@ -198,6 +166,19 @@ object ImportHelper extends Logging {
           throw new Exception("illegal state: backgroundImportRunning was false!")
         }
       }
+    }
+  }
+
+  def updateMetadataWithoutDoc(article: Article): Boolean = {
+    if (!backgroundImportRunning.compareAndSet(false, true)) {
+      info("import document NOT executed because already running...")
+      false
+    } else {
+      val task = importDocument2(updateMetadata = true, article, null, doFileAction = false, copyIt = false, null)
+      new MyWorker("Update metadata...", task, () => {
+        backgroundImportRunning.set(false)
+      }).runInBackground()
+      true
     }
   }
 
@@ -386,8 +367,9 @@ object ImportHelper extends Logging {
       s = btfield.toUserString
       if (s.contains('\\') || s.contains('{')) {
         val latexParser = new org.jbibtex.LaTeXParser()
-        val s1 = s.replaceAll("(?<!\\\\)~", " ") // IMO bug in jbibtex, A~B lastname fails
-        val latexObjects = latexParser.parse(s1)
+        s = s.replaceAll("(?<!\\\\)~", " ") // jbibtex: A~B lastname fails
+        s = s.replaceAll("\\{\\\\hspace\\{[\\w\\.]*\\}\\}", " ") // jbibtex doesn't remove {\hspace{0.167em}} properly
+        val latexObjects = latexParser.parse(s)
         val latexPrinter = new org.jbibtex.LaTeXPrinter()
         s = latexPrinter.print(latexObjects)
       }
@@ -408,7 +390,6 @@ object ImportHelper extends Logging {
   }
 
   val months = List("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
-  // https://github.com/jbibtex/jbibtex
   def updateArticleFromBibtex(a: Article): Article = {
     val (_, btentry) = parseBibtex(a.bibtexentry)
     if (btentry != null) {

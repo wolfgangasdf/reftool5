@@ -95,17 +95,19 @@ object Helpers extends Logging {
   }
 
   def showTextAlert(alerttype: AlertType, titletext: String, headertext: String, contenttext: String, text: String, buttons: Seq[ButtonType] = null): Option[ButtonType] = {
-    val exceptionText = text
-    val textArea = new TextArea {
-      text = exceptionText
-      editable = false
-      wrapText = false
-      maxWidth = Double.MaxValue
-      maxHeight = Double.MaxValue
-      vgrow = Priority.Always
-      hgrow = Priority.Always
-    }
-    val expContent = textArea
+    val expContent = if (text.nonEmpty) {
+      val exceptionText = text
+      val textArea = new TextArea {
+        text = exceptionText
+        editable = false
+        wrapText = false
+        maxWidth = Double.MaxValue
+        maxHeight = Double.MaxValue
+        vgrow = Priority.Always
+        hgrow = Priority.Always
+      }
+      textArea
+    } else null
 
     new Alert(alerttype) {
       //      initOwner(stage)
@@ -113,7 +115,7 @@ object Helpers extends Logging {
       headerText = headertext
       contentText = contenttext
       if (buttons != null) buttonTypes = buttons
-      dialogPane().setExpandableContent(expContent)
+      if (expContent != null) dialogPane().setExpandableContent(expContent)
       dialogPane().setExpanded(true)
     }.showAndWait()
   }
