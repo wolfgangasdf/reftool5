@@ -40,7 +40,7 @@ object PdfHelper extends Logging {
         }
       }
       if (doi == "") {
-        // parse for doi in first pdf page (not checking hyperlinks as it may be a reference link!)
+        // parse for doi in first pdf pages (not checking hyperlinks as it may be a reference link!)
         debug("still no doi, get first pdf page...")
         val pdoc = new PDDocument(pdf.getDocument)
         val pstrip = new PDFTextStripper()
@@ -50,7 +50,7 @@ object PdfHelper extends Logging {
           val text = pstrip.getText(pdoc)
           debug("search first page for doi link...")
           // debug("first page:\n" + text)
-          doi = doire.findFirstIn(text).getOrElse({
+          doi = doire.findFirstMatchIn(text).map(m => m.group(1)).getOrElse({
             debug("found no doi, check for vertical arxiv id...")
             text.replaceAll( """[\r\n]""", "") match {
               case arxivreua(aaa) =>

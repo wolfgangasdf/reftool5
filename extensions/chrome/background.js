@@ -13,8 +13,8 @@ chrome.browserAction.onClicked.addListener(function(tab) {
             } else {
                 console.log("not a pdf document: " + pdfsrouce)
             }
-        } else { // google chrome internal pdf viewer used (wrong for opticsinfobase with pdf.js)
-            chrome.tabs.executeScript(null,
+        } else { // google chrome internal pdf viewer used
+            chrome.tabs.executeScript(null, // inject script into DOM (background.js can't access DOM)
             { file: "myscript.js" },
             function(resultx){
                 var data = resultx[0][0];

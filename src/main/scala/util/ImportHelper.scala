@@ -322,7 +322,7 @@ object ImportHelper extends Logging {
   }
 
   private def updateBibtexFromDoi(article: Article, doi: String): Article = {
-    // http://citation.crosscite.org/docs.html
+    // http://citation.crosscite.org/docs.html  https://github.com/CrossRef/rest-api-doc
     import scalaj.http._
     var a = article
     // val doienc = java.net.URLEncoder.encode(doi, "utf-8")

@@ -15,8 +15,8 @@ plugins {
     scala
     id("idea")
     id("application")
-    id("com.github.ben-manes.versions") version "0.20.0"
-    id("com.github.johnrengelman.shadow") version "4.0.3"
+    id("com.github.ben-manes.versions") version "0.25.0"
+    id("com.github.johnrengelman.shadow") version "5.1.0"
     id("edu.sc.seis.macAppBundle") version "2.3.0"
 }
 
@@ -61,16 +61,16 @@ repositories {
 }
 
 dependencies {
-    implementation("org.scala-lang:scala-library:2.12.8")
-    compile("org.scalafx:scalafx_2.12:8.0.181-R13")
+    implementation("org.scala-lang:scala-library:2.12.0")
+    compile("org.scalafx:scalafx_2.12:8.0.192-R14")
     compile("org.apache.derby:derby:10.14.2.0")
-    compile("org.squeryl:squeryl_2.12:0.9.13")
-    compile("org.scala-lang.modules:scala-parser-combinators_2.12:1.1.1")
-    compile("org.apache.pdfbox:pdfbox:2.0.13")
+    compile("org.squeryl:squeryl_2.12:0.9.14")
+    compile("org.scala-lang.modules:scala-parser-combinators_2.12:1.1.2")
+    compile("org.apache.pdfbox:pdfbox:2.0.16")
     compile("org.jbibtex:jbibtex:1.0.17")
-    compile("org.scalaj:scalaj-http_2.12:2.4.1")
-    compile("org.scala-lang:scala-reflect:2.12.8")
-    compile("org.jsoup:jsoup:1.11.3")
+    compile("org.scalaj:scalaj-http_2.12:2.4.2")
+    compile("org.scala-lang:scala-reflect:2.12.0")
+    compile("org.jsoup:jsoup:1.12.1")
     compile("org.openmole:toolxit-bibtex_2.12:0.4") {
         exclude(group = "macros", module = "macros_2.12")
         exclude(group = "core", module = "core_2.12")

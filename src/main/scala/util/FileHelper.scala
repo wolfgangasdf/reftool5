@@ -11,7 +11,7 @@ import db.Article
 import framework.{Helpers, Logging}
 
 import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
+import scala.util.{Random, Try}
 
 // wrap everything that returns a java.io.File into util.MFile!
 // this always uses "/" as file separator and includes useful classes from java.nio
@@ -158,11 +158,8 @@ object FileHelper extends Logging {
     val pdfpath = new MFile(AppStorage.config.pdfpath)
     val ifolders = pdfpath.listFiles(new io.FileFilter {
       override def accept(pathname: io.File): Boolean = pathname.getName.startsWith(AppStorage.config.importfolderprefix)
-    })
-    var lastfolder: MFile = if (ifolders.isEmpty)
-      new MFile(AppStorage.getImportFolder(1))
-    else
-      ifolders.last
+    }).map( mf => Try(mf.getName.substring(AppStorage.config.importfolderprefix.length).toInt).getOrElse(0))
+    var lastfolder: MFile = new MFile(AppStorage.getImportFolder(if (ifolders.isEmpty) 1 else ifolders.max))
     if (lastfolder.exists) {
       if (lastfolder.list.length > 99) {
         val rex = """.*-([0-9]+)""".r
