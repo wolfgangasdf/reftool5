@@ -11,6 +11,7 @@ buildscript {
 group = "com.reftool5"
 version = "1.0-SNAPSHOT"
 val cPlatforms = listOf("mac", "win", "linux") // compile for these platforms. "mac", "linux", "win"
+val derbyVersion = "10.15.1.3"
 
 println("Current Java version: ${JavaVersion.current()}")
 java {
@@ -25,7 +26,7 @@ plugins {
     application
     id("com.github.ben-manes.versions") version "0.25.0"
     id("org.openjfx.javafxplugin") version "0.0.8"
-    id("org.beryx.runtime") version "1.6.0"
+    id("org.beryx.runtime") version "1.6.1"
 }
 
 application {
@@ -51,17 +52,20 @@ repositories {
 
 javafx {
     modules = listOf("javafx.base", "javafx.controls", "javafx.fxml", "javafx.graphics", "javafx.media", "javafx.swing", "javafx.web")
-    configuration = "compile" // set below to compileOnly for crosspackage to avoid packaging host javafx jmods for all target platforms
+    // set compileOnly for crosspackage to avoid packaging host javafx jmods for all target platforms
+    configuration = if (project.gradle.startParameter.taskNames.intersect(listOf("crosspackage", "dist")).isNotEmpty()) "compileOnly" else "compile"
 }
 val javaFXOptions = the<JavaFXOptions>()
 
 dependencies {
     implementation("org.scala-lang:scala-library:2.13.1")
     compile("org.scalafx:scalafx_2.13:12.0.2-R18")
-    compile("org.apache.derby:derby:10.14.2.0")
+    compile("org.apache.derby:derby:$derbyVersion")
+    compile("org.apache.derby:derbytools:$derbyVersion")
+    compile("org.apache.derby:derbyshared:$derbyVersion")
     compile("org.squeryl:squeryl_2.13:0.9.14")
     compile("org.scala-lang.modules:scala-parser-combinators_2.13:1.1.2")
-    compile("org.apache.pdfbox:pdfbox:2.0.16")
+    compile("org.apache.pdfbox:pdfbox:2.0.17")
     compile("org.jbibtex:jbibtex:1.0.17")
     compile("org.scalaj:scalaj-http_2.13:2.4.2")
     compile("org.scala-lang:scala-reflect:2.13.1")
@@ -178,7 +182,6 @@ open class CrossPackage : DefaultTask() {
 }
 
 tasks.register<CrossPackage>("crosspackage") {
-    project.javafx.configuration = "compileOnly" //
     dependsOn("runtime")
     execfilename = "reftool5"
     macicnspath = "src/deploy/macosx"

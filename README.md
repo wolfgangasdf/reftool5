@@ -51,8 +51,9 @@ Hints:
 
 ### How to run ###
 
-[Download the zip](https://github.com/wolfgangasdf/reftool5/releases), extract it somewhere and double-click the app (Mac) or
+* [Download the zip](https://github.com/wolfgangasdf/reftool5/releases), extract it somewhere and double-click the app (Mac) or
   `bin/reftool5.bat` (Windows) or `bin/reftool5` (Linux).
+* Install the Google Chrome plugin to import a displayed pdf.
 
 Everything should be self-explanatory (watch out for tooltips) and if you create a new "reftool data dir", the 
 database is populated with a few demo topics and articles.
@@ -67,7 +68,7 @@ plugin for development, just open the project to get started.
 Packaging:
 
 * Download JDKs for the other platforms (and/or adapt `cPlatforms` in `build.gradle.kts`), extract them and set the environment variables to it:
-  * `export JDK_WIN_HOME=...`, `export JDK_LINUX_HOME=...`
+  * `export JDK_MAC_HOME=...`, `export JDK_WIN_HOME=...`, `export JDK_LINUX_HOME=...`
 * Package for all platforms: `gradle dist`. The resulting files are in `build/crosspackage`
 
 ### Used technologies ###
@@ -81,7 +82,7 @@ Packaging:
 * [scalaj-http](https://github.com/scalaj/scalaj-http) to make http connections
 * [jsoup](https://jsoup.org/) to parse html
 * [Runtime plugin](https://github.com/beryx/badass-runtime-plugin) to make runtimes with JRE
-* [Crossref](http://labs.crossref.org/citation-formatting-service) to get bibtex entries from DOIs and search
+* [Crossref](http://labs.crossref.org/citation-formatting-service) to get bibtex entries from DOIs
 * Scalafx GUI Application framework: I couldn't find one (yet), so reftool contains its own GUI app framework
   with, e.g., buttons next to tabs (`Framework.scala`)
 
