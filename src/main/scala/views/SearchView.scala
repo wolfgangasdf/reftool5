@@ -47,7 +47,7 @@ class SearchView extends GenericView("searchview") {
       and (a.modtime <= millis2.inhibitWhen(!cbModifiedSince.selected.value))
   )
 
-  private def doSearch() {
+  private def doSearch(): Unit = {
     val millis1 = date1.getValue.atTime(hours1.getText.toInt, 0).toInstant(ZonedDateTime.now().getOffset).toEpochMilli
     val millis2 = date2.getValue.atTime(hours2.getText.toInt, 59).toInstant(ZonedDateTime.now().getOffset).toEpochMilli
     inTransaction {

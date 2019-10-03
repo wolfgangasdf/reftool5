@@ -41,17 +41,17 @@ object Helpers extends Logging {
     s.getBytes(encoding).map("%02x " format _).mkString
   }
 
-  def unit() {}
+  def unit(): Unit = {}
 
   // enqueue f in UI thread queue
-  def runUI( f: => Unit ) {
+  def runUI( f: => Unit ): Unit = {
     scalafx.application.Platform.runLater(() => {
       f
     })
   }
 
   // use carefully, remove if possible!
-  def runUIdelayed( f: => Unit, delay: Int = 200 ) {
+  def runUIdelayed( f: => Unit, delay: Int = 200 ): Unit = {
     val clickedTimer = new java.util.Timer()
     clickedTimer.schedule(
       new java.util.TimerTask {
@@ -65,7 +65,7 @@ object Helpers extends Logging {
     if (!scalafx.application.Platform.isFxApplicationThread) {
       @volatile var stat: T = null.asInstanceOf[T]
       val runnable = new Runnable() {
-        def run() {
+        def run(): Unit = {
           try {
             stat = f
           } catch {

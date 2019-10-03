@@ -65,7 +65,7 @@ object AppStorage extends Logging {
     }
   }
 
-  def load() {
+  def load(): Unit = {
     val lines = AppSettings.getLines
     config = new Config
     if (lines.isEmpty) {
@@ -73,7 +73,7 @@ object AppStorage extends Logging {
     } else {
       lines.foreach(lll => {
         val reUIsett = """ui-(.*)""".r
-        val sett = new ArrayBuffer[String]() ++ splitsetting(lll.toString).toArray
+        val sett = new ArrayBuffer[String]() ++ splitsetting(lll.toString)
         if (sett.length == 1) sett += ""
         sett.head match {
           case "reftoolsettingsversion" =>
@@ -94,12 +94,12 @@ object AppStorage extends Logging {
     }
   }
 
-  def save() {
+  def save(): Unit = {
     val fff = MFile(AppSettings.getSettingPath)
     fff.delete()
     fff.createFile(false)
 
-    def saveSett(key: String, what: Any) {
+    def saveSett(key: String, what: Any): Unit = {
       fff.appendString(key + "=" + what + "\n")
     }
 

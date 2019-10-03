@@ -48,7 +48,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   private var article: Article = _
 
-  private def setArticle(aa: Article) {
+  private def setArticle(aa: Article): Unit = {
     logCall("" + aa)
     val doit = if (isDirty.value) {
       val res = new Alert(AlertType.Confirmation) {

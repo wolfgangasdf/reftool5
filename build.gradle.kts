@@ -1,5 +1,5 @@
-
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.openjfx.gradle.JavaFXModule
+import org.openjfx.gradle.JavaFXOptions
 
 buildscript {
     repositories {
@@ -10,18 +10,22 @@ buildscript {
 
 group = "com.reftool5"
 version = "1.0-SNAPSHOT"
+val cPlatforms = listOf("mac", "win", "linux") // compile for these platforms. "mac", "linux", "win"
+
+println("Current Java version: ${JavaVersion.current()}")
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+    if (!JavaVersion.current().isJava11Compatible) throw GradleException("This project needs JDK compatible with Java 11")
+}
 
 plugins {
     scala
     id("idea")
-    id("application")
+    application
     id("com.github.ben-manes.versions") version "0.25.0"
-    id("com.github.johnrengelman.shadow") version "5.1.0"
-    id("edu.sc.seis.macAppBundle") version "2.3.0"
-}
-
-tasks.withType<Wrapper> {
-    gradleVersion = "5.1.1"
+    id("org.openjfx.javafxplugin") version "0.0.8"
+    id("org.beryx.runtime") version "1.6.0"
 }
 
 application {
@@ -34,25 +38,9 @@ tasks.withType<Jar> {
         attributes(mapOf(
                 "Description" to "Reftool5 JAR",
                 "Implementation-Title" to "Reftool5",
-                "Implementation-Version" to version,
                 "Main-Class" to "main.Main"
         ))
     }
-}
-
-tasks.withType<ShadowJar> {
-    // uses manifest from above!
-    baseName = "reftool5"
-    classifier = ""
-    version = ""
-    mergeServiceFiles() // can be essential
-}
-
-macAppBundle {
-    mainClassName = "main.Main"
-    appName = "Reftool5"
-    icon = "src/deploy/macosx/reftool5.icns"
-    bundleJRE = false
 }
 
 repositories {
@@ -60,48 +48,171 @@ repositories {
     jcenter()
 }
 
+
+javafx {
+    modules = listOf("javafx.base", "javafx.controls", "javafx.fxml", "javafx.graphics", "javafx.media", "javafx.swing", "javafx.web")
+    configuration = "compile" // set below to compileOnly for crosspackage to avoid packaging host javafx jmods for all target platforms
+}
+val javaFXOptions = the<JavaFXOptions>()
+
 dependencies {
-    implementation("org.scala-lang:scala-library:2.12.0")
-    compile("org.scalafx:scalafx_2.12:8.0.192-R14")
+    implementation("org.scala-lang:scala-library:2.13.1")
+    compile("org.scalafx:scalafx_2.13:12.0.2-R18")
     compile("org.apache.derby:derby:10.14.2.0")
-    compile("org.squeryl:squeryl_2.12:0.9.14")
-    compile("org.scala-lang.modules:scala-parser-combinators_2.12:1.1.2")
+    compile("org.squeryl:squeryl_2.13:0.9.14")
+    compile("org.scala-lang.modules:scala-parser-combinators_2.13:1.1.2")
     compile("org.apache.pdfbox:pdfbox:2.0.16")
     compile("org.jbibtex:jbibtex:1.0.17")
-    compile("org.scalaj:scalaj-http_2.12:2.4.2")
-    compile("org.scala-lang:scala-reflect:2.12.0")
+    compile("org.scalaj:scalaj-http_2.13:2.4.2")
+    compile("org.scala-lang:scala-reflect:2.13.1")
     compile("org.jsoup:jsoup:1.12.1")
-    compile("org.openmole:toolxit-bibtex_2.12:0.4") {
-        exclude(group = "macros", module = "macros_2.12")
-        exclude(group = "core", module = "core_2.12")
+    cPlatforms.forEach {platform ->
+        val cfg = configurations.create("javafx_$platform")
+        JavaFXModule.getJavaFXModules(javaFXOptions.modules).forEach { m ->
+            project.dependencies.add(cfg.name,"org.openjfx:${m.artifactName}:${javaFXOptions.version}:$platform")
+        }
+    }
+}
+
+runtime {
+    options.set(listOf("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages"))
+    modules.set(listOf("java.desktop", "java.sql", "jdk.unsupported", "java.scripting", "java.logging", "java.xml", "java.transaction.xa", "java.management", "java.rmi"))
+    if (cPlatforms.contains("mac")) targetPlatform("mac", System.getenv("JDK_MAC_HOME"))
+    if (cPlatforms.contains("win")) targetPlatform("win", System.getenv("JDK_WIN_HOME"))
+    if (cPlatforms.contains("linux")) targetPlatform("linux", System.getenv("JDK_LINUX_HOME"))
+}
+
+open class CrossPackage : DefaultTask() {
+    var execfilename = "execfilename"
+    var macicnspath = "macicnspath" // name should be execfilename.icns
+
+    @TaskAction
+    fun crossPackage() {
+        project.runtime.targetPlatforms.get().forEach { (t, _) ->
+            println("targetplatform: $t")
+            val imgdir = "${project.runtime.imageDir.get()}/${project.name}-$t"
+            println("imagedir: $imgdir")
+            when(t) {
+                "mac" -> {
+                    val appp = File(project.buildDir.path + "/crosspackage/mac/$execfilename.app").path
+                    project.delete(appp)
+                    project.copy {
+                        into(appp)
+                        from("$macicnspath/$execfilename.icns") {
+                            into("Contents/Resources")
+                        }
+                        from("$imgdir/${project.application.executableDir}/${project.application.applicationName}") {
+                            into("Contents/MacOS")
+                        }
+                        from(imgdir) {
+                            into("Contents")
+                        }
+                    }
+                    val pf = File("$appp/Contents/Info.plist")
+                    pf.writeText("""
+                        <?xml version="1.0" ?>
+                        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+                        <plist version="1.0">
+                         <dict>
+                          <key>LSMinimumSystemVersion</key>
+                          <string>10.9</string>
+                          <key>CFBundleDevelopmentRegion</key>
+                          <string>English</string>
+                          <key>CFBundleAllowMixedLocalizations</key>
+                          <true/>
+                          <key>CFBundleExecutable</key>
+                          <string>$execfilename</string>
+                          <key>CFBundleIconFile</key>
+                          <string>$execfilename.icns</string>
+                          <key>CFBundleIdentifier</key>
+                          <string>main</string>
+                          <key>CFBundleInfoDictionaryVersion</key>
+                          <string>6.0</string>
+                          <key>CFBundleName</key>
+                          <string>${project.name}</string>
+                          <key>CFBundlePackageType</key>
+                          <string>APPL</string>
+                          <key>CFBundleShortVersionString</key>
+                          <string>${project.version}</string>
+                          <key>CFBundleSignature</key>
+                          <string>????</string>
+                          <!-- See http://developer.apple.com/library/mac/#releasenotes/General/SubmittingToMacAppStore/_index.html
+                               for list of AppStore categories -->
+                          <key>LSApplicationCategoryType</key>
+                          <string>Unknown</string>
+                          <key>CFBundleVersion</key>
+                          <string>100</string>
+                          <key>NSHumanReadableCopyright</key>
+                          <string>Copyright (C) 2019</string>
+                          <key>NSHighResolutionCapable</key>
+                          <string>true</string>
+                         </dict>
+                        </plist>
+                    """.trimIndent())
+                    // touch folder to update Finder
+                    File(appp).setLastModified(System.currentTimeMillis())
+                    // zip it
+                    ant.withGroovyBuilder {
+                        "zip"("destfile" to "${project.buildDir.path}/crosspackage/$execfilename-mac.zip",
+                                "basedir" to "${project.buildDir.path}/crosspackage/mac") {
+                        }
+                    }
+                }
+                "win" -> {
+                    ant.withGroovyBuilder {
+                        "zip"("destfile" to "${project.buildDir.path}/crosspackage/$execfilename-win.zip",
+                                "basedir" to imgdir) {
+                        }
+                    }
+                }
+                "linux" -> {
+                    ant.withGroovyBuilder {
+                        "zip"("destfile" to "${project.buildDir.path}/crosspackage/$execfilename-linux.zip",
+                                "basedir" to imgdir) {
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+tasks.register<CrossPackage>("crosspackage") {
+    project.javafx.configuration = "compileOnly" //
+    dependsOn("runtime")
+    execfilename = "reftool5"
+    macicnspath = "src/deploy/macosx"
+}
+
+tasks.withType(CreateStartScripts::class).forEach {script ->
+    script.doFirst {
+        script.classpath =  files("lib/*")
+    }
+}
+
+// copy jmods for each platform
+tasks["runtime"].doLast {
+    cPlatforms.forEach { platform ->
+        println("Copy jmods for platform $platform")
+        val cfg = configurations["javafx_$platform"]
+        cfg.resolvedConfiguration.files.forEach { f ->
+            copy {
+                from(f)
+                into("build/image/reftool5-${platform}/lib")
+            }
+        }
     }
 }
 
 tasks {
-    val zipmac by creating(Zip::class) {
-        dependsOn("createApp") // macappbundle
-        archiveName = "reftool5-mac.zip"
-        destinationDir = file("$buildDir/dist")
-        from("$buildDir/macApp")
-        include("Reftool5.app/")
-    }
-    val zipjar by creating(Zip::class) {
-        dependsOn(shadowJar)
-        archiveName = "reftool5-winlinux.zip"
-        destinationDir = file("$buildDir/dist")
-        from("$buildDir/libs")
-        include("reftool5.jar")
-    }
-
     val zipchrome by creating(Zip::class) {
-        archiveName = "reftool5-chromeextension.zip"
-        destinationDir = file("$buildDir/dist")
+        archiveFileName.set("reftool5-chromeextension.zip")
+        destinationDirectory.set(file("$buildDir/crosspackage"))
         from("extensions/chrome")
     }
     val dist by creating {
-        dependsOn(zipmac)
-        dependsOn(zipjar)
+        dependsOn("crosspackage")
         dependsOn(zipchrome)
-        doLast { println("Created reftool5 zips in build/dist") }
+        doLast { println("Created reftool5 zips in build/crosspackage") }
     }
 }

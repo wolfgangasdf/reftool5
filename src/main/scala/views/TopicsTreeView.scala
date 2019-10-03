@@ -10,7 +10,7 @@ import db.SquerylEntrypointForMyApp._
 import org.squeryl.Queryable
 import util._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
 import scalafx.event.ActionEvent
@@ -150,7 +150,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
       }
     }
 
-    def clearDnDFormatting() {
+    def clearDnDFormatting(): Unit = {
       if (MyTreeCell.lastDragoverCell != null) { // clear old formatting
         MyTreeCell.lastDragoverCell.effect = null
         MyTreeCell.lastDragoverCell = null

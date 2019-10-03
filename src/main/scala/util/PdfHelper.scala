@@ -4,7 +4,7 @@ import org.apache.pdfbox.text.PDFTextStripper
 import org.apache.pdfbox.pdmodel.PDDocument
 import framework.Logging
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.matching.{Regex, UnanchoredRegex}
 
 object PdfHelper extends Logging {

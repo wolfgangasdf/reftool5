@@ -1,10 +1,10 @@
 package framework
 
 import db.{Article, Topic}
-import main.MainScene
+import views.MainScene
 import util.{AppStorage, MFile}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
 import scalafx.beans.property.BooleanProperty
@@ -27,7 +27,7 @@ trait HasUISettings {
 
   def getUIsettings: String
 
-  def setUIsettings(s: String)
+  def setUIsettings(s: String): Unit
 }
 
 abstract class GenericView(id: String) extends Tab with HasUISettings with Logging {
@@ -89,7 +89,7 @@ class ViewContainer extends Pane with Logging {
   toolbar.layoutX <== tabpane.width.subtract(toolbar.width.add(10.0))
   toolbar.layoutY = 2
 
-  def addView(view: GenericView) {
+  def addView(view: GenericView): Unit = {
     debug(" add view " + view)
     tabpane.tabs.add(view)
     views += view
@@ -195,7 +195,7 @@ class MyInputDirchooser(gpRow: Int, labelText: String, iniText: String, helpStri
   override def content: Seq[javafx.scene.Node] = Seq(label, tf, bt)
 }
 
-class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String, helpString: String, disableEnter: Boolean) extends MyFlexInput(gpRow, labelText, rows, helpString) {
+class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String, helpString: String, disableEnter: Boolean) extends MyFlexInput(gpRow, labelText, rows, helpString) with Logging {
   val tf: TextArea = new TextArea() {
     text = iniText
     prefRowCount = rows - 1
@@ -208,10 +208,16 @@ class MyInputTextArea(gpRow: Int, labelText: String, rows: Int, iniText: String,
     tf.filterEvent(KeyEvent.KeyPressed) {
       ke: KeyEvent => ke.code match {
         case KeyCode.Enter => ke.consume()
-        case KeyCode.Tab =>
-          val beh = tf.skin.value.asInstanceOf[com.sun.javafx.scene.control.skin.TextAreaSkin].getBehavior
-          if (ke.shiftDown) beh.callAction("TraversePrevious") else beh.callAction("TraverseNext")
+        case KeyCode.Z if ke.isMetaDown => // TODO: bug in javafx?
           ke.consume()
+          try { tf.undo() } catch { case _: NullPointerException => debug("prevented NPE in undo...") }
+        case KeyCode.Tab => // https://stackoverflow.com/questions/12860478/tab-key-navigation-in-javafx-textarea
+          if (!ke.isControlDown) {
+            ke.consume()
+            val tabControlEvent = new javafx.scene.input.KeyEvent(ke.getSource, ke.getTarget, ke.getEventType, ke.getCharacter,
+              ke.getText, ke.getCode, ke.isShiftDown, true, ke.isAltDown, ke.isMetaDown)
+            tf.delegate.fireEvent(tabControlEvent)
+          }
         case _ =>
       }
     }

@@ -80,7 +80,7 @@ class ArticleListView extends GenericView("articlelistview") {
   private val articles = new ObservableBuffer[Article]()
 
   private val alv: TableView[Article] = new TableView[Article](articles) {
-    columns += (cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview, cModtime)
+    columns.addAll(cTitle, cAuthors, cPubdate, cJournal, cBibtexid, cReview, cModtime)
     columns.foreach(tc => tc.setPrefWidth(120.0))
     // columnResizePolicy = TableView.ConstrainedResizePolicy doesn't work with programmatic resizing: https://bugs.openjdk.java.net/browse/JDK-8091269
     tableMenuButtonVisible = true
@@ -355,7 +355,7 @@ class ArticleListView extends GenericView("articlelistview") {
       onDragDetected = (me: MouseEvent) => {
         ApplicationController.showNotification("Drag'n'drop: 'link' means 'move'!")
         val db = if (currentTopic == null) startDragAndDrop(TransferMode.Copy) else {
-          startDragAndDrop(TransferMode.Any:_*) // workaround, MOVE and COPY does not work! I use LINK therefore...
+          startDragAndDrop(TransferMode.Any.toSeq:_*) // workaround, MOVE and COPY does not work! I use LINK therefore...
         }
         val cont = new ClipboardContent {
           putString("articles") // can't easily make custom DataFormats on mac (!)
@@ -390,10 +390,10 @@ class ArticleListView extends GenericView("articlelistview") {
       Helpers.runUI {
         alv.getSelectionModel.select(a)
         // make row visible if not already https://stackoverflow.com/questions/17268529/javafx-tableview-keep-selected-row-in-current-view
-        val vflow = alv.delegate.getSkin.asInstanceOf[com.sun.javafx.scene.control.skin.TableViewSkin[_]].
-          getChildren.get(1).asInstanceOf[com.sun.javafx.scene.control.skin.VirtualFlow[_]]
+        val vflow = alv.delegate.getSkin.asInstanceOf[javafx.scene.control.skin.TableViewSkin[_]].
+          getChildren.get(1).asInstanceOf[javafx.scene.control.skin.VirtualFlow[_]]
         val idx = alv.getSelectionModel.getSelectedIndex
-        vflow.show(idx)
+        vflow.scrollTo(idx)
       }
     } else debug("revealarticle: not found: " + a)
   }
@@ -453,7 +453,7 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   }
 
-  private def setArticlesTopic(topic: Topic) {
+  private def setArticlesTopic(topic: Topic): Unit = {
     if (topic != null) inTransaction {
       if (topicHistory.isEmpty || topicHistory.last != topic.id)
         topicHistory += topic.id

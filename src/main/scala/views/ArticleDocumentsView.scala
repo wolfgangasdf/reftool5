@@ -6,7 +6,7 @@ import framework.{Logging, ApplicationController, GenericView, MyAction}
 import util.FileHelper._
 import util.{MFile, ImportHelper}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import scalafx.Includes._
 import scalafx.scene.control.Alert.AlertType

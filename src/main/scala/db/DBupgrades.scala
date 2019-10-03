@@ -31,7 +31,7 @@ object DBupgrades extends Logging {
   }
 
   // upgrades old reftool4 database, from config.olddbpath into config.dbpath
-  def upgrade4to5() {
+  def upgrade4to5(): Unit = {
     info("Upgrade4to5 of " + AppStorage.config.olddbpath + " ...")
 
     def dbStats(dbpath: String, clobx: Boolean): Unit = {

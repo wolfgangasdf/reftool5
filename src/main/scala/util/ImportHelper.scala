@@ -18,9 +18,9 @@ import scalafx.scene.control._
 import scalafx.scene.layout.HBox._
 import scalafx.scene.layout.{HBox, Priority, VBox}
 import scalafx.stage.{Modality, Stage, WindowEvent}
-import toolxit.bibtex.AuthorNamesExtractor
+import util.bibtex.AuthorNamesExtractor
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 
 object ImportHelper extends Logging {
@@ -389,7 +389,7 @@ object ImportHelper extends Logging {
     }
   }
 
-  val months = List("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
+  val months: List[String] = List("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
   def updateArticleFromBibtex(a: Article): Article = {
     val (_, btentry) = parseBibtex(a.bibtexentry)
     if (btentry != null) {

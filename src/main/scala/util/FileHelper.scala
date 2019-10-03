@@ -71,7 +71,7 @@ object MFile {
     val opts = new ArrayBuffer[StandardCopyOption]()
     if (copyAttrs) opts += COPY_ATTRIBUTES
     if (replaceExisting) opts += REPLACE_EXISTING
-    java.nio.file.Files.copy(source.toPath, dest.toPath, opts:_*)
+    java.nio.file.Files.copy(source.toPath, dest.toPath, opts.toSeq:_*)
   }
   def createDirectories(mf: MFile): Unit = {
     java.nio.file.Files.createDirectories(java.nio.file.Paths.get(mf.getPath))

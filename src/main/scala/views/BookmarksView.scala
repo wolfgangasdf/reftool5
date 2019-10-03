@@ -221,7 +221,7 @@ class BookmarksView extends GenericView("bookmarksview") {
     var s = ""
     folders.foreach(f => {
       s += f.name + "\t"
-      f.topics.foreach(t => s += t.id + ",")
+      f.topics.foreach(t => s += s"${t.id},")
       s += "\r\n"
     })
     debug("store bookmarks:\n" + s)

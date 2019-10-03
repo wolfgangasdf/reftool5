@@ -200,7 +200,6 @@ object ReftoolDB extends Schema with Logging {
 
   on(topics2articles)(a => declare(
     a.color.is(named("COLOR")), a.color.defaultsTo(0)
-    // TODO defaultsTo(0) doesn't work here after squeryl 0.9.5-7, workaround: all calls to associate(t) changed to associate(t, new Topic2Article())
   ))
 
   // manually auto-increment ids.
@@ -244,7 +243,7 @@ object ReftoolDB extends Schema with Logging {
     val dbpath2 = if (dbpath == null) AppStorage.config.dbpath else dbpath
     try { java.sql.DriverManager.getConnection(s"jdbc:derby:$dbpath2;shutdown=true") } catch {
       case se: SQLException => if (!se.getSQLState.equals("08006")) throw se
-      case se: SQLNonTransientConnectionException => if (!se.getSQLState.equals("08006")) throw se
+//      case se: SQLNonTransientConnectionException => if (!se.getSQLState.equals("08006")) throw se
     }
   }
   def dbGetSchemaVersion: Int = {
@@ -252,7 +251,7 @@ object ReftoolDB extends Schema with Logging {
     assert(res.nonEmpty, "db schema version file not present!")
     res.get.toInt
   }
-  def dbSetSchemaVersion(v: Int) {
+  def dbSetSchemaVersion(v: Int): Unit = {
     FileHelper.writeString(new MFile(AppStorage.config.dbschemaversionpath), v.toString)
   }
 
@@ -269,7 +268,7 @@ object ReftoolDB extends Schema with Logging {
     res
   }
 
-  def initialize(startwithempty: Boolean) {
+  def initialize(startwithempty: Boolean): Unit = {
 
     System.setProperty("derby.stream.error.method", "db.DerbyUtil.getOS")
     // System.setProperty("derby.language.logStatementText", "true")

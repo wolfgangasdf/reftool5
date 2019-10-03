@@ -4,7 +4,7 @@ package util
 class StopWatch {
   private var startNanos = System.nanoTime
   var deltaSecs: Double = 0
-  def stop() { // fast stopping
+  def stop(): Unit = { // fast stopping
     deltaSecs = (System.nanoTime - startNanos)/1e9
   }
   def getTime: Double = (System.nanoTime - startNanos)/1e9
@@ -23,7 +23,7 @@ class StopWatch {
   def printLapTime(msg: String): Unit = {
     println(msg + getTime)
   }
-  def restart() {
+  def restart(): Unit = {
     startNanos = System.nanoTime
   }
 }
