@@ -101,15 +101,8 @@ class BookmarksView extends GenericView("bookmarksview") {
     tooltipString = "Expand all bookmarked topics of current bookmark folder"
     image = new Image(getClass.getResource("/images/expandall.gif").toExternalForm)
     action = _ => {
-      val topics = folders(currentFolderIdx).topics
-      topics.headOption.foreach(t => {
-        debug("t = " + t)
-        ApplicationController.obsRevealTopic((t, true))
-        topics.tail.foreach(tt => {
-          debug("tt = " + tt)
-          ApplicationController.obsRevealTopic((tt, false))
-        })
-      })
+      folders(currentFolderIdx).topics.foreach(t => ApplicationController.obsExpandToTopic(t))
+      ApplicationController.obsBookmarksChanged(folders(currentFolderIdx).topics.toList)
     }
     enabled = true
   }

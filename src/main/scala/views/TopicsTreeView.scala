@@ -146,7 +146,9 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
         self.style = null
       } else {
         self.text = myStringConverter.toString(item)
-        self.style = if (TopicsTreeView.bookmarksTopics.contains(item)) "-fx-control-inner-background: #ffff55" else null
+        if (TopicsTreeView.bookmarksTopics.contains(item)) {
+          self.style.set("-fx-control-inner-background: #ffff55")
+        } else self.style.set(null)
       }
     }
 
@@ -322,11 +324,11 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     }
 
     inTransaction {
-      if (tlast != null) {
+      if (tlast != null) { // expand topic to be revealed
         expandAllParents(tlast)
         tlast.expanded = true
         ReftoolDB.topics.update(tlast)
-      } // expand topic to be revealed
+      }
       troot = ReftoolDB.rootTopic
       tiroot = new MyTreeItem(troot, this)
       tv.root = tiroot
@@ -507,6 +509,11 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     loadTopics(revealLastTopic = false, revealTopic = t)
   }
 
+  // must call loadTopics afterwards, e.g. by obsBookmarksChanged
+  ApplicationController.obsExpandToTopic += { t: Topic =>
+    inTransaction { expandAllParents(t) }
+  }
+
   ApplicationController.obsBookmarksChanged += { bl: List[Topic] =>
     TopicsTreeView.bookmarksTopics = bl
     loadTopics()
@@ -564,7 +571,10 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     def dynamicWhere(q: Queryable[Topic], s: String) = q.where(t => upper(t.title) like s"%$s%")
     var rest = dynamicWhere(ReftoolDB.topics, terms(0))
     for (i <- 1 until terms.length) rest = dynamicWhere(rest, terms(i))
-    rest.toList.toArray
+    val res = rest.toList.toBuffer
+    // add bookmarked topics
+    TopicsTreeView.bookmarksTopics.foreach(t => res.append(ReftoolDB.topics.lookup(t.id).get))
+    res.toArray
   }
 
   // search matching full topic path, slow (how to do with squeryl?)
@@ -583,6 +593,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     recSearch("", ReftoolDB.rootTopic)
     found.toArray
   }
+
   private val tfSearch = new TextField {
     hgrow = Priority.Always
     promptText = "search..."
@@ -592,7 +603,6 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
         val terms = SearchUtil.getSearchTerms(text.value)
         if (terms.exists(_.length > 2)) {
           ApplicationController.showNotification("Searching...")
-
           new MyWorker( "Searching...",
             atask = () => {
               val found = inTransaction {
@@ -614,7 +624,6 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
             },
             cleanup = () => {}
           ).runInBackground()
-
         } else {
           ApplicationController.showNotification("Enter at least one search term >= 3 characters long!")
         }

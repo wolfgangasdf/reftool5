@@ -356,7 +356,7 @@ object ApplicationController extends Logging {
     new java.util.TimerTask {
       override def run(): Unit = {
         if (workerQueue.asScala.nonEmpty) {
-          if ((System.nanoTime()-lastWorkEnd)/1e6 < 100) stressCounter += 1 else stressCounter = 0
+          if ((System.nanoTime()-lastWorkEnd)/1e6 > 100) stressCounter += 1 else stressCounter = 0
           if (stressCounter > 10) Helpers.runUIwait { stressAlert.show() }
           val work = workerQueue.remove(0)
           if (work.uithread) Helpers.runUIwait(work.f()) else work.f()
@@ -386,6 +386,7 @@ object ApplicationController extends Logging {
   val obsTopicSelected = new Observable[Topic]("oTopicSelected") // for other views to update if topic changed. topic can be null.
   val obsRevealArticleInList = new Observable[Article]("oRevealAInList")
   val obsRevealTopic = new Observable[(Topic, Boolean)]("oRevealTopic") // topic, collapseBefore
+  val obsExpandToTopic = new Observable[(Topic)]("oExpandToTopic") // topic
   val obsTopicRenamed = new Observable[Long]("oTopicRenamed")
   val obsTopicRemoved = new Observable[Long]("oTopicRemoved")
   val obsBookmarksChanged = new Observable[List[Topic]]("oBookmarksChanged")
