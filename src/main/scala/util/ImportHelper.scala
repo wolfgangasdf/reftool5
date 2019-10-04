@@ -330,7 +330,8 @@ object ImportHelper extends Logging {
     var doit = 6
     while (doit > 0) {
       val responseo = try {
-        Some(Http(s"https://api.crossref.org/works/${a.doi}/transform/application/x-bibtex").timeout(connTimeoutMs = 15000, readTimeoutMs = 30000).
+        // provide email otherwise slow: https://github.com/CrossRef/rest-api-doc#good-manners--more-reliable-service
+        Some(Http(s"https://api.crossref.org/works/${a.doi}/transform/application/x-bibtex?mailto=wolfgang.loeffler@gmail.com").timeout(connTimeoutMs = 15000, readTimeoutMs = 30000).
           option(HttpOptions.followRedirects(shouldFollow = true)).asBytes)
       } catch {
         case _: SocketTimeoutException =>
