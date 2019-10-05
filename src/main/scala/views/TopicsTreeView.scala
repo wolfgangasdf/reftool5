@@ -123,10 +123,6 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
 
     setConverter(myStringConverter)
 
-    self.treeItem.onChange((_, _, newti) => {
-      self.text = if (newti != null) newti.getValue.title else null
-    })
-
     // drag'n'drop
     self.onDragDetected = (me: MouseEvent) => {
       val db = self.treeView.value.startDragAndDrop(TransferMode.Move)
@@ -136,7 +132,6 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
       DnDHelper.topicTreeItem = self.treeItem.value
       me.consume()
     }
-
 
     override def updateItem(item: Topic, empty: Boolean): Unit = {
       super.updateItem(item, empty)
