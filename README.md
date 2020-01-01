@@ -60,7 +60,7 @@ database is populated with a few demo topics and articles.
 
 ### How to develop, compile & package ###
 
-* Get the latest Java JDK from https://jdk.java.net
+* Get Java 13 from https://jdk.java.net
 * Clone the repository
 * I use the free community version of [IntelliJ IDEA](https://www.jetbrains.com/idea/download/) with the scala 
 plugin for development, just open the project to get started.

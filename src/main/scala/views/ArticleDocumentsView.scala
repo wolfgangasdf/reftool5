@@ -35,7 +35,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
         d.docName = string
         d
       }
-      override def toString(t: Document): String = t.docName
+      override def toString(t: Document): String = if (t != null) t.docName else null
     }
     delegate.setConverter(myConverter)
 

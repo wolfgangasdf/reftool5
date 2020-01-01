@@ -327,7 +327,7 @@ object ImportHelper extends Logging {
     var a = article
     // val doienc = java.net.URLEncoder.encode(doi, "utf-8")
     debug(s"""# curl https://api.crossref.org/works/${a.doi}/transform/application/x-bibtex""")
-    var doit = 6
+    var doit = 2
     while (doit > 0) {
       val responseo = try {
         // provide email otherwise slow: https://github.com/CrossRef/rest-api-doc#good-manners--more-reliable-service
@@ -340,6 +340,7 @@ object ImportHelper extends Logging {
       }
       if (responseo.isDefined) {
         val response = responseo.get
+        for( (k,v) <- response.headers) debug(s"response header: $k = ${v.mkString(";")}")
         if (response.code == 200) {
           // val rb = response.body
           val rb = new String(response.body, "UTF-8")

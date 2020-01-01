@@ -17,31 +17,21 @@ println("Current Java version: ${JavaVersion.current()}")
 java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
-    if (!JavaVersion.current().isJava11Compatible) throw GradleException("This project needs JDK compatible with Java 11")
+    if (JavaVersion.current().toString() != "13") throw GradleException("Use Java 13")
 }
 
 plugins {
     scala
     id("idea")
     application
-    id("com.github.ben-manes.versions") version "0.25.0"
+    id("com.github.ben-manes.versions") version "0.27.0"
     id("org.openjfx.javafxplugin") version "0.0.8"
-    id("org.beryx.runtime") version "1.6.1"
+    id("org.beryx.runtime") version "1.8.0"
 }
 
 application {
     mainClassName = "main.Main"
     //defaultTasks = tasks.run
-}
-
-tasks.withType<Jar> {
-    manifest {
-        attributes(mapOf(
-                "Description" to "Reftool5 JAR",
-                "Implementation-Title" to "Reftool5",
-                "Main-Class" to "main.Main"
-        ))
-    }
 }
 
 repositories {
@@ -201,7 +191,7 @@ tasks["runtime"].doLast {
         cfg.resolvedConfiguration.files.forEach { f ->
             copy {
                 from(f)
-                into("build/image/reftool5-${platform}/lib")
+                into("${project.runtime.imageDir.get()}/${project.name}-$platform/lib")
             }
         }
     }
