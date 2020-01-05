@@ -31,7 +31,7 @@ plugins {
 
 application {
     mainClassName = "main.Main"
-    //defaultTasks = tasks.run
+    applicationDefaultJvmArgs = listOf("-Dprism.verbose=true", "-Dprism.order=sw") // use software renderer
 }
 
 repositories {
