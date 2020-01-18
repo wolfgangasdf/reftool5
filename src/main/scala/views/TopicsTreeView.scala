@@ -164,8 +164,8 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
       val tirely = de.getSceneY - tipossc.getY
       if (de.getSceneY - tvpossc.getY < tiheight) { // javafx can't really scroll yet...
         self.treeView.value.scrollTo(self.treeView.value.row(self.treeItem.value) - 1)
-      } else if (de.getSceneY - tvpossc.getY > tvheight - tiheight) {
-        val newtopindex = 2 + self.treeView.value.getRow(self.treeItem.value) - tvheight / tiheight
+      } else if (de.getSceneY - tvpossc.getY > tvheight - 3*tiheight) {
+        val newtopindex = 3 + self.treeView.value.getRow(self.treeItem.value) - tvheight / tiheight
         self.treeView.value.scrollTo(newtopindex.toInt)
       } else {
         MyTreeCell.lastDragoverCell = self
@@ -186,8 +186,8 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
       if (self.treeItem.value != null) {
         getDropPositionScroll(de)
         if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "topic") {
-          val dti = DnDHelper.topicTreeItem
-          if (dti.getParent != self.treeItem.value && dti.delegate != self.treeItem.value) {
+          val draggedId = DnDHelper.topicTreeItem.getValue.id
+          if (!self.treeItem.value.getValue.path.exists(t => t.id == draggedId)) {
             MyTreeCell.lastDragoverCell = self
             de.acceptTransferModes(TransferMode.Move)
           }
@@ -498,6 +498,41 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
       }
     }
   }
+  private var topicMoveStack: Option[Topic] = None
+  private val aMoveTopic: MyAction = new MyAction("Topic", "Move") {
+    image = new Image(getClass.getResource("/images/m.png").toExternalForm)
+    tooltipString = "Click: remember selected topic, shift-click: move to selected topic (with confirmation dialog)."
+    action = m => {
+      if (m != MyAction.MSHIFT) {
+        topicMoveStack = Option(tv.getSelectionModel.getSelectedItem).map(ti => ti.getValue)
+      } else {
+        val st = Option(tv.getSelectionModel.getSelectedItem).map(ti => ti.getValue)
+        if (st.nonEmpty && topicMoveStack.nonEmpty) {
+          if (st.get.path.exists(t => t.id == topicMoveStack.get.id)) {
+            info("Can't move topic below its own children.")
+          } else {
+            val res = new Alert(AlertType.Confirmation, s"Move topic\n${topicMoveStack.get}\nto selected topic\n${st.get}\n?").showAndWait()
+            res match {
+              case Some(ButtonType.OK) =>
+                inTransaction {
+                  val dt = topicMoveStack.get
+                  val newParent = st.get
+                  dt.parent = newParent.id
+                  ReftoolDB.topics.update(dt)
+                  newParent.expanded = true
+                  ReftoolDB.topics.update(newParent)
+                  loadTopics(revealLastTopic = false, revealTopic = dt)
+                }
+                loadTopics(clearSearch = true)
+              case _ =>
+            }
+          }
+        }
+      }
+    }
+    enabled = true
+  }
+
 
   ApplicationController.obsRevealTopic += { case (t: Topic, collapseBefore: Boolean) =>
     if (collapseBefore) collapseAllTopics()
@@ -514,10 +549,8 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     loadTopics()
   }
 
-  toolbaritems ++= Seq( aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aExportTopicPDFs.toolbarButton,
-    aUpdatePDFs.toolbarButton, aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton
-  )
-
+  toolbaritems ++= Seq(aMoveTopic.toolbarButton, aAddTopic.toolbarButton, aAddArticle.toolbarButton, aExportBibtex.toolbarButton, aExportTopicPDFs.toolbarButton,
+    aUpdatePDFs.toolbarButton, aCollapseAll.toolbarButton, aRemoveTopic.toolbarButton)
 
   private def updateButtons(): Unit = {
     val sel = tv.getSelectionModel.getSelectedItems.nonEmpty
@@ -526,6 +559,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     aExportBibtex.enabled = sel
     aExportTopicPDFs.enabled = sel
     aRemoveTopic.enabled = sel
+    aMoveTopic.enabled = sel
   }
 
   // selection changed must be handled via mouseclick/key updown, doesn't work well with selection change below.

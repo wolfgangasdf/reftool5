@@ -132,6 +132,14 @@ class Topic(var title: String = "", var parent: Long = 0, var expanded: Boolean 
   def orderedChilds: List[Topic] = inTransaction {
     childrenTopics.toList.sortWith( (s1, s2) => StringHelper.AlphaNumStringSorter(s1.title, s2.title))
   }
+  def path: List[Topic] = inTransaction {
+    var t = this
+    return Iterator.continually {
+      val oldt = t
+      t = t.parentTopic.headOption.getOrElse(oldt)
+      oldt
+    }.takeWhile( tt => tt != ReftoolDB.rootTopic ).toList // first element is "this" topic.
+  }
   override def toString: String = title
 }
 
