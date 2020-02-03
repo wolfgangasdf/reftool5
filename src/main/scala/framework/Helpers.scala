@@ -6,13 +6,14 @@ import java.util.Date
 import java.util.concurrent.FutureTask
 import java.util.jar.JarFile
 
+import scalafx.geometry.Insets
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control.{Alert, ButtonType, TextArea}
 import scalafx.scene.layout.Priority
 
 object Helpers extends Logging {
 
-  val insetsstd = scalafx.geometry.Insets(5)
+  val insetsstd: Insets = scalafx.geometry.Insets(5)
 
   // this should be used for anything in javafx startup, as the stacktrace is missing if e.g. an icon file is not present!
   def tryit[T]( f: => T ): T = {

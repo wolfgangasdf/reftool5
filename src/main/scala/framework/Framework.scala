@@ -32,7 +32,7 @@ trait HasUISettings {
 
 abstract class GenericView(id: String) extends Tab with HasUISettings with Logging {
 
-  val isDirty = BooleanProperty(value = false)
+  val isDirty: BooleanProperty = BooleanProperty(value = false)
 
   val toolbaritems = new ArrayBuffer[Node]
 
@@ -386,7 +386,7 @@ object ApplicationController extends Logging {
   val obsTopicSelected = new Observable[Topic]("oTopicSelected") // for other views to update if topic changed. topic can be null.
   val obsRevealArticleInList = new Observable[Article]("oRevealAInList")
   val obsRevealTopic = new Observable[(Topic, Boolean)]("oRevealTopic") // topic, collapseBefore
-  val obsExpandToTopic = new Observable[(Topic)]("oExpandToTopic") // topic
+  val obsExpandToTopic = new Observable[Topic]("oExpandToTopic") // topic
   val obsTopicRenamed = new Observable[Long]("oTopicRenamed")
   val obsTopicRemoved = new Observable[Long]("oTopicRemoved")
   val obsBookmarksChanged = new Observable[List[Topic]]("oBookmarksChanged")

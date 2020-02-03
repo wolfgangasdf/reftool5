@@ -1,21 +1,22 @@
 package views
 
-import db.{ReftoolDB, Document, Article}
+import db.{Article, Document, ReftoolDB}
 import db.SquerylEntrypointForMyApp._
-import framework.{Logging, ApplicationController, GenericView, MyAction}
+import framework.{ApplicationController, GenericView, Logging, MyAction}
 import util.FileHelper._
-import util.{MFile, ImportHelper}
+import util.{ImportHelper, MFile}
 
 import scala.jdk.CollectionConverters._
-
 import scalafx.Includes._
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control._
 import scalafx.scene.control.cell.TextFieldListCell
 import scalafx.scene.image.Image
-import scalafx.scene.input.{TransferMode, DataFormat, DragEvent, MouseEvent}
+import scalafx.scene.input.{DataFormat, DragEvent, MouseEvent, TransferMode}
 import scalafx.stage.FileChooser
 import scalafx.util.StringConverter
+
+import scala.collection.mutable.ArrayBuffer
 
 class ArticleDocumentsView extends GenericView("articledocumentsview") with Logging {
 
@@ -81,7 +82,8 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     action = _ => {
       new Alert(AlertType.Confirmation, "Really deleted selected documents", ButtonType.Yes, ButtonType.No).showAndWait() match {
         case Some(ButtonType.Yes) =>
-          lv.selectionModel.value.getSelectedItems.foreach( dd => {
+          val ds = new ArrayBuffer[Document] ++ lv.selectionModel.value.getSelectedItems
+          ds.foreach( dd => {
             getDocumentFileAbs(dd.docPath).delete()
             lv.getItems.remove(dd)
           })

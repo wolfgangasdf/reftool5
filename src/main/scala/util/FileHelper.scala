@@ -1,7 +1,7 @@
 package util
 
 import java.{io, util}
-import java.io.{BufferedInputStream, File, FileInputStream}
+import java.io.{BufferedInputStream, File, FileInputStream, FileNotFoundException}
 import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.{Path, StandardCopyOption}
@@ -11,7 +11,7 @@ import db.Article
 import framework.{Helpers, Logging}
 
 import scala.collection.mutable.ArrayBuffer
-import scala.util.{Random, Try}
+import scala.util.{Random, Try, Using}
 
 // wrap everything that returns a java.io.File into util.MFile!
 // this always uses "/" as file separator and includes useful classes from java.nio
@@ -103,7 +103,7 @@ object FileHelper extends Logging {
   }
   def readString(file: MFile) : Option[String] = {
     if (file.exists && file.canRead)
-      Some(scala.io.Source.fromFile(file.toFile).mkString)
+      Some(Using(scala.io.Source.fromFile(file.toFile)) { _.mkString }.get )
     else
       None
   }
@@ -208,6 +208,7 @@ object FileHelper extends Logging {
   }
 
   def revealFile(file: MFile): Unit = {
+    if (!file.exists) throw new FileNotFoundException(s"File ${file.getPath} not found while revealing!")
     if (Helpers.isMac) {
       Runtime.getRuntime.exec(Array("open", "-R", file.getPath))
     } else if (Helpers.isWin) {

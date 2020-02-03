@@ -28,7 +28,7 @@ import scala.util.parsing.combinator.RegexParsers
 
 object bibtex {
 
-  lazy val EmptyAuthor = Author(Nil, Nil, Nil, Nil)
+  lazy val EmptyAuthor: Author = Author(Nil, Nil, Nil, Nil)
 
 //  lazy val UnknownEntry = BibEntry("unknown", "??", Map())
 

@@ -24,15 +24,6 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   text = title
 
-  isDirty.onChange({
-    text = if (isDirty.value) title + " *" else title
-    aSave.enabled = isDirty.value
-    aUpdateFromBibtex.enabled = !isDirty.value
-    aGenerateBibtexID.enabled = !isDirty.value
-    aCreateBibtex.enabled = !isDirty.value
-    aUpdateMetadatafromPDF.enabled = !isDirty.value
-  })
-
   override def canClose: Boolean = {
     if (isDirty.value) {
       val res = new Alert(AlertType.Confirmation) {
@@ -259,4 +250,14 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   override def setUIsettings(s: String): Unit = {}
 
   override val uisettingsID: String = "adv"
+
+  isDirty.onChange({
+    text = if (isDirty.value) title + " *" else title
+    aSave.enabled = isDirty.value
+    aUpdateFromBibtex.enabled = !isDirty.value
+    aGenerateBibtexID.enabled = !isDirty.value
+    aCreateBibtex.enabled = !isDirty.value
+    aUpdateMetadatafromPDF.enabled = !isDirty.value
+  })
+
 }
