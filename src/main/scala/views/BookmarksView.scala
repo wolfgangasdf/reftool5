@@ -2,13 +2,14 @@ package views
 
 import db.{ReftoolDB, Topic}
 import framework.{ApplicationController, GenericView, MyAction}
-
 import db.SquerylEntrypointForMyApp._
 import util.StringHelper
+
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
 import scalafx.collections.ObservableBuffer
 import scalafx.event.ActionEvent
+import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control._
 import scalafx.scene.image.Image
 import scalafx.scene.input.{KeyCode, KeyEvent, MouseEvent}
@@ -111,10 +112,14 @@ class BookmarksView extends GenericView("bookmarksview") {
     tooltipString = "Remove whole bookmarks folder"
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
     action = _ => {
-      folders.remove(currentFolderIdx)
-      checkFolders()
-      cbfolder.getSelectionModel.select(0)
-      storeSettings()
+      new Alert(AlertType.Confirmation, s"Really remove bookmark folder\n${folders(currentFolderIdx)}?").showAndWait() match {
+        case Some(ButtonType.OK) =>
+          folders.remove(currentFolderIdx)
+          checkFolders()
+          cbfolder.getSelectionModel.select(0)
+          storeSettings()
+        case _ =>
+      }
     }
     enabled = true
   }

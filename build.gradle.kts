@@ -1,3 +1,4 @@
+import org.gradle.kotlin.dsl.support.zipTo
 import org.openjfx.gradle.JavaFXModule
 import org.openjfx.gradle.JavaFXOptions
 
@@ -11,20 +12,16 @@ buildscript {
 group = "com.reftool5"
 version = "1.0-SNAPSHOT"
 val cPlatforms = listOf("mac", "win", "linux") // compile for these platforms. "mac", "linux", "win"
-val derbyVersion = "10.15.1.3"
+val derbyVersion = "10.15.2.0"
 
 println("Current Java version: ${JavaVersion.current()}")
-java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-    if (JavaVersion.current().toString() != "13") throw GradleException("Use Java 13")
-}
+if (JavaVersion.current().majorVersion.toInt() < 14) throw GradleException("Use Java >= 14")
 
 plugins {
     scala
     id("idea")
     application
-    id("com.github.ben-manes.versions") version "0.27.0"
+    id("com.github.ben-manes.versions") version "0.28.0"
     id("org.openjfx.javafxplugin") version "0.0.8"
     id("org.beryx.runtime") version "1.8.0"
 }
@@ -41,7 +38,7 @@ repositories {
 
 
 javafx {
-    modules = listOf("javafx.base", "javafx.controls", "javafx.fxml", "javafx.graphics", "javafx.media", "javafx.swing", "javafx.web")
+    modules = listOf("javafx.base", "javafx.controls", "javafx.media") // scalafx requires javafx.media
     // set compileOnly for crosspackage to avoid packaging host javafx jmods for all target platforms
     configuration = if (project.gradle.startParameter.taskNames.intersect(listOf("crosspackage", "dist")).isNotEmpty()) "compileOnly" else "implementation"
 }
@@ -55,11 +52,11 @@ dependencies {
     implementation("org.apache.derby:derbyshared:$derbyVersion")
     implementation("org.squeryl:squeryl_2.13:0.9.14")
     implementation("org.scala-lang.modules:scala-parser-combinators_2.13:1.1.2")
-    implementation("org.apache.pdfbox:pdfbox:2.0.17")
+    implementation("org.apache.pdfbox:pdfbox:2.0.19")
     implementation("org.jbibtex:jbibtex:1.0.17")
     implementation("org.scalaj:scalaj-http_2.13:2.4.2")
     implementation("org.scala-lang:scala-reflect:2.13.1")
-    implementation("org.jsoup:jsoup:1.12.1")
+    implementation("org.jsoup:jsoup:1.13.1")
     cPlatforms.forEach {platform ->
         val cfg = configurations.create("javafx_$platform")
         JavaFXModule.getJavaFXModules(javaFXOptions.modules).forEach { m ->
@@ -120,7 +117,7 @@ open class CrossPackage : DefaultTask() {
                           <key>CFBundleIconFile</key>
                           <string>$execfilename.icns</string>
                           <key>CFBundleIdentifier</key>
-                          <string>main</string>
+                          <string>${project.group}</string>
                           <key>CFBundleInfoDictionaryVersion</key>
                           <string>6.0</string>
                           <key>CFBundleName</key>
@@ -147,13 +144,20 @@ open class CrossPackage : DefaultTask() {
                     // touch folder to update Finder
                     File(appp).setLastModified(System.currentTimeMillis())
                     // zip it
-                    org.gradle.kotlin.dsl.support.zipTo(File("${project.buildDir.path}/crosspackage/$execfilename-mac.zip"), File("${project.buildDir.path}/crosspackage/mac"))
+                    zipTo(File("${project.buildDir.path}/crosspackage/$execfilename-mac.zip"), File("${project.buildDir.path}/crosspackage/mac"))
                 }
                 "win" -> {
-                    org.gradle.kotlin.dsl.support.zipTo(File("${project.buildDir.path}/crosspackage/$execfilename-win.zip"), File(imgdir))
+                    File("$imgdir/bin/$execfilename.bat").delete() // from runtime, not nice
+                    val pf = File("$imgdir/$execfilename.bat")
+                    pf.writeText("""
+                        set JLINK_VM_OPTIONS="${project.application.applicationDefaultJvmArgs.joinToString(" ")}"
+                        set DIR=%~dp0
+                        start "" "%DIR%\bin\javaw" %JLINK_VM_OPTIONS% -classpath "%DIR%/lib/*" ${project.application.mainClassName} 
+                    """.trimIndent())
+                    zipTo(File("${project.buildDir.path}/crosspackage/$execfilename-win.zip"), File(imgdir))
                 }
                 "linux" -> {
-                    org.gradle.kotlin.dsl.support.zipTo(File("${project.buildDir.path}/crosspackage/$execfilename-linux.zip"), File(imgdir))
+                    zipTo(File("${project.buildDir.path}/crosspackage/$execfilename-linux.zip"), File(imgdir))
                 }
             }
         }
@@ -195,5 +199,9 @@ task<Zip>("zipchrome") {
 task("dist") {
     dependsOn("crosspackage")
     dependsOn("zipchrome")
-    doLast { println("Created reftool5 zips in build/crosspackage") }
+    doLast {
+        println("Deleting build/[image,jre,install]")
+        project.delete(project.runtime.imageDir.get(), project.runtime.jreDir.get(), "${project.buildDir.path}/install")
+        println("Created zips in build/crosspackage")
+    }
 }

@@ -51,8 +51,7 @@ Hints:
 
 ### How to run ###
 
-* [Download the zip](https://github.com/wolfgangasdf/reftool5/releases), extract it somewhere and double-click the app (Mac) or
-  `bin/reftool5.bat` (Windows) or `bin/reftool5` (Linux).
+* [Download the zip](https://github.com/wolfgangasdf/reftool5/releases), extract it somewhere and run it. It is not signed, google for "open unsigned mac/win".
 * Install the Google Chrome plugin to import a displayed pdf.
 
 Everything should be self-explanatory (watch out for tooltips) and if you create a new "reftool data dir", the 
@@ -60,7 +59,7 @@ database is populated with a few demo topics and articles.
 
 ### How to develop, compile & package ###
 
-* Get Java 13 from https://jdk.java.net
+* Get Java 14 from https://jdk.java.net
 * Clone the repository
 * I use the free community version of [IntelliJ IDEA](https://www.jetbrains.com/idea/download/) with the scala 
 plugin for development, just open the project to get started.
