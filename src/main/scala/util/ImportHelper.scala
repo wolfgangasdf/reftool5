@@ -17,7 +17,7 @@ import scalafx.scene.control.Button._
 import scalafx.scene.control._
 import scalafx.scene.layout.HBox._
 import scalafx.scene.layout.{HBox, Priority, VBox}
-import scalafx.stage.{Modality, Stage, WindowEvent}
+import scalafx.stage.{Stage, WindowEvent}
 import util.bibtex.AuthorNamesExtractor
 
 import scala.jdk.CollectionConverters._
@@ -73,7 +73,6 @@ object ImportHelper extends Logging {
       )
     }
     val dialogStage: Stage = new Stage {
-      val initModality: Modality = Modality.WindowModal
       initOwner(main.Main.stage)
       scene = new Scene {
         content = new ScrollPane {
@@ -117,7 +116,7 @@ object ImportHelper extends Logging {
             case PdfHelper.doire(_) =>
               a.doi = doi
               updateMessage("retrieve bibtex from DOI...")
-              a = updateBibtexFromDoi(a, doi)
+              a = updateBibtexFromDoi(a)
               a = updateArticleFromBibtex(a)
             case _ =>
           }
@@ -321,7 +320,7 @@ object ImportHelper extends Logging {
     a
   }
 
-  private def updateBibtexFromDoi(article: Article, doi: String): Article = {
+  private def updateBibtexFromDoi(article: Article): Article = {
     // http://citation.crosscite.org/docs.html  https://github.com/CrossRef/rest-api-doc
     import scalaj.http._
     var a = article
@@ -368,9 +367,10 @@ object ImportHelper extends Logging {
     if (btfield != null) {
       s = btfield.toUserString
       if (s.contains('\\') || s.contains('{')) {
-        val latexParser = new org.jbibtex.LaTeXParser()
         s = s.replaceAll("(?<!\\\\)~", " ") // jbibtex: A~B lastname fails
         s = s.replaceAll("\\{\\\\hspace\\{[\\w\\.]*\\}\\}", " ") // jbibtex doesn't remove {\hspace{0.167em}} properly
+        s = s.replaceAllLiterally("$", " ") // latexparser can't do this
+        val latexParser = new org.jbibtex.LaTeXParser()
         val latexObjects = latexParser.parse(s)
         val latexPrinter = new org.jbibtex.LaTeXPrinter()
         s = latexPrinter.print(latexObjects)

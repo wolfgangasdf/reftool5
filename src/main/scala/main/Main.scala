@@ -49,7 +49,9 @@ object Main extends JFXApp with Logging {
 
   class MyConsole(errchan: Boolean) extends io.OutputStream {
     override def write(b: Int): Unit = {
-      runUI { if (mainScene != null) if (mainScene.logView != null) if (mainScene.logView.taLog != null) mainScene.logView.taLog.appendText(b.toChar.toString) }
+      runUI {
+        if (mainScene != null) if (mainScene.logView != null) mainScene.logView.append(b.toChar.toString)
+      }
       if (logps != null) logps.write(b)
       (if (errchan) oldErr else oldOut).print(b.toChar.toString)
     }
