@@ -3,11 +3,10 @@ package views
 import java.time._
 
 import db.{Article, ReftoolDB, Topic}
-import framework.{ApplicationController, GenericView}
+import framework.{ApplicationController, GenericView, Helpers}
 import db.SquerylEntrypointForMyApp._
 import org.squeryl.{Query, Queryable}
-import util.SearchUtil
-
+import util.{HistoryField, SearchUtil}
 import scalafx.Includes._
 import scalafx.event.ActionEvent
 import scalafx.geometry.{Insets, Pos}
@@ -20,10 +19,8 @@ class SearchView extends GenericView("searchview") {
 
   text = "Search"
 
-  private val tfSearch: TextField = new TextField {
+  private val tfSearch = new HistoryField(10) {
     hgrow = Priority.Always
-    var millis1: Long = 0
-    var millis2: Long = 0
     tooltip = new Tooltip { text = "Sspace-separated search terms (group with single quote), articles matching all terms are returned if you press Enter!" }
     this.promptText = "Enter search text"
     onAction = (_: ActionEvent) => {
@@ -52,7 +49,8 @@ class SearchView extends GenericView("searchview") {
     val millis2 = date2.getValue.atTime(hours2.getText.toInt, 59).toInstant(ZonedDateTime.now().getOffset).toEpochMilli
     inTransaction {
       val maxSize = 1000
-      val terms = SearchUtil.getSearchTerms(tfSearch.getText)
+      debug(s"dosearch: [${tfSearch.getValue}]")
+      val terms = SearchUtil.getSearchTerms(tfSearch.getValue)
       val canSearchWithoutTerms = cbModifiedSince.selected.value
       if (terms.exists(_.length > 2) || canSearchWithoutTerms) {
         val res1: Queryable[Article] = if (cbOnlyTopic.selected.value && currentTopic != null)
@@ -114,7 +112,7 @@ class SearchView extends GenericView("searchview") {
       selNotDefault.foreach( _.selected = false)
       date1.value = LocalDate.now.minusDays(1)
       date2.value = LocalDate.now
-      tfSearch.text = ""
+      tfSearch.value = ""
     }
   }
   private val btSelectNone = new Button("Select none") {
@@ -127,10 +125,10 @@ class SearchView extends GenericView("searchview") {
   }
   content = new BorderPane {
     margin = Insets(5.0)
-    top = new HBox { children = List(
-      new Label("Search text: "),
-      tfSearch
-    )}
+    top = new HBox {
+      alignment = Pos.CenterLeft
+      children = List(new Label("Search text: "), tfSearch)
+    }
     center = new VBox {
       spacing = 5.0
       children = List(
@@ -154,6 +152,7 @@ class SearchView extends GenericView("searchview") {
 
   override def onViewClicked(): Unit = {
     tfSearch.requestFocus()
+    Helpers.runUI { tfSearch.getEditor.selectAll() }
   }
 
   override def canClose: Boolean = true

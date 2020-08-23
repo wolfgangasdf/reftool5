@@ -294,7 +294,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     assert(!( revealLastTopic && (revealTopic != null) ))
     debug(s"ttv: loadtopics! revlast=$revealLastTopic revealtopic=$revealTopic")
     if (clearSearch) {
-      tfSearch.text = ""
+      tfSearch.value = ""
       btClearSearch.disable = true
       searchActive = false
     }
@@ -414,7 +414,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
           t.exportfn = fn.getPath
           ReftoolDB.topics.update(t)
         }
-        def fixbibtex(s: String): String = s.replaceAllLiterally("–", "-") // can't use utf8 in bst files...
+        def fixbibtex(s: String): String = s.replace("–", "-") // can't use utf8 in bst files...
         val pw = new java.io.PrintWriter(new java.io.FileOutputStream(fn.toFile, false))
         val datestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())
         pw.write(s"% $datestamp Reftool export topic:${t.title}\n")
@@ -623,46 +623,53 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     found.toArray
   }
 
-  private val tfSearch = new TextField {
+  private def findTopics(s: String, recursive: Boolean): Unit = {
+    if (s.trim != "") {
+      val terms = SearchUtil.getSearchTerms(s)
+      if (terms.exists(_.length > 2)) {
+        ApplicationController.showNotification("Searching...")
+        new MyWorker( "Searching...",
+          atask = () => {
+            val found = inTransaction {
+              if (recursive) findRecursive(terms) else findSql(terms)
+            }
+            Helpers.runUI {
+              ApplicationController.showNotification("Search done, found " + found.length + " topics.")
+              if (found.length > 0) inTransaction {
+                collapseAllTopics()
+                found.foreach(t => {
+                  t.expanded = true // also for leaves if in search!
+                  ReftoolDB.topics.update(t)
+                  expandAllParents(t)
+                })
+                searchActive = true
+                loadTopics(revealLastTopic = false)
+              }
+            }
+          },
+          cleanup = () => {}
+        ).runInBackground()
+      } else {
+        ApplicationController.showNotification("Enter at least one search term >= 3 characters long!")
+      }
+      btClearSearch.disable = false
+    } else loadTopics(clearSearch = true)
+  }
+
+  private val tfSearch = new HistoryField(10) {
     hgrow = Priority.Always
     promptText = "search..."
-    tooltip = new Tooltip { text = "enter space-separated search terms (group with single quote), topics matching all terms are listed.\nmeta+enter: match full topic path (slow!)" }
-    onKeyPressed = (e: KeyEvent) => if (e.code == KeyCode.Enter) {
-      if (text.value.trim != "") {
-        val terms = SearchUtil.getSearchTerms(text.value)
-        if (terms.exists(_.length > 2)) {
-          ApplicationController.showNotification("Searching...")
-          new MyWorker( "Searching...",
-            atask = () => {
-              val found = inTransaction {
-                if (e.metaDown) findRecursive(terms) else findSql(terms)
-              }
-              Helpers.runUI {
-                ApplicationController.showNotification("Search done, found " + found.length + " topics.")
-                if (found.length > 0) inTransaction {
-                  collapseAllTopics()
-                  found.foreach(t => {
-                    t.expanded = true // also for leaves if in search!
-                    ReftoolDB.topics.update(t)
-                    expandAllParents(t)
-                  })
-                  searchActive = true
-                  loadTopics(revealLastTopic = false)
-                }
-              }
-            },
-            cleanup = () => {}
-          ).runInBackground()
-        } else {
-          ApplicationController.showNotification("Enter at least one search term >= 3 characters long!")
-        }
-        btClearSearch.disable = false
-      } else loadTopics(clearSearch = true)
-    }
+    tooltip = new Tooltip { text = "enter space-separated search terms (group with single quote), topics matching all terms are listed." }
+    onAction = (_: ActionEvent) => findTopics(this.getValue, recursive = false)
+  }
+
+  private val btSearchRec = new Button("R") {
+    tooltip = new Tooltip { text = "Search full topic path (slow!)" }
+    onAction = (_: ActionEvent) => findTopics(tfSearch.getValue, recursive = true)
   }
 
   content = new BorderPane {
-    top = new HBox { children ++= Seq(tfSearch, btClearSearch) }
+    top = new HBox { children ++= Seq(tfSearch, btSearchRec, btClearSearch) }
     center = tv
   }
 

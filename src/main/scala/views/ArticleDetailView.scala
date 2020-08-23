@@ -111,7 +111,6 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   }
 
   private class MyLine(gpRow: Int, labelText: String, rows: Int = 1, disableEnter: Boolean = false) extends MyInputTextArea(gpRow, labelText, rows, "", "", disableEnter) {
-    val lineidx: Int = lines.size
     onchange = () => { isDirty.value = true }
     lines += this
   }

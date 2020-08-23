@@ -21,9 +21,9 @@ plugins {
     scala
     id("idea")
     application
-    id("com.github.ben-manes.versions") version "0.28.0"
-    id("org.openjfx.javafxplugin") version "0.0.8"
-    id("org.beryx.runtime") version "1.8.0"
+    id("com.github.ben-manes.versions") version "0.29.0"
+    id("org.openjfx.javafxplugin") version "0.0.9"
+    id("org.beryx.runtime") version "1.11.3"
 }
 
 application {
@@ -38,6 +38,7 @@ repositories {
 
 
 javafx {
+    version = "14"
     modules = listOf("javafx.base", "javafx.controls", "javafx.media") // scalafx requires javafx.media
     // set compileOnly for crosspackage to avoid packaging host javafx jmods for all target platforms
     configuration = if (project.gradle.startParameter.taskNames.intersect(listOf("crosspackage", "dist")).isNotEmpty()) "compileOnly" else "implementation"
@@ -45,17 +46,17 @@ javafx {
 val javaFXOptions = the<JavaFXOptions>()
 
 dependencies {
-    implementation("org.scala-lang:scala-library:2.13.1")
-    implementation("org.scalafx:scalafx_2.13:12.0.2-R18")
+    implementation("org.scala-lang:scala-library:2.13.3")
+    implementation("org.scalafx:scalafx_2.13:14-R19")
     implementation("org.apache.derby:derby:$derbyVersion")
     implementation("org.apache.derby:derbytools:$derbyVersion")
     implementation("org.apache.derby:derbyshared:$derbyVersion")
-    implementation("org.squeryl:squeryl_2.13:0.9.14")
+    implementation("org.squeryl:squeryl_2.13:0.9.15")
     implementation("org.scala-lang.modules:scala-parser-combinators_2.13:1.1.2")
-    implementation("org.apache.pdfbox:pdfbox:2.0.19")
+    implementation("org.apache.pdfbox:pdfbox:2.0.21")
     implementation("org.jbibtex:jbibtex:1.0.17")
     implementation("org.scalaj:scalaj-http_2.13:2.4.2")
-    implementation("org.scala-lang:scala-reflect:2.13.1")
+    implementation("org.scala-lang:scala-reflect:2.13.3")
     implementation("org.jsoup:jsoup:1.13.1")
     cPlatforms.forEach {platform ->
         val cfg = configurations.create("javafx_$platform")
@@ -74,8 +75,8 @@ runtime {
 }
 
 open class CrossPackage : DefaultTask() {
-    @org.gradle.api.tasks.Input var execfilename = "execfilename"
-    @org.gradle.api.tasks.Input var macicnspath = "macicnspath"
+    @Input var execfilename = "execfilename"
+    @Input var macicnspath = "macicnspath"
 
     @TaskAction
     fun crossPackage() {

@@ -1,7 +1,7 @@
 package db
 
 import java.io.OutputStream
-import java.sql.{SQLException, SQLNonTransientConnectionException}
+import java.sql.SQLException
 import java.text.SimpleDateFormat
 import java.time.Instant
 
@@ -120,7 +120,7 @@ class Article(var entrytype: String = "",
 }
 object Article {
   def updateBibtexIDinBibtexString(bibtexString: String, oldBibtexID: String, newBibtexID: String): String = {
-    bibtexString.replaceAllLiterally(s"{$oldBibtexID,", s"{$newBibtexID,")
+    bibtexString.replace(s"{$oldBibtexID,", s"{$newBibtexID,")
   }
 }
 

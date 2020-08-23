@@ -251,7 +251,7 @@ object ImportHelper extends Logging {
   def getUniqueBibtexID(bibtexid: String, article: Article): String = {
     val replist = List(("ä", "ae"), ("ü", "ue"), ("ö", "oe"), ("ß", "ss"))
     var bid2 = bibtexid.toLowerCase
-    replist.foreach { case (s1, s2) => bid2 = bid2.replaceAllLiterally(s1, s2) }
+    replist.foreach { case (s1, s2) => bid2 = bid2.replace(s1, s2) }
     bid2 = java.text.Normalizer.normalize(bid2, java.text.Normalizer.Form.NFD)
     bid2 = bid2.replaceAll("[^\\p{Alnum}]", "").toLowerCase
     var bid3 = bid2
@@ -346,7 +346,7 @@ object ImportHelper extends Logging {
           a = generateUpdateBibtexID(rb, a)
           doit = 0 // becomes -1 below
         } else {
-          debug("updatebibtexfromdoi: response = " + response + " code=" + response.code + "\nbody:\n" + response.body)
+          debug(s"updatebibtexfromdoi: response=$response code=${response.code}\nbody:\n${response.body}")
         }
       } else {
         debug("updatebibtexfromdoi: received empty response")
@@ -369,7 +369,7 @@ object ImportHelper extends Logging {
       if (s.contains('\\') || s.contains('{')) {
         s = s.replaceAll("(?<!\\\\)~", " ") // jbibtex: A~B lastname fails
         s = s.replaceAll("\\{\\\\hspace\\{[\\w\\.]*\\}\\}", " ") // jbibtex doesn't remove {\hspace{0.167em}} properly
-        s = s.replaceAllLiterally("$", " ") // latexparser can't do this
+        s = s.replace("$", " ") // latexparser can't do this
         val latexParser = new org.jbibtex.LaTeXParser()
         val latexObjects = latexParser.parse(s)
         val latexPrinter = new org.jbibtex.LaTeXPrinter()

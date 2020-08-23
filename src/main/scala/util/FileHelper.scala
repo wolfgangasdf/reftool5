@@ -18,7 +18,7 @@ import scala.util.{Random, Try, Using}
 class MFile(file: io.File) extends Logging {
 
   def this(pathname: String) = this(new io.File(pathname))
-  def toSlashSeparator(s: String): String = s.replaceAllLiterally("\\", "/")
+  def toSlashSeparator(s: String): String = s.replace("\\", "/")
 
   def listFiles: Array[MFile] = file.listFiles.sorted.map(f => MFile(f))
   def listFiles(filter: io.FileFilter): Array[MFile] = file.listFiles(filter).sorted.map(f => MFile(f))
