@@ -21,9 +21,9 @@ plugins {
     scala
     id("idea")
     application
-    id("com.github.ben-manes.versions") version "0.29.0"
+    id("com.github.ben-manes.versions") version "0.33.0"
     id("org.openjfx.javafxplugin") version "0.0.9"
-    id("org.beryx.runtime") version "1.11.3"
+    id("org.beryx.runtime") version "1.11.4"
 }
 
 application {

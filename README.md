@@ -5,7 +5,7 @@ Reftool is a scientific reference manager, similar to [Zotero](https://www.zoter
 
 Some key specs & features (not complete):
 
-* Uses JavaFX/Java 13 and runs on Mac, Windows, Linux (JRE is bundled).
+* Uses java and runs on Mac, Windows, Linux (JRE is bundled).
 * All data except app settings is stored below one folder (data directory). You can move this between different platforms.
 * There are `topics` and `articles`. Articles can belong to any number of topics, topics are organized in a tree structure.
 * Bibtex ids are unique (and are automatically generated).
