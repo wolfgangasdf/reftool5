@@ -312,6 +312,8 @@ object ApplicationController extends Logging {
   }
 
   def afterShown(): Unit = {
+    info("java.version: " + System.getProperties.get("java.version"))
+    info("javafx.runtime.version: " + System.getProperties.get("javafx.runtime.version"))
     java.lang.management.ManagementFactory.getRuntimeMXBean.getInputArguments.asScala.foreach( s => info("jvm runtime parm: " + s))
 
     debug("main ui thread: " + Thread.currentThread.getId + " isUI:" + scalafx.application.Platform.isFxApplicationThread)

@@ -15,15 +15,15 @@ val cPlatforms = listOf("mac", "win", "linux") // compile for these platforms. "
 val derbyVersion = "10.15.2.0"
 
 println("Current Java version: ${JavaVersion.current()}")
-if (JavaVersion.current().majorVersion.toInt() < 14) throw GradleException("Use Java >= 14")
+if (JavaVersion.current().majorVersion.toInt() < 15) throw GradleException("Use Java >= 15")
 
 plugins {
     scala
     id("idea")
     application
-    id("com.github.ben-manes.versions") version "0.33.0"
+    id("com.github.ben-manes.versions") version "0.36.0"
     id("org.openjfx.javafxplugin") version "0.0.9"
-    id("org.beryx.runtime") version "1.11.4"
+    id("org.beryx.runtime") version "1.11.7"
 }
 
 application {
@@ -38,7 +38,7 @@ repositories {
 
 
 javafx {
-    version = "14"
+    version = "15"
     modules = listOf("javafx.base", "javafx.controls", "javafx.media") // scalafx requires javafx.media
     // set compileOnly for crosspackage to avoid packaging host javafx jmods for all target platforms
     configuration = if (project.gradle.startParameter.taskNames.intersect(listOf("crosspackage", "dist")).isNotEmpty()) "compileOnly" else "implementation"
@@ -46,8 +46,8 @@ javafx {
 val javaFXOptions = the<JavaFXOptions>()
 
 dependencies {
-    implementation("org.scala-lang:scala-library:2.13.3")
-    implementation("org.scalafx:scalafx_2.13:14-R19")
+    implementation("org.scala-lang:scala-library:2.13.4")
+    implementation("org.scalafx:scalafx_2.13:15.0.1-R20")
     implementation("org.apache.derby:derby:$derbyVersion")
     implementation("org.apache.derby:derbytools:$derbyVersion")
     implementation("org.apache.derby:derbyshared:$derbyVersion")
@@ -56,7 +56,7 @@ dependencies {
     implementation("org.apache.pdfbox:pdfbox:2.0.21")
     implementation("org.jbibtex:jbibtex:1.0.17")
     implementation("org.scalaj:scalaj-http_2.13:2.4.2")
-    implementation("org.scala-lang:scala-reflect:2.13.3")
+    implementation("org.scala-lang:scala-reflect:2.13.4")
     implementation("org.jsoup:jsoup:1.13.1")
     cPlatforms.forEach {platform ->
         val cfg = configurations.create("javafx_$platform")
@@ -68,7 +68,8 @@ dependencies {
 
 runtime {
     options.set(listOf("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages"))
-    modules.set(listOf("java.desktop", "java.sql", "jdk.unsupported", "java.scripting", "java.logging", "java.xml", "java.transaction.xa", "java.management", "java.rmi"))
+    modules.set(listOf("java.desktop", "java.sql", "jdk.unsupported", "java.scripting", "java.logging", "java.xml",
+            "java.transaction.xa", "java.management", "java.rmi", "java.net.http", "jdk.crypto.cryptoki","jdk.crypto.ec"))
     if (cPlatforms.contains("mac")) targetPlatform("mac", System.getenv("JDK_MAC_HOME"))
     if (cPlatforms.contains("win")) targetPlatform("win", System.getenv("JDK_WIN_HOME"))
     if (cPlatforms.contains("linux")) targetPlatform("linux", System.getenv("JDK_LINUX_HOME"))
