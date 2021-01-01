@@ -13,6 +13,7 @@ class HistoryField(var historySize: Int) extends ComboBox[String] with Logging {
   private var valuechanging = false
   onKeyPressed = (e: javafx.scene.input.KeyEvent) => if (e.getCode == javafx.scene.input.KeyCode.ESCAPE) {
     this.setValue("")
+    // can't capture ENTER and call getOnAction because value combobox only set later see https://stackoverflow.com/a/30423278
   }
   this.valueProperty.addListener((_, _, newValue) => {
     if (!valuechanging && newValue != null && newValue.trim != "") {

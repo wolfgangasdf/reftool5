@@ -648,7 +648,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
             }
           },
           cleanup = () => {}
-        ).runInBackground()
+        ).run()
       } else {
         ApplicationController.showNotification("Enter at least one search term >= 3 characters long!")
       }

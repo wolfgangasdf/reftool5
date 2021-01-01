@@ -209,7 +209,7 @@ class ArticleListView extends GenericView("articlelistview") {
       val q = ReftoolDB.articles.where(a =>
         a.id notIn from(ReftoolDB.topics2articles)(t2a => select(t2a.ARTICLE))
       )
-      setArticles(q.toList, "Orphaned articles", null, null)
+      setArticles(q.toList, "Orphaned articles", null)
     }
     enabled = true
   }
@@ -310,6 +310,21 @@ class ArticleListView extends GenericView("articlelistview") {
       ApplicationController.showNotification(s"Updated document filenames of ${as.length} articles!")
     }
   }
+  private val aUnionTopics = new MyAction("Article", "Put selected articles in union of topics") {
+    tooltipString = "select exactly two articles!"
+    action = _ => if (alv.selectionModel.value.getSelectedItems.length == 2) inTransaction {
+      val a1 = alv.selectionModel.value.getSelectedItems.get(0)
+      val a2 = alv.selectionModel.value.getSelectedItems.get(1)
+      val topicsunion = a1.topics.toList ++ a2.topics.toList
+      topicsunion.foreach { t =>
+        if (!a1.topics.toList.contains(t)) a1.topics.associate(t, new Topic2Article())
+        if (!a2.topics.toList.contains(t)) a2.topics.associate(t, new Topic2Article())
+      }
+      ApplicationController.obsArticleModified(a1)
+      ApplicationController.obsArticleModified(a2)
+      ApplicationController.showNotification(s"Done!")
+    }
+  }
 
   alv.selectionModel().selectedItems.onChange(
     (ob, change) => {
@@ -325,6 +340,7 @@ class ArticleListView extends GenericView("articlelistview") {
         aRevealPDF.enabled = false
         aOpenURL.enabled = false
         aUpdateDocumentFilenames.enabled = false
+        aUnionTopics.enabled = false
       } else if (change.nonEmpty) { // no idea why it's empty sometimes...
         aRemoveArticle.enabled = true
         aCopyToStack.enabled = true
@@ -339,6 +355,8 @@ class ArticleListView extends GenericView("articlelistview") {
           aRevealPDF.enabled = true
           aOpenURL.enabled = true
           ApplicationController.obsShowArticle(ob.head)
+        } else if (ob.size == 2) {
+          aUnionTopics.enabled = true
         }
       }
     }
@@ -404,7 +422,8 @@ class ArticleListView extends GenericView("articlelistview") {
     if (newidx > -1) alv.getSelectionModel.select(newidx)
   }
 
-  ApplicationController.obsShowArticlesList += { case (al: List[Article], title: String) => setArticles(al, title, null, null) }
+  ApplicationController.obsShowArticlesList += { case (al: List[Article], title: String, nosort: Boolean) =>
+    setArticles(al, title, null, sortCols = if (nosort) null else defaultSortOrder) }
   ApplicationController.obsTopicSelected += ((t: Topic) => setArticlesTopic(t) )
   ApplicationController.obsRevealArticleInList += ((a: Article) => selectRevealArticle(a) )
   ApplicationController.obsArticleModified += ((a: Article) => {
@@ -430,7 +449,7 @@ class ArticleListView extends GenericView("articlelistview") {
   })
 
   private var firstRun = true
-  private def setArticles(al: List[Article], title: String, topic: Topic, sortCols: List[TableColumn[Article, String]]): Unit = {
+  private def setArticles(al: List[Article], title: String, topic: Topic, sortCols: List[TableColumn[Article, String]] = defaultSortOrder): Unit = {
     logCall(s"num=${al.length} topic=$topic")
     currentTopic = topic
     articles.clear()
@@ -444,7 +463,7 @@ class ArticleListView extends GenericView("articlelistview") {
     aRemoveFromTopic.enabled = false // req selection
     aRemoveArticle.enabled = false // req selection
     alv.sortOrder.clear()
-    (if (sortCols != null) sortCols else defaultSortOrder).foreach(sc => alv.sortOrder += sc)
+    if (sortCols != null) sortCols.foreach(sc => alv.sortOrder += sc)
     alv.sort()
     if (firstRun) {
       ReftoolDB.getSetting(ReftoolDB.SLASTARTICLEID) foreach(s =>
@@ -457,7 +476,7 @@ class ArticleListView extends GenericView("articlelistview") {
     if (topic != null) inTransaction {
       if (topicHistory.isEmpty || topicHistory.last != topic.id)
         topicHistory += topic.id
-      setArticles(topic.articles.toList, s"Articles in [${topic.title}]  ", topic, null)
+      setArticles(topic.articles.toList, s"Articles in [${topic.title}]  ", topic)
     }
   }
 

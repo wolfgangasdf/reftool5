@@ -104,9 +104,11 @@ object ImportHelper extends Logging {
               updateProgress(30, 100)
             }
           }
+          if (isCancelled) return
           if (doi == "" && interactive) Helpers.runUIwait {
             doi = getDOImanually(sourceFile)
           }
+          if (isCancelled) return
           doi match {
             case PdfHelper.arxivre(arxivid) =>
               updateMessage("retrieve bibtex from arxiv ID...")
@@ -127,6 +129,7 @@ object ImportHelper extends Logging {
         }
 
         updateProgress(60, 100)
+        if (isCancelled) return
         if (doFileAction) {
           val newdoc = new Document(if (article == null) Document.NMAIN else Document.NOTHER, "")
 
@@ -176,7 +179,7 @@ object ImportHelper extends Logging {
       val task = importDocument2(updateMetadata = true, article, null, doFileAction = false, copyIt = false, null)
       new MyWorker("Update metadata...", task, () => {
         backgroundImportRunning.set(false)
-      }).runInBackground()
+      }).run()
       true
     }
   }
@@ -187,7 +190,7 @@ object ImportHelper extends Logging {
       false
     } else {
       val task = importDocument2(updateMetadata = true, article, sourceFile, doFileAction = false, copyIt = false, null, parsePdf = parsePdf)
-      new MyWorker( "Update metadata...", task, () => { backgroundImportRunning.set(false) } ).runInBackground()
+      new MyWorker( "Update metadata...", task, () => { backgroundImportRunning.set(false) } ).run()
       true
     }
   }
@@ -207,7 +210,7 @@ object ImportHelper extends Logging {
       inTransaction {
         val res = ReftoolDB.articles.where(a => upper(a.pdflink) like s"%${relp.toUpperCase}%")
         if (res.nonEmpty) {
-          ApplicationController.obsShowArticlesList((res.toList, "Dropped:"))
+          ApplicationController.obsShowArticlesList((res.toList, "Dropped:", false))
         }
       }
       backgroundImportRunning.set(false)
@@ -232,7 +235,7 @@ object ImportHelper extends Logging {
     } else copyFile.get
 
     val task = importDocument2(!isAdditionalDoc, article, sourceFile, doFileAction = true, copyIt = copyIt, topic, interactive)
-      new MyWorker("Import document", task, () => { backgroundImportRunning.set(false) } ).runInBackground()
+      new MyWorker("Import document", task, () => { backgroundImportRunning.set(false) } ).run()
 
     true
   }

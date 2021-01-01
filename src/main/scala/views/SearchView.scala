@@ -67,7 +67,7 @@ class SearchView extends GenericView("searchview") {
             new Alert(AlertType.Warning, s"Showing only the first $maxSize of ${res.size} results!", ButtonType.OK).showAndWait()
             res.page(0, maxSize)
           } else res
-          ApplicationController.obsShowArticlesList((res2.toList, s"Search [${text.value}]"))
+          ApplicationController.obsShowArticlesList((res2.toList, s"Search [${text.value}]", false))
         }
       } else {
         ApplicationController.showNotification("Enter at least one search term >= 3 characters long!")

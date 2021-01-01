@@ -3,12 +3,13 @@ package views
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import db.{Article, ReftoolDB, Topic, Topic2Article}
-import framework._
 import db.SquerylEntrypointForMyApp._
+import db.{Article, ReftoolDB, Topic, Topic2Article}
 import util._
+import framework._
 
 import scala.collection.mutable.ArrayBuffer
+import scala.util.control.Breaks._
 import scalafx.geometry.Insets
 import scalafx.scene.control._
 import scalafx.scene.image.Image
@@ -88,28 +89,44 @@ class InfoView extends GenericView("toolview") {
     image = new Image(getClass.getResource("/images/checkpdfs.png").toExternalForm)
     tooltipString = "List orphaned and multiple times used documents\nTakes a long time!"
     action = _ => {
-      addToInfo("Retrieving all documents...")
-      val alldocs = FileHelper.listFilesRec(new MFile(AppStorage.config.pdfpath)).filter(_.isFile)
-      addToInfo("  found " + alldocs.length + " files!")
-      addToInfo("find all used documents...")
-      val alladocs = new ArrayBuffer[String]()
-      inTransaction {
-        ReftoolDB.articles.allRows.foreach(a => alladocs ++= a.getDocuments.filter(d => d.docPath.nonEmpty).map(d => d.docPath))
-      }
-      addToInfo("  found " + alladocs.length + " article documents!")
-      addToInfo("find pdf orphans...")
-      alldocs.foreach( file => {
-        val relpath = FileHelper.getDocumentPathRelative(file)
-        val res = alladocs.filter(ad => ad == relpath)
-        if (res.length != 1) {
-          val msg = if (res.isEmpty)
-            s"found orphaned document: $relpath"
-          else
-            s"multiple (${res.size}) use of: $relpath"
-          addToInfo(msg)
-        }
-      })
-      addToInfo("done!")
+      new MyWorker( "Find wrong documents",
+        atask = new javafx.concurrent.Task[Unit] { // single abstract method doesn't work: isCancelled etc.
+          override def call(): Unit = {
+            updateMessage("Retrieving all documents...")
+            val alldocs = FileHelper.listFilesRec(new MFile(AppStorage.config.pdfpath)).filter(_.isFile)
+            Helpers.runUI {
+              addToInfo("  found " + alldocs.length + " files!")
+            }
+            if (isCancelled) return
+            updateMessage("find all used documents...")
+            val alladocs = new ArrayBuffer[String]()
+            inTransaction {
+              ReftoolDB.articles.allRows.foreach(a => alladocs ++= a.getDocuments.filter(d => d.docPath.nonEmpty).map(d => d.docPath))
+            }
+            Helpers.runUI {
+              addToInfo("  found " + alladocs.length + " article documents!")
+            }
+            if (isCancelled) return
+            updateMessage("find pdf orphans...")
+            alldocs.foreach(file => {
+              if (isCancelled) return
+              val relpath = FileHelper.getDocumentPathRelative(file)
+              val res = alladocs.filter(ad => ad == relpath)
+              if (res.length != 1) {
+                val msg = if (res.isEmpty)
+                  s"found orphaned document: $relpath"
+                else
+                  s"multiple (${res.size}) use of: $relpath"
+                Helpers.runUI {
+                  addToInfo(msg)
+                }
+              }
+            })
+            Helpers.runUI { addToInfo("done!") }
+          }
+        },
+        cleanup = () => {}
+      ).run()
     }
     enabled = true
   }
@@ -134,7 +151,78 @@ class InfoView extends GenericView("toolview") {
             }
           })
         })
-        ApplicationController.obsShowArticlesList((ares.toList, "Articles with missing documents"))
+        ApplicationController.obsShowArticlesList((ares.toList, "Articles with missing documents", false))
+      }
+    }
+    enabled = true
+  }
+
+
+  private val aFindDuplicates: MyAction = new MyAction("Tools", "Find duplicate articles") {
+    image = new Image(getClass.getResource("/images/articledocs.png").toExternalForm)
+    tooltipString = "Find duplicate articles based on title and authors"
+    action = _ => {
+      taInfo.text = "Finding article duplicates, uses words (>4 characters) from title and authors.\nDiscarding <3 word articles, showing first 20:\n"
+      val dialog = new TextInputDialog(defaultValue = "0") {
+        title = "Find duplicates"
+        headerText = "Enter the start article index, 0 starts from beginning!"
+        contentText = "Start index:"
+      }
+      val startindex = dialog.showAndWait().getOrElse("-1").toInt
+      if (startindex >= 0) {
+        //noinspection ConvertExpressionToSAM
+        new MyWorker( "Searching duplicates...",
+          atask = new javafx.concurrent.Task[Unit] { // single abstract method doesn't work: isCancelled etc.
+            override def call(): Unit = {
+              updateMessage("making list of words...")
+              case class Entry(id: Long, words: List[String])
+              val entries = new ArrayBuffer[Entry]()
+              inTransaction {
+                ReftoolDB.articles.allRows.foreach(a => {
+                  if (isCancelled) { debug("cancelled!"); return }
+                  val s = (a.title + " " + a.authors).toLowerCase
+                  val w = s.split("\\s+").filter(w => w.length > 4).map(_.replaceAll("[^a-z]", "")).toList
+                  if (w.length > 2)
+                    entries += Entry(id = a.id, words = w)
+                  else
+                    debug(s"article (${a.bibtexid} $a) has only ${w.length} words!")
+                })
+              }
+              updateMessage("searching for duplicates...")
+              val ares = new ArrayBuffer[Article]()
+              var equals = 0
+              val l = entries.length
+              inTransaction {
+                breakable {
+                  for (i1 <- startindex until l) {
+                    updateProgress(i1, l)
+                    if (i1 % 1000 == 0) Helpers.runUI { addToInfo(s"...done: $i1/${entries.length}") }
+                    for (i2 <- i1 + 1 until l) {
+                      if (isCancelled) { debug("cancelled!"); break() }
+                      val equal = entries(i1).words.intersect(entries(i2).words).size
+                      if (equal / math.max(entries(i1).words.size, entries(i2).words.size) > 0.7) {
+                        Helpers.runUI { addToInfo(s" similar: [${entries(i1).words.mkString(",")}] and [${entries(i2).words.mkString(",")}]") }
+                        ares += ReftoolDB.articles.get(entries(i1).id)
+                        ares += ReftoolDB.articles.get(entries(i2).id)
+                        equals += 1
+                        if (equals > 20) {
+                          Helpers.runUI { addToInfo(s"stopping index=$i1 of $l") }
+                          break()
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              Helpers.runUI {
+                if (isCancelled) addToInfo("interrupted!")
+                ApplicationController.obsShowArticlesList((ares.toList, "Possibly duplicate articles", true))
+                addToInfo("done!")
+              }
+            }
+          },
+          cleanup = () => {}
+        ).run()
       }
     }
     enabled = true
@@ -165,7 +253,7 @@ class InfoView extends GenericView("toolview") {
     enabled = true
   }
 
-  toolbaritems ++= Seq(aDBstats.toolbarButton, aCheckArticleDocs.toolbarButton, aFindOrphanedPDFs.toolbarButton, aMemory.toolbarButton, aClear.toolbarButton)
+  toolbaritems ++= Seq(aDBstats.toolbarButton, aCheckArticleDocs.toolbarButton, aFindOrphanedPDFs.toolbarButton, aFindDuplicates.toolbarButton, aMemory.toolbarButton, aClear.toolbarButton)
 
   content = new BorderPane {
     margin = Insets(5.0)

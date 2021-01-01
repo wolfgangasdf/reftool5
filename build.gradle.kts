@@ -23,11 +23,11 @@ plugins {
     application
     id("com.github.ben-manes.versions") version "0.36.0"
     id("org.openjfx.javafxplugin") version "0.0.9"
-    id("org.beryx.runtime") version "1.11.7"
+    id("org.beryx.runtime") version "1.12.1"
 }
 
 application {
-    mainClassName = "main.Main"
+    mainClass.set("main.Main")
     applicationDefaultJvmArgs = listOf("-Dprism.verbose=true", "-Dprism.order=sw") // use software renderer
 }
 
@@ -53,8 +53,8 @@ dependencies {
     implementation("org.apache.derby:derbyshared:$derbyVersion")
     implementation("org.squeryl:squeryl_2.13:0.9.15")
     implementation("org.scala-lang.modules:scala-parser-combinators_2.13:1.1.2")
-    implementation("org.apache.pdfbox:pdfbox:2.0.21")
-    implementation("org.jbibtex:jbibtex:1.0.17")
+    implementation("org.apache.pdfbox:pdfbox:2.0.22")
+    implementation("org.jbibtex:jbibtex:1.0.18")
     implementation("org.scalaj:scalaj-http_2.13:2.4.2")
     implementation("org.scala-lang:scala-reflect:2.13.4")
     implementation("org.jsoup:jsoup:1.13.1")
@@ -154,7 +154,7 @@ open class CrossPackage : DefaultTask() {
                     pf.writeText("""
                         set JLINK_VM_OPTIONS="${project.application.applicationDefaultJvmArgs.joinToString(" ")}"
                         set DIR=%~dp0
-                        start "" "%DIR%\bin\javaw" %JLINK_VM_OPTIONS% -classpath "%DIR%/lib/*" ${project.application.mainClassName} 
+                        start "" "%DIR%\bin\javaw" %JLINK_VM_OPTIONS% -classpath "%DIR%/lib/*" ${project.application.mainClass.get()} 
                     """.trimIndent())
                     zipTo(File("${project.buildDir.path}/crosspackage/$execfilename-win.zip"), File(imgdir))
                 }

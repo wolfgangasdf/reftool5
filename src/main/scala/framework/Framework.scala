@@ -10,15 +10,15 @@ import scalafx.Includes._
 import scalafx.beans.property.BooleanProperty
 import scalafx.concurrent.{Service, WorkerStateEvent}
 import scalafx.event.ActionEvent
-import scalafx.geometry.Pos
+import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control.Tab._
 import scalafx.scene.control._
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.input.{KeyCode, KeyCombination, KeyEvent, MouseEvent}
 import scalafx.scene.layout.{GridPane, HBox, Pane, VBox}
-import scalafx.scene.{Group, Node}
-import scalafx.stage.{DirectoryChooser, WindowEvent}
+import scalafx.scene.{Group, Node, Scene}
+import scalafx.stage.{DirectoryChooser, Modality, Stage, WindowEvent}
 
 
 trait HasUISettings {
@@ -259,34 +259,66 @@ abstract class MyFlexInput(gpRow: Int, labelText: String, rows: Int = 1, helpStr
 }
 
 
-// used for import
-// https://github.com/scalafx/ProScalaFX/blob/master/src/proscalafx/ch06/ServiceExample.scala
-class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () => Unit ) extends Logging {
+// don't use SAM for atask if access to updateMessage etc is needed!
+// query isCancelled often if long-running!
+// can't use scalafx task (still!):
+class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () => Unit) extends Logging {
+  // https://github.com/scalafx/ProScalaFX/blob/master/src/proscalafx/ch06/ServiceExample.scala
   object worker extends Service[Unit](new javafx.concurrent.Service[Unit]() {
     override def createTask(): javafx.concurrent.Task[Unit] = atask
   })
-  val lab = new Label("")
-  val progress: ProgressBar = new ProgressBar { minWidth = 250 }
-  val al: Dialog[Unit] = new Dialog[Unit] {
-    initOwner(main.Main.stage)
-    title = atitle
-    dialogPane.value.content = new VBox { children ++= Seq(lab, progress) }
-    dialogPane.value.getButtonTypes += ButtonType.Cancel
+  private val message = new Label("") {
+    maxWidth = Double.MaxValue
+    wrapText = true
   }
-  def runInBackground(): Unit = {
-    al.show()
-    lab.text <== worker.message
+  private val progress: ProgressBar = new ProgressBar { maxWidth = Double.MaxValue }
+  private val buttonCancel = new Button("Cancel")
+  private val dialog: Stage = new Stage {
+    title = atitle
+    initOwner(main.Main.stage) // really needed to make modal!
+    initModality(Modality.WindowModal)
+    resizable = false
+    onCloseRequest = e => { e.consume() } // prevent close
+    scene = new Scene {
+      content = new VBox(10.0) {
+        prefWidth = 350
+        fillWidth = true
+        padding = Insets.apply(20.0)
+        children.setAll(
+          message,
+          progress,
+          new Separator(),
+          new HBox(10.0) {
+            alignment = Pos.Center
+            padding = Insets.apply(10.0)
+            children +=  buttonCancel
+          }
+        )
+      }
+    }
+  }
+  buttonCancel.onAction = () => {
+    info("cancelling worker...")
+    worker.cancel()
+  }
+
+  def run(): Unit = {
+    dialog.show()
+    dialog.toFront()
+    message.text <== worker.message
     progress.progress <== worker.progress
     worker.onSucceeded = (_: WorkerStateEvent) => {
-      al.close()
+      dialog.close()
+      cleanup()
+    }
+    worker.onCancelled = (_: WorkerStateEvent) => {
+      dialog.close()
+      cleanup()
     }
     worker.onFailed = (_: WorkerStateEvent) => {
-      error("onfailed: " + atask.getException.getMessage)
       atask.getException.printStackTrace()
-      al.close()
-      Helpers.runUIwait {
-        Helpers.showExceptionAlert(atitle, atask.getException)
-      }
+      dialog.close()
+      error(s"  exception: ${atask.getException}")
       cleanup()
     }
     worker.start()
@@ -384,7 +416,7 @@ object ApplicationController extends Logging {
   val obsArticleModified = new Observable[Article]("oArticleModified")
   val obsArticleRemoved = new Observable[Article]("oArticleRemoved")
   val obsShowArticle = new Observable[Article]("oArticleShow")
-  val obsShowArticlesList = new Observable[(List[Article], String)]("aShowAList ")
+  val obsShowArticlesList = new Observable[(List[Article], String, Boolean)]("aShowAList ")
   val obsTopicSelected = new Observable[Topic]("oTopicSelected") // for other views to update if topic changed. topic can be null.
   val obsRevealArticleInList = new Observable[Article]("oRevealAInList")
   val obsRevealTopic = new Observable[(Topic, Boolean)]("oRevealTopic") // topic, collapseBefore

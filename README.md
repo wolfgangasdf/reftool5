@@ -29,7 +29,7 @@ Reftool is/can not:
     * Reftool is a single-user application. In my opinion, references are personal, you exchange PDFs or links with collaborators. 
       My experience tells me that you should not import any articles into a reference manager 
       without having read at least the abstract, you'll never have time to read them later!
-    * Reftool contains tools to make this exchange easy (copy article links, copy pdfs)
+    * Reftool contains tools to make exchange easy (copy article links, copy pdfs)
 * Tag-based. I tried it and find that you'll quickly have to many, so they must be arranged in a tree, which I call `topics`. 
 * Full-text search through all documents. However, since most have a desktop search engine running you can use this 
   and reverse-lookup articles by drag'n'drop into Reftool.
@@ -59,7 +59,7 @@ database is populated with a few demo topics and articles.
 
 ### How to develop, compile & package ###
 
-* Get Java 14 from https://jdk.java.net
+* Get Java from https://jdk.java.net
 * Clone the repository
 * I use the free community version of [IntelliJ IDEA](https://www.jetbrains.com/idea/download/) with the scala 
 plugin for development, just open the project to get started.
