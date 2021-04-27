@@ -5,7 +5,6 @@ import org.openjfx.gradle.JavaFXOptions
 buildscript {
     repositories {
         mavenCentral()
-        jcenter()
     }
 }
 
@@ -21,9 +20,9 @@ plugins {
     scala
     id("idea")
     application
-    id("com.github.ben-manes.versions") version "0.36.0"
+    id("com.github.ben-manes.versions") version "0.38.0"
     id("org.openjfx.javafxplugin") version "0.0.9"
-    id("org.beryx.runtime") version "1.12.1"
+    id("org.beryx.runtime") version "1.12.4"
 }
 
 application {
@@ -33,9 +32,7 @@ application {
 
 repositories {
     mavenCentral()
-    jcenter()
 }
-
 
 javafx {
     version = "15"
@@ -46,17 +43,17 @@ javafx {
 val javaFXOptions = the<JavaFXOptions>()
 
 dependencies {
-    implementation("org.scala-lang:scala-library:2.13.4")
-    implementation("org.scalafx:scalafx_2.13:15.0.1-R20")
+    implementation("org.scala-lang:scala-library:2.13.5")
+    implementation("org.scalafx:scalafx_2.13:15.0.1-R21")
     implementation("org.apache.derby:derby:$derbyVersion")
     implementation("org.apache.derby:derbytools:$derbyVersion")
     implementation("org.apache.derby:derbyshared:$derbyVersion")
-    implementation("org.squeryl:squeryl_2.13:0.9.15")
+    implementation("org.squeryl:squeryl_2.13:0.9.16")
     implementation("org.scala-lang.modules:scala-parser-combinators_2.13:1.1.2")
-    implementation("org.apache.pdfbox:pdfbox:2.0.22")
+    implementation("org.apache.pdfbox:pdfbox:2.0.23")
     implementation("org.jbibtex:jbibtex:1.0.18")
     implementation("org.scalaj:scalaj-http_2.13:2.4.2")
-    implementation("org.scala-lang:scala-reflect:2.13.4")
+    implementation("org.scala-lang:scala-reflect:2.13.5")
     implementation("org.jsoup:jsoup:1.13.1")
     cPlatforms.forEach {platform ->
         val cfg = configurations.create("javafx_$platform")

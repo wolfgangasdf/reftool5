@@ -8,7 +8,7 @@ import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
 import scalafx.beans.property.BooleanProperty
-import scalafx.concurrent.{Service, WorkerStateEvent}
+import scalafx.concurrent.WorkerStateEvent
 import scalafx.event.ActionEvent
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.Alert.AlertType
@@ -160,7 +160,6 @@ object MyAction {
   val MCTRL = "ctrl"
 }
 
-
 class MyInputTextField(gpRow: Int, labelText: String, iniText: String, helpString: String) extends MyFlexInput(gpRow, labelText, rows=1, helpString) {
   val tf: TextField = new TextField() {
     text = iniText
@@ -242,31 +241,25 @@ class MyInputCheckbox(gpRow: Int, labelText: String, iniStatus: Boolean, helpStr
   override def content: Seq[javafx.scene.Node] = Seq(label, cb)
 }
 
-
 // imode: 0-textarea 1-textfield 2-tf with dir sel 3-checkbox
 abstract class MyFlexInput(gpRow: Int, labelText: String, rows: Int = 1, helpString: String) {
-
   val label: Label = new Label(labelText) {
     style = "-fx-font-weight:bold"
     alignmentInParent = Pos.CenterRight
     tooltip = new Tooltip { text = helpString }
   }
   GridPane.setConstraints(label, 0, gpRow, 1, 1)
-
   var onchange: () => Unit = () => {}
-
   def content: Seq[javafx.scene.Node]
 }
 
-
-// don't use SAM for atask if access to updateMessage etc is needed!
-// query isCancelled often if long-running!
-// can't use scalafx task (still!):
+// open progress dialog for long-running task.
+// task is not supposed to use onSucceeded etc, don't use SAM for atask if access to updateMessage etc is needed!
+// also query isCancelled often if long-running, make sure task doesn't do anything anymore if isCancelled()!
+// note: this dialog closes immediately if cancel is clicked!
+// can't wait until task is really done as http tasks can't be interrupted https://stackoverflow.com/questions/33849053/how-to-stop-a-url-connection-upon-thread-interruption-java
+// possibly apache http could do it, but not via interrupt(), have to use abort(), also inconvenient: need to make worker specific with async http stuff... http://httpcomponents.10934.n7.nabble.com/Aborting-requests-via-Thread-interrupt-td17862.html
 class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () => Unit) extends Logging {
-  // https://github.com/scalafx/ProScalaFX/blob/master/src/proscalafx/ch06/ServiceExample.scala
-  object worker extends Service[Unit](new javafx.concurrent.Service[Unit]() {
-    override def createTask(): javafx.concurrent.Task[Unit] = atask
-  })
   private val message = new Label("") {
     maxWidth = Double.MaxValue
     wrapText = true
@@ -298,33 +291,39 @@ class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () 
     }
   }
   buttonCancel.onAction = () => {
-    info("cancelling worker...")
-    worker.cancel()
+    info("cancelling task...")
+    message.text.unbind()
+    message.text = "cancelling..."
+    if (atask.isRunning) atask.cancel()
   }
 
   def run(): Unit = {
     dialog.show()
     dialog.toFront()
-    message.text <== worker.message
-    progress.progress <== worker.progress
-    worker.onSucceeded = (_: WorkerStateEvent) => {
+    message.text <== atask.message
+    progress.progress <== atask.progress
+    atask.onSucceeded = (_: WorkerStateEvent) => {
+      debug("atask: onsucceeded!")
       dialog.close()
       cleanup()
     }
-    worker.onCancelled = (_: WorkerStateEvent) => {
+    atask.onCancelled = (_: WorkerStateEvent) => {
+      debug("atask: oncancelled!")
+      // should wait here until task is really finished, but can't because http connections currently can't be interrupted!
       dialog.close()
       cleanup()
     }
-    worker.onFailed = (_: WorkerStateEvent) => {
+    atask.onFailed = (_: WorkerStateEvent) => {
+      error(s" atask: onfailed, exception: ${atask.getException}")
       atask.getException.printStackTrace()
       dialog.close()
-      error(s"  exception: ${atask.getException}")
       cleanup()
     }
-    worker.start()
+    val th = new Thread(atask)
+    th.setDaemon(true)
+    th.start()
   }
 }
-
 
 object ApplicationController extends Logging {
   val views = new ArrayBuffer[GenericView]

@@ -5,11 +5,11 @@ import java.io.{File, IOException}
 import java.util.Date
 import java.util.concurrent.FutureTask
 import java.util.jar.JarFile
-
 import scalafx.geometry.Insets
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control.{Alert, ButtonType, TextArea}
 import scalafx.scene.layout.Priority
+import scalafx.stage.Modality
 
 object Helpers extends Logging {
 
@@ -79,6 +79,12 @@ object Helpers extends Logging {
       future.get()
       stat
     } else f
+  }
+
+  def getModalAlert(alertType: AlertType, contentText: String): Alert = {
+    val a = new Alert(alertType, contentText)
+    a.initModality(Modality.ApplicationModal)
+    a
   }
 
   def showExceptionAlert(what: String, t: Throwable): Option[ButtonType] = {
@@ -155,7 +161,4 @@ object Helpers extends Logging {
     }
     d
   }
-
-
-
 }

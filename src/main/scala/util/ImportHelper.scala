@@ -2,10 +2,10 @@ package util
 
 import java.io
 import java.net.SocketTimeoutException
-
 import db.SquerylEntrypointForMyApp._
 import db._
 import framework.{ApplicationController, Helpers, Logging, MyWorker}
+import javafx.concurrent.Task
 import org.jbibtex._
 import org.jsoup.Jsoup
 import scalafx.Includes._
@@ -89,7 +89,7 @@ object ImportHelper extends Logging {
 
   private def importDocument2(updateMetadata: Boolean, article: Article, sourceFile: MFile,
                               doFileAction: Boolean, copyIt: Boolean, topic: Topic,
-                              interactive: Boolean = true, parsePdf: Boolean = true) = {
+                              interactive: Boolean = true, parsePdf: Boolean = true): Task[Unit] = {
     new javafx.concurrent.Task[Unit] {
       override def call(): Unit = {
         var a = if (article == null) new Article(title = sourceFile.getName, entrytype = "article") else article
@@ -118,7 +118,7 @@ object ImportHelper extends Logging {
             case PdfHelper.doire(_) =>
               a.doi = doi
               updateMessage("retrieve bibtex from DOI...")
-              a = updateBibtexFromDoi(a)
+              a = updateBibtexFromDoi(a, isCancelled)
               a = updateArticleFromBibtex(a)
             case _ =>
           }
@@ -323,43 +323,51 @@ object ImportHelper extends Logging {
     a
   }
 
-  private def updateBibtexFromDoi(article: Article): Article = {
+  private def updateBibtexFromDoi(article: Article, isCancelled: () => Boolean): Article = {
     // http://citation.crosscite.org/docs.html  https://github.com/CrossRef/rest-api-doc
     import scalaj.http._
     var a = article
     // val doienc = java.net.URLEncoder.encode(doi, "utf-8")
     debug(s"""# curl https://api.crossref.org/works/${a.doi}/transform/application/x-bibtex""")
     var doit = 2
-    while (doit > 0) {
+    while (doit > 0 && !isCancelled()) {
+      debug(s"updatebibtexfromdoi: while loop doit = $doit ...")
       val responseo = try {
         // provide email otherwise slow: https://github.com/CrossRef/rest-api-doc#good-manners--more-reliable-service
-        Some(Http(s"https://api.crossref.org/works/${a.doi}/transform/application/x-bibtex?mailto=wolfgang.loeffler@gmail.com").timeout(connTimeoutMs = 15000, readTimeoutMs = 30000).
-          option(HttpOptions.followRedirects(shouldFollow = true)).asBytes)
+        // unfortunately, can't be interrupted(), uses URLConnection where the connect() can't be interrupted.
+        Some(Http(s"https://api.crossref.org/works/${a.doi}/transform/application/x-bibtex").timeout(connTimeoutMs = 7000, readTimeoutMs = 10000)
+          .option(HttpOptions.followRedirects(shouldFollow = true))
+          .header("User-Agent", "Reftool5/1.0 ; (https://github.com/wolfgangasdf/reftool5; mailto:wolfgang.loeffler@gmail.com)")
+          .asBytes)
       } catch {
         case _: SocketTimeoutException =>
           debug("tryhttp: got SocketTimeoutException...")
           None
       }
-      if (responseo.isDefined) {
+      if (responseo.isDefined && !isCancelled()) {
         val response = responseo.get
-        for( (k,v) <- response.headers) debug(s"response header: $k = ${v.mkString(";")}")
+        for ((k, v) <- response.headers) debug(s"response header: $k = ${v.mkString(";")}")
         if (response.code == 200) {
           // val rb = response.body
           val rb = new String(response.body, "UTF-8")
           a = generateUpdateBibtexID(rb, a)
           doit = 0 // becomes -1 below
+        } else if (response.code == 404) {
+          debug("updatebibtexfromdoi: received 404 not found")
+          doit = 1 // will be zero below.
         } else {
           debug(s"updatebibtexfromdoi: response=$response code=${response.code}\nbody:\n${response.body}")
         }
       } else {
-        debug("updatebibtexfromdoi: received empty response")
+        debug("updatebibtexfromdoi: received no response or cancelled")
       }
       doit -= 1
-      if (doit > 0) debug("updatebibtexfromdoi: retrying... " + doit)
     }
-    if (doit != -1) {
-      Helpers.runUI { new Alert(AlertType.Error, "Error retrieving metadata from crossref. Probably the article is not yet in their database?\n" +
-        "You have to paste the bibtex entry manually, or retry later (update metadata from pdf).").showAndWait() }
+    if (doit != -1 && !isCancelled()) {
+      Helpers.runUI { Helpers.getModalAlert(AlertType.Error, "Error retrieving metadata from crossref. " +
+        "Probably the article is not yet in their database?\n" +
+        "You have to paste the bibtex entry manually, or retry later (update metadata from pdf).").showAndWait()
+      }
     }
     a
   }
