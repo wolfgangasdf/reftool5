@@ -335,8 +335,9 @@ object ImportHelper extends Logging {
       val responseo = try {
         // provide email otherwise slow: https://github.com/CrossRef/rest-api-doc#good-manners--more-reliable-service
         // unfortunately, can't be interrupted(), uses URLConnection where the connect() can't be interrupted.
-        Some(Http(s"https://api.crossref.org/works/${a.doi}/transform/application/x-bibtex").timeout(connTimeoutMs = 7000, readTimeoutMs = 10000)
+        Some(Http(s"https://dx.doi.org/${a.doi}").timeout(connTimeoutMs = 7000, readTimeoutMs = 10000)
           .option(HttpOptions.followRedirects(shouldFollow = true))
+          .header("Accept", "text/bibliography; style=bibtex")
           .header("User-Agent", "Reftool5/1.0 ; (https://github.com/wolfgangasdf/reftool5; mailto:wolfgang.loeffler@gmail.com)")
           .asBytes)
       } catch {
