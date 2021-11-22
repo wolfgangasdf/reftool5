@@ -71,6 +71,10 @@ class Article(var entrytype: String = "",
   lazy val topics: Query[Topic] with ManyToMany[Topic, Topic2Article] = ReftoolDB.topics2articles.right(this)
   def getT2a(t: Topic): Option[Topic2Article] = ReftoolDB.topics2articles.where(t2a => t2a.ARTICLE === id and t2a.TOPIC === t.id).headOption
   def getURL: String = if (doi != "") "http://dx.doi.org/" + doi else linkurl
+  def getArxivID: String = linkurl match {
+    case s"http://arxiv.org/abs/$aid" => aid
+    case _ => ""
+  }
   def color(t: Topic): Int = if (t == null) 0 else getT2a(t) match {
     case None => 0
     case Some(t2a) => t2a.color

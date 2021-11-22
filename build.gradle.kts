@@ -12,9 +12,9 @@ group = "com.reftool5"
 version = "1.0-SNAPSHOT"
 val cPlatforms = listOf("mac", "win", "linux") // compile for these platforms. "mac", "linux", "win"
 val derbyVersion = "10.15.2.0"
-
+val minJavaVersion = 17
 println("Current Java version: ${JavaVersion.current()}")
-if (JavaVersion.current().majorVersion.toInt() < 15) throw GradleException("Use Java >= 15")
+if (JavaVersion.current().majorVersion.toInt() < minJavaVersion) throw GradleException("Use Java >= $minJavaVersion")
 
 plugins {
     scala
@@ -22,7 +22,7 @@ plugins {
     application
     id("com.github.ben-manes.versions") version "0.39.0"
     id("org.openjfx.javafxplugin") version "0.0.10"
-    id("org.beryx.runtime") version "1.12.5"
+    id("org.beryx.runtime") version "1.12.7"
 }
 
 application {
@@ -37,7 +37,7 @@ repositories {
 }
 
 javafx {
-    version = "16"
+    version = "17"
     modules = listOf("javafx.base", "javafx.controls", "javafx.media") // scalafx requires javafx.media
     // set compileOnly for crosspackage to avoid packaging host javafx jmods for all target platforms
     configuration = if (project.gradle.startParameter.taskNames.intersect(listOf("crosspackage", "dist")).isNotEmpty()) "compileOnly" else "implementation"
@@ -45,18 +45,18 @@ javafx {
 val javaFXOptions = the<JavaFXOptions>()
 
 dependencies {
-    implementation("org.scala-lang:scala-library:2.13.6")
-    implementation("org.scalafx:scalafx_2.13:16.0.0-R24")
+    implementation("org.scala-lang:scala-library:2.13.7")
+    implementation("org.scalafx:scalafx_2.13:16.0.0-R25")
     implementation("org.apache.derby:derby:$derbyVersion")
     implementation("org.apache.derby:derbytools:$derbyVersion")
     implementation("org.apache.derby:derbyshared:$derbyVersion")
     implementation("org.squeryl:squeryl_2.13:0.9.16")
-    implementation("org.scala-lang.modules:scala-parser-combinators_2.13:2.0.0")
-    implementation("org.apache.pdfbox:pdfbox:2.0.23")
+    implementation("org.scala-lang.modules:scala-parser-combinators_2.13:2.1.0")
+    implementation("org.apache.pdfbox:pdfbox:2.0.24")
     implementation("org.jbibtex:jbibtex:1.0.19")
     implementation("org.scalaj:scalaj-http_2.13:2.4.2")
-    implementation("org.scala-lang:scala-reflect:2.13.6")
-    implementation("org.jsoup:jsoup:1.14.1")
+    implementation("org.scala-lang:scala-reflect:2.13.7")
+    implementation("org.jsoup:jsoup:1.14.3")
     cPlatforms.forEach {platform ->
         val cfg = configurations.create("javafx_$platform")
         JavaFXModule.getJavaFXModules(javaFXOptions.modules).forEach { m ->

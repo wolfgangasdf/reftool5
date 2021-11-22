@@ -290,7 +290,27 @@ class ArticleListView extends GenericView("articlelistview") {
       ApplicationController.showNotification(s"Copied article URLs to clipboard!")
     }
   }
-
+  private val aCopyDOIs = new MyAction("Article", "Copy article DOIs/arXiv ID") {
+    tooltipString = "Copy article DOIs or arXiv IDs to clipboard (for import into Zotero etc.)"
+    image = new Image(getClass.getResource("/images/copydois.png").toExternalForm)
+    action = _ => {
+      val clipboard = Clipboard.systemClipboard
+      val content = new ClipboardContent
+      val items = alv.selectionModel.value.getSelectedItems
+      val failed = new ArrayBuffer[Article]
+      content.putString(items.map(a => {
+        val s = if (a.doi.trim.isEmpty) a.getArxivID else a.doi
+        if (s.isEmpty) failed += a
+        s
+      }).mkString(" "))
+      clipboard.setContent(content)
+      ApplicationController.showNotification(s"Copied article DOIs or arXiv IDs to clipboard!")
+      if (failed.nonEmpty) {
+        new Alert(AlertType.Warning, "Can't find ID of some articles, show in list...", ButtonType.OK).showAndWait()
+        ApplicationController.obsShowArticlesList((failed.toList, "Articles with missing DOI/arXiv ID", false))
+      }
+    }
+  }
   private val aCopyPDFs = new MyAction("Article", "Copy documents") {
     tooltipString = "Copy documents of articles somewhere"
     image = new Image(getClass.getResource("/images/copypdfs.png").toExternalForm)
@@ -334,6 +354,7 @@ class ArticleListView extends GenericView("articlelistview") {
         aRemoveFromTopic.enabled = false
         aRemoveArticle.enabled = false
         aCopyURLs.enabled = false
+        aCopyDOIs.enabled = false
         aCopyPDFs.enabled = false
         aCopyToStack.enabled = false
         aOpenPDF.enabled = false
@@ -347,6 +368,7 @@ class ArticleListView extends GenericView("articlelistview") {
         aMoveToStack.enabled = currentTopic != null
         aRemoveFromTopic.enabled = currentTopic != null
         aCopyURLs.enabled = true
+        aCopyDOIs.enabled = true
         aCopyPDFs.enabled = true
         aUpdateDocumentFilenames.enabled = true
         if (ob.size == 1) {

@@ -9,7 +9,6 @@ import scalafx.geometry.{Insets, Orientation}
 import scalafx.scene.Scene
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control.Button._
-import scalafx.scene.control.TextField._
 import scalafx.scene.control._
 import scalafx.scene.layout._
 import scalafx.scene.shape.Line
@@ -37,7 +36,10 @@ class MainScene(stage: Stage) extends Scene with Logging {
                   padding = Insets(15)
                   spacing = 15
                   children ++= Seq(
-                    new TextField { text = "Build time: " + Helpers.getClassBuildTime.toString ; editable = false },
+                    new TextArea {
+                      text = "Build time: " + Helpers.getClassBuildTime.toString + "\njava.version: " + System.getProperty("java.version")
+                      editable = false
+                    },
                     new Button("Open Reftool homepage") {
                       onAction = (_: ActionEvent) =>
                         FileHelper.openURL("https://github.com/wolfgangasdf/reftool5")
