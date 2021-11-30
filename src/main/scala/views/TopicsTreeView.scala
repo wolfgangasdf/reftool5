@@ -271,7 +271,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
       me: MouseEvent => if (me.clickCount == 1) me.consume() // but enable double click to expand/collapse
     }
 
-    delegate.setCellFactory(_ => new MyTreeCell())
+    delegate.setCellFactory(_ => new MyTreeCell()) // TODO try new scalafx method, possibly can remove deletion of nodes in loadTopics https://github.com/scalafx/scalafx/issues/256
   }
 
   private def expandAllParents(t: Topic): Unit = {
@@ -340,7 +340,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
           tv.selectionModel.value.select(tin)
           ApplicationController.obsTopicSelected(tin.getValue, addTop = true)
           val idx = tv.selectionModel.value.getSelectedIndex
-          tv.scrollTo(math.max(0, idx - 5))
+          Helpers.runUIdelayed(tv.scrollTo(math.max(0, idx - 5))) // TODO delayed should not be needed, bug jfx 17
           if (editTopic) {
             tv.layout() // workaround: get focus http://stackoverflow.com/a/29897147
             tv.edit(tin)

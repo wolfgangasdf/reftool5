@@ -420,7 +420,7 @@ object ImportHelper extends Logging {
       val month = getPlainTextField(btentry, "", BibTeXEntry.KEY_MONTH).toLowerCase
       val monthi = months.indexOf(month)
       if (year != "") {
-        if (monthi > -1) year += (monthi + 1).formatted("%02d")
+        if (monthi > -1) year += "%02d".format(monthi + 1)
         a.pubdate = year
       }
     } else {
