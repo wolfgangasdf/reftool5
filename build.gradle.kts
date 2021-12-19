@@ -46,7 +46,7 @@ val javaFXOptions = the<JavaFXOptions>()
 
 dependencies {
     implementation("org.scala-lang:scala-library:2.13.7")
-    implementation("org.scalafx:scalafx_2.13:16.0.0-R25")
+    implementation("org.scalafx:scalafx_2.13:17.0.1-R26")
     implementation("org.apache.derby:derby:$derbyVersion")
     implementation("org.apache.derby:derbytools:$derbyVersion")
     implementation("org.apache.derby:derbyshared:$derbyVersion")

@@ -102,9 +102,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
 
   }
 
-
-  // DnD: https://gist.github.com/andytill/4009620
-  // workaround: use javafx because scala doesn't work properly: https://github.com/scalafx/scalafx/issues/256
+  // workaround: use javafx because scalafx doesn't work properly: https://github.com/scalafx/scalafx/issues/256
   private class MyTreeCell extends jfxsc.cell.TextFieldTreeCell[Topic] with Logging {
 
     private val self: TextFieldTreeCell[Topic] = this
@@ -123,7 +121,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
 
     setConverter(myStringConverter)
 
-    // drag'n'drop
+    // drag'n'drop https://gist.github.com/andytill/4009620
     self.onDragDetected = (me: MouseEvent) => {
       val db = self.treeView.value.startDragAndDrop(TransferMode.Move)
       val cont = new ClipboardContent()
@@ -271,7 +269,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
       me: MouseEvent => if (me.clickCount == 1) me.consume() // but enable double click to expand/collapse
     }
 
-    delegate.setCellFactory(_ => new MyTreeCell()) // TODO try new scalafx method, possibly can remove deletion of nodes in loadTopics https://github.com/scalafx/scalafx/issues/256
+    delegate.setCellFactory(_ => new MyTreeCell())
   }
 
   private def expandAllParents(t: Topic): Unit = {
@@ -305,18 +303,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
     else if (revealTopic != null)
       tlast = revealTopic
 
-    // tv.setRoot(null) // doesn't work, many little triangles remain!
-    tv.selectionModel.value.clearSelection()
-    // remove all treeitems!
-    if (tv.root.value != null) {
-      tv.root.value.setExpanded(false) // speedup!
-      def removeRec(ti: TreeItem[Topic]): Unit = {
-        if (ti.children.nonEmpty) ti.children.foreach( child => removeRec(child) )
-        ti.children.clear()
-      }
-      removeRec(tv.root.value)
-      tv.root = null
-    }
+    tv.root = null // clear all items
 
     inTransaction {
       if (tlast != null) { // expand topic to be revealed
@@ -340,7 +327,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
           tv.selectionModel.value.select(tin)
           ApplicationController.obsTopicSelected(tin.getValue, addTop = true)
           val idx = tv.selectionModel.value.getSelectedIndex
-          Helpers.runUIdelayed(tv.scrollTo(math.max(0, idx - 5))) // TODO delayed should not be needed, bug jfx 17
+          tv.scrollTo(math.max(0, idx - 5))
           if (editTopic) {
             tv.layout() // workaround: get focus http://stackoverflow.com/a/29897147
             tv.edit(tin)

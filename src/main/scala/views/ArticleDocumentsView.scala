@@ -47,12 +47,11 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
   private val lv = new ListView[Document] {
     editable = true
     selectionModel.value.setSelectionMode(SelectionMode.Single)
-    //    val converter = StringConverter.toStringConverter[Document](_.docName)
-    cellFactory = (_: ListView[Document]) => new MyListCell()
+    cellFactory = (_: ListView[Document]) => new MyListCell() // don't fix deprecation, cellFactory_ is unflexible, if needed use jfxu.callback
     onEditCommit = (_: ListView.EditEvent[Document]) => {
       updateArticle()
     }
-    onMouseClicked = (me: MouseEvent) => {
+    onMouseClicked = (me: javafx.scene.input.MouseEvent) => {
       if (me.clickCount == 2 && selectionModel.value.getSelectedItems.length == 1) {
         openDocument(selectionModel.value.getSelectedItem.docPath)
       }

@@ -48,7 +48,7 @@ class ArticleListView extends GenericView("articlelistview") {
   private val cTitle = new TableColumn[Article, String] {
     text = "Title"
     cellValueFactory = a => new StringProperty(a.value.title.trim.replaceAll("((\r\n)|\r|\n)+", " "))
-    cellFactory = { _: TableColumn[Article, String] => new MyTableCell }
+    cellFactory = { _: TableColumn[Article, String] => new MyTableCell } // don't fix deprecation, cellFactory_ is unflexible, if needed use jfxu.callback
   }
   private val cPubdate = new TableColumn[Article, String] {
     text = "Date"
