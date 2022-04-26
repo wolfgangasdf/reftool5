@@ -81,9 +81,18 @@ object Helpers extends Logging {
     } else f
   }
 
-  def getModalAlert(alertType: AlertType, contentText: String): Alert = {
-    val a = new Alert(alertType, contentText)
-    a.initModality(Modality.ApplicationModal)
+  // always set owner of windows!
+  class MyAlert(alertType: AlertType, contentText: String = "") extends Alert(alertType, contentText) {
+    def this(alertType: AlertType, contentText: String, buttonType: ButtonType*) = {
+      this(alertType, contentText)
+      this.buttonTypes = buttonType
+    }
+    initModality(Modality.ApplicationModal)
+    initOwner(main.Main.stage)
+  }
+
+  def getModalTextAlert(alertType: AlertType, contentText: String): Alert = {
+    val a = new MyAlert(alertType, contentText)
     a
   }
 
@@ -116,8 +125,7 @@ object Helpers extends Logging {
       textArea
     } else null
 
-    new Alert(alerttype) {
-      //      initOwner(stage)
+    new MyAlert(alerttype) {
       title = titletext
       headerText = headertext
       contentText = contenttext

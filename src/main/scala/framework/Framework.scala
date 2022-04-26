@@ -268,7 +268,7 @@ class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () 
   private val buttonCancel = new Button("Cancel")
   private val dialog: Stage = new Stage {
     title = atitle
-    initOwner(main.Main.stage) // really needed to make modal!
+    initOwner(main.Main.stage)
     initModality(Modality.WindowModal)
     resizable = false
     onCloseRequest = e => { e.consume() } // prevent close
@@ -316,6 +316,7 @@ class MyWorker(atitle: String, atask: javafx.concurrent.Task[Unit], cleanup: () 
     atask.onFailed = (_: WorkerStateEvent) => {
       error(s" atask: onfailed, exception: ${atask.getException}")
       atask.getException.printStackTrace()
+      Helpers.showExceptionAlert("task failed", atask.getException)
       dialog.close()
       cleanup()
     }
@@ -430,7 +431,7 @@ object ApplicationController extends Logging {
     notificationTimer.schedule( // remove Notification later
       new java.util.TimerTask {
         override def run(): Unit = { Helpers.runUI( mainScene.statusBarLabel.text = "" ) }
-      }, 3000
+      }, 5000
     )
   }
 }

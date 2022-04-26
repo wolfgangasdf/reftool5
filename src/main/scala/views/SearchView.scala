@@ -1,10 +1,10 @@
 package views
 
 import java.time._
-
 import db.{Article, ReftoolDB, Topic}
 import framework.{ApplicationController, GenericView, Helpers}
 import db.SquerylEntrypointForMyApp._
+import framework.Helpers.MyAlert
 import org.squeryl.{Query, Queryable}
 import util.{HistoryField, SearchUtil}
 import scalafx.Includes._
@@ -64,7 +64,7 @@ class SearchView extends GenericView("searchview") {
         else {
           ApplicationController.showNotification(s"Search returned ${res.size} results!")
           val res2 = if (res.size > maxSize) {
-            new Alert(AlertType.Warning, s"Showing only the first $maxSize of ${res.size} results!", ButtonType.OK).showAndWait()
+            new MyAlert(AlertType.Warning, s"Showing only the first $maxSize of ${res.size} results!", ButtonType.OK).showAndWait()
             res.page(0, maxSize)
           } else res
           ApplicationController.obsShowArticlesList((res2.toList, s"Search [${text.value}]", false))

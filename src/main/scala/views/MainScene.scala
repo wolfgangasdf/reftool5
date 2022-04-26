@@ -29,7 +29,7 @@ class MainScene(stage: Stage) extends Scene with Logging {
         items = List(
           new MenuItem("About") {
             onAction = (_: ActionEvent) => {
-              new Alert(AlertType.Information, "", ButtonType.Close) {
+              new MyAlert(AlertType.Information, "", ButtonType.Close) {
                 title = "About Reftool 5"
                 headerText = "Reftool 5 - a scientific reference manager"
                 val cont: VBox = new VBox {

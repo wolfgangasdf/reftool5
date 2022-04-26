@@ -21,7 +21,7 @@ plugins {
     id("idea")
     application
     id("com.github.ben-manes.versions") version "0.42.0"
-    id("org.openjfx.javafxplugin") version "0.0.11"
+    id("org.openjfx.javafxplugin") version "0.0.12"
     id("org.beryx.runtime") version "1.12.7"
 }
 
@@ -51,9 +51,9 @@ dependencies {
     implementation("org.apache.derby:derbytools:$derbyVersion")
     implementation("org.apache.derby:derbyshared:$derbyVersion")
     implementation("org.squeryl:squeryl_2.13:0.9.17")
-    implementation("org.scala-lang.modules:scala-parser-combinators_2.13:2.1.0")
+    implementation("org.scala-lang.modules:scala-parser-combinators_2.13:2.1.1")
     implementation("org.apache.pdfbox:pdfbox:2.0.24")
-    implementation("org.jbibtex:jbibtex:1.0.19")
+    implementation("org.jbibtex:jbibtex:1.0.20")
     implementation("org.scalaj:scalaj-http_2.13:2.4.2")
     implementation("org.scala-lang:scala-reflect:2.13.8")
     implementation("org.jsoup:jsoup:1.14.3")

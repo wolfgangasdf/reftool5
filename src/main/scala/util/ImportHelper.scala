@@ -93,7 +93,7 @@ object ImportHelper extends Logging {
     new javafx.concurrent.Task[Unit] {
       override def call(): Unit = {
         var a = if (article == null) new Article(title = sourceFile.getName, entrytype = "article") else article
-        if (updateMetadata) try {
+        if (updateMetadata) {
           updateProgress(0, 100)
           updateMessage("find document metadata...")
           var doi = ""
@@ -122,10 +122,6 @@ object ImportHelper extends Logging {
               a = updateArticleFromBibtex(a)
             case _ =>
           }
-        } catch {
-          case e: Exception =>
-            error("error updating metadata but will continue: ", e)
-            error("suspicious bibtexentry:\n" + a.bibtexentry)
         }
 
         updateProgress(60, 100)
@@ -221,7 +217,7 @@ object ImportHelper extends Logging {
     val copyIt = if (copyFile.isEmpty) Helpers.runUIwait {
       val BtCopy = new ButtonType("Copy")
       val BtMove = new ButtonType("Move")
-      val ale = new Alert(AlertType.Confirmation) {
+      val ale = new Helpers.MyAlert(AlertType.Confirmation) {
         headerText = "Import file into reftool database"
         contentText = "Should i copy or move the file?"
         buttonTypes = Seq(BtMove, BtCopy, ButtonType.Cancel)
@@ -365,7 +361,7 @@ object ImportHelper extends Logging {
       doit -= 1
     }
     if (doit != -1 && !isCancelled()) {
-      Helpers.runUI { Helpers.getModalAlert(AlertType.Error, "Error retrieving metadata from crossref. " +
+      Helpers.runUI { Helpers.getModalTextAlert(AlertType.Error, "Error retrieving metadata from crossref. " +
         "Probably the article is not yet in their database?\n" +
         "You have to paste the bibtex entry manually, or retry later (update metadata from pdf).").showAndWait()
       }

@@ -155,7 +155,7 @@ object Main extends JFXApp3 with Logging {
                     }.showDialog(stage))
                     if (res != null) {
                       if (res.listFiles.nonEmpty) {
-                        new Alert(AlertType.Error, "Need empty new data directory").showAndWait()
+                        new MyAlert(AlertType.Error, "Need empty new data directory").showAndWait()
                       } else {
                         AppStorage.config.datadir = res.getPath
                         loadMainScene(createNewStorage = true)

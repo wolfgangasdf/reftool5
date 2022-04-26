@@ -2,6 +2,7 @@ package views
 
 import db.{Article, Document, ReftoolDB}
 import db.SquerylEntrypointForMyApp._
+import framework.Helpers.MyAlert
 import framework.{ApplicationController, GenericView, Logging, MyAction}
 import util.FileHelper._
 import util.{ImportHelper, MFile}
@@ -79,7 +80,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     tooltipString = "Delete selected documents from article and delete document"
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
     action = _ => {
-      new Alert(AlertType.Confirmation, "Really deleted selected documents", ButtonType.Yes, ButtonType.No).showAndWait() match {
+      new MyAlert(AlertType.Confirmation, "Really deleted selected documents", ButtonType.Yes, ButtonType.No).showAndWait() match {
         case Some(ButtonType.Yes) =>
           val ds = new ArrayBuffer[Document] ++ lv.selectionModel.value.getSelectedItems
           ds.foreach( dd => {

@@ -3,10 +3,10 @@ package views
 import java.text.SimpleDateFormat
 import java.util.Date
 import javafx.scene.{control => jfxsc}
-
 import db.{Article, ReftoolDB, Topic, Topic2Article}
 import framework._
 import db.SquerylEntrypointForMyApp._
+import framework.Helpers.MyAlert
 import org.squeryl.Queryable
 import util._
 
@@ -463,12 +463,12 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
       val t = tv.getSelectionModel.getSelectedItem.getValue
       inTransaction {
         if (t.childrenTopics.nonEmpty) {
-          new Alert(AlertType.Error, "Topic has children, cannot delete").showAndWait()
+          new MyAlert(AlertType.Error, "Topic has children, cannot delete").showAndWait()
         } else {
           val pt = if (t.parentTopic.head == ReftoolDB.rootTopic) null else t.parentTopic.head
           var doit = true
           if (t.articles.nonEmpty) {
-            val res = new Alert(AlertType.Confirmation, "Topic contains articles, they might become orphans if topic is removed.").showAndWait()
+            val res = new MyAlert(AlertType.Confirmation, "Topic contains articles, they might become orphans if topic is removed.").showAndWait()
             res match {
               case Some(ButtonType.OK) =>
               case _ => doit = false
@@ -498,7 +498,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
           if (st.get.path.exists(t => t.id == topicMoveStack.get.id)) {
             info("Can't move topic below its own children.")
           } else {
-            val res = new Alert(AlertType.Confirmation, s"Move topic\n${topicMoveStack.get}\nto selected topic\n${st.get}\n?").showAndWait()
+            val res = new MyAlert(AlertType.Confirmation, s"Move topic\n${topicMoveStack.get}\nto selected topic\n${st.get}\n?").showAndWait()
             res match {
               case Some(ButtonType.OK) =>
                 inTransaction {

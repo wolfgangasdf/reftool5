@@ -3,6 +3,7 @@ package views
 import db.{ReftoolDB, Topic}
 import framework.{ApplicationController, GenericView, MyAction}
 import db.SquerylEntrypointForMyApp._
+import framework.Helpers.MyAlert
 import util.StringHelper
 
 import scala.collection.mutable.ArrayBuffer
@@ -112,7 +113,7 @@ class BookmarksView extends GenericView("bookmarksview") {
     tooltipString = "Remove whole bookmarks folder"
     image = new Image(getClass.getResource("/images/delete_obj.gif").toExternalForm)
     action = _ => {
-      new Alert(AlertType.Confirmation, s"Really remove bookmark folder\n${folders(currentFolderIdx)}?").showAndWait() match {
+      new MyAlert(AlertType.Confirmation, s"Really remove bookmark folder\n${folders(currentFolderIdx)}?").showAndWait() match {
         case Some(ButtonType.OK) =>
           folders.remove(currentFolderIdx)
           checkFolders()

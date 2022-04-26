@@ -4,6 +4,7 @@ package views
 import db.{Article, ReftoolDB, Topic, Topic2Article}
 import framework.{ApplicationController, GenericView, Helpers, MyAction}
 import db.SquerylEntrypointForMyApp._
+import framework.Helpers.MyAlert
 import util._
 
 import scala.collection.mutable.ArrayBuffer
@@ -306,7 +307,7 @@ class ArticleListView extends GenericView("articlelistview") {
       clipboard.setContent(content)
       ApplicationController.showNotification(s"Copied article DOIs or arXiv IDs to clipboard!")
       if (failed.nonEmpty) {
-        new Alert(AlertType.Warning, "Can't find ID of some articles, show in list...", ButtonType.OK).showAndWait()
+        new MyAlert(AlertType.Warning, "Can't find ID of some articles, show in list...", ButtonType.OK).showAndWait()
         ApplicationController.obsShowArticlesList((failed.toList, "Articles with missing DOI/arXiv ID", false))
       }
     }
