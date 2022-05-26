@@ -212,7 +212,7 @@ object FileHelper extends Logging {
     if (Helpers.isMac) {
       Runtime.getRuntime.exec(Array("open", "-R", file.getPath))
     } else if (Helpers.isWin) {
-      Runtime.getRuntime.exec("explorer.exe /select,"+file.getPath)
+      Runtime.getRuntime.exec(Array("explorer.exe", "/select,"+file.getPath.replace("/","""\"""))) // explorer needs backslashes
     } else if (Helpers.isLinux) {
       error("not supported OS, tell me how to do it!")
     } else {

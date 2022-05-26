@@ -1,9 +1,10 @@
 package util
 
 import java.io
-import java.net.SocketTimeoutException
+import java.net.URI
 import db.SquerylEntrypointForMyApp._
 import db._
+import framework.Helpers.{runUI, showExceptionAlert}
 import framework.{ApplicationController, Helpers, Logging, MyWorker}
 import javafx.concurrent.Task
 import org.jbibtex._
@@ -20,6 +21,10 @@ import scalafx.scene.layout.{HBox, Priority, VBox}
 import scalafx.stage.{Stage, WindowEvent}
 import util.bibtex.AuthorNamesExtractor
 
+import java.net.http.{HttpClient, HttpRequest}
+import java.net.http.HttpClient.Redirect
+import java.net.http.HttpResponse.BodyHandlers
+import java.time.Duration
 import scala.jdk.CollectionConverters._
 
 
@@ -94,33 +99,40 @@ object ImportHelper extends Logging {
       override def call(): Unit = {
         var a = if (article == null) new Article(title = sourceFile.getName, entrytype = "article") else article
         if (updateMetadata) {
-          updateProgress(0, 100)
-          updateMessage("find document metadata...")
-          var doi = ""
-          if (sourceFile != null) {
-            if (sourceFile.getName.toLowerCase.endsWith(".pdf")) {
-              if (parsePdf) doi = PdfHelper.getDOI(sourceFile)
-              debug(" pdf doi=" + doi)
-              updateProgress(30, 100)
+          try {
+            updateProgress(0, 100)
+            updateMessage("find document metadata...")
+            var doi = ""
+            if (sourceFile != null) {
+              if (sourceFile.getName.toLowerCase.endsWith(".pdf")) {
+                if (parsePdf) doi = PdfHelper.getDOI(sourceFile)
+                debug(" pdf doi=" + doi)
+                updateProgress(30, 100)
+              }
             }
-          }
-          if (isCancelled) return
-          if (doi == "" && interactive) Helpers.runUIwait {
-            doi = getDOImanually(sourceFile)
-          }
-          if (isCancelled) return
-          doi match {
-            case PdfHelper.arxivre(arxivid) =>
-              updateMessage("retrieve bibtex from arxiv ID...")
-              a.linkurl = "http://arxiv.org/abs/" + arxivid
-              a = updateBibtexFromArxiv(a, arxivid)
-              a = updateArticleFromBibtex(a)
-            case PdfHelper.doire(_) =>
-              a.doi = doi
-              updateMessage("retrieve bibtex from DOI...")
-              a = updateBibtexFromDoi(a, isCancelled)
-              a = updateArticleFromBibtex(a)
-            case _ =>
+            if (isCancelled) return
+            if (doi == "" && interactive) Helpers.runUIwait {
+              doi = getDOImanually(sourceFile)
+            }
+            if (isCancelled) return
+            doi match {
+              case PdfHelper.arxivre(arxivid) =>
+                updateMessage("retrieve bibtex from arxiv ID...")
+                a.linkurl = "http://arxiv.org/abs/" + arxivid
+                a = updateBibtexFromArxiv(a, arxivid)
+                a = updateArticleFromBibtex(a)
+              case PdfHelper.doire(_) =>
+                a.doi = doi
+                updateMessage("retrieve bibtex from DOI...")
+                a = updateBibtexFromDoi(a, isCancelled)
+                a = updateArticleFromBibtex(a)
+              case _ =>
+            }
+          } catch {
+            case e: Exception =>
+              error("importDocument2: error updateMetadata, ignoring: ", e)
+              e.printStackTrace()
+              runUI { showExceptionAlert("Error updating metadata, ignoring...", e) }
           }
         }
 
@@ -128,9 +140,7 @@ object ImportHelper extends Logging {
         if (isCancelled) return
         if (doFileAction) {
           val newdoc = new Document(if (article == null) Document.NMAIN else Document.NOTHER, "")
-
           val newFile1 = FileHelper.getUniqueDocFile(FileHelper.getLastImportFolder, a, newdoc.docName, sourceFile.getName)
-
           newdoc.docPath = FileHelper.getDocumentPathRelative(newFile1)
 
           // add pdf to documents
@@ -287,83 +297,76 @@ object ImportHelper extends Logging {
   }
 
   private def updateBibtexFromArxiv(article: Article, aid: String): Article = {
-    import scalaj.http._
     var a = article
     val url1 = "https://arxiv.org/abs/" + aid
     debug("getting " + url1)
-    val resp1 = Http(url1).timeout(15000, 10000).asString
-    if (resp1.code == 200) {
-      val doc = Jsoup.parse(resp1.body)
-      val title = doc.select("meta[name=citation_title]").attr("content")
-      val authors = doc.select("meta[name=citation_author]").eachAttr("content").toArray().mkString(" and ")
-      val arxivid = doc.select("meta[name=citation_arxiv_id]").attr("content")
-      val date = doc.select("meta[name=citation_date]").attr("content")
-      val datere = "([0-9]+)/([0-9]+)/.*".r
-      val be = new BibTeXEntry(new Key("article"), new Key(arxivid))
-      be.addField(BibTeXEntry.KEY_TITLE, new StringValue(title, StringValue.Style.BRACED))
-      be.addField(BibTeXEntry.KEY_AUTHOR, new StringValue(authors, StringValue.Style.BRACED))
-      be.addField(BibTeXEntry.KEY_JOURNAL, new StringValue("ArXiv e-prints", StringValue.Style.BRACED))
-      be.addField(BibTeXEntry.KEY_DOI, new StringValue(a.doi, StringValue.Style.BRACED))
-      date match {
-        case datere(year, month) =>
-          be.addField(BibTeXEntry.KEY_YEAR, new StringValue(year, StringValue.Style.BRACED))
-          be.addField(BibTeXEntry.KEY_MONTH, new StringValue(months(month.toInt - 1), StringValue.Style.BRACED))
-        case _ =>
-      }
-      be.addField(new Key("eid"), new StringValue(arxivid, StringValue.Style.BRACED))
-      be.addField(new Key("pages"), new StringValue(arxivid, StringValue.Style.BRACED))
-      be.addField(new Key("eprint"), new StringValue(arxivid, StringValue.Style.BRACED))
-      be.addField(new Key("archivePrefix"), new StringValue("arXiv", StringValue.Style.BRACED))
-      a = generateUpdateBibtexID(bibtexFromBtentry(be), a)
+    val httpreq = HttpRequest.newBuilder().uri(new URI(url1)).timeout(Duration.ofSeconds(10)).GET().build()
+    val response = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build().send(httpreq, BodyHandlers.ofString())
+    response.statusCode() match {
+      case 200 =>
+        val doc = Jsoup.parse(response.body())
+        val title = doc.select("meta[name=citation_title]").attr("content")
+        val authors = doc.select("meta[name=citation_author]").eachAttr("content").toArray().mkString(" and ")
+        val arxivid = doc.select("meta[name=citation_arxiv_id]").attr("content")
+        val date = doc.select("meta[name=citation_date]").attr("content")
+        val datere = "([0-9]+)/([0-9]+)/.*".r
+        val be = new BibTeXEntry(new Key("article"), new Key(arxivid))
+        be.addField(BibTeXEntry.KEY_TITLE, new StringValue(title, StringValue.Style.BRACED))
+        be.addField(BibTeXEntry.KEY_AUTHOR, new StringValue(authors, StringValue.Style.BRACED))
+        be.addField(BibTeXEntry.KEY_JOURNAL, new StringValue("ArXiv e-prints", StringValue.Style.BRACED))
+        be.addField(BibTeXEntry.KEY_DOI, new StringValue(a.doi, StringValue.Style.BRACED))
+        date match {
+          case datere(year, month) =>
+            be.addField(BibTeXEntry.KEY_YEAR, new StringValue(year, StringValue.Style.BRACED))
+            be.addField(BibTeXEntry.KEY_MONTH, new StringValue(months(month.toInt - 1), StringValue.Style.BRACED))
+          case _ =>
+        }
+        be.addField(new Key("eid"), new StringValue(arxivid, StringValue.Style.BRACED))
+        be.addField(new Key("pages"), new StringValue(arxivid, StringValue.Style.BRACED))
+        be.addField(new Key("eprint"), new StringValue(arxivid, StringValue.Style.BRACED))
+        be.addField(new Key("archivePrefix"), new StringValue("arXiv", StringValue.Style.BRACED))
+        a = generateUpdateBibtexID(bibtexFromBtentry(be), a)
+      case x =>
+        error(s"updateBibtexFromArxiv: response=$response code=${response.statusCode()}\nbody:\n${response.body}")
+        Helpers.runUI { Helpers.getModalTextAlert(AlertType.Error, s"Error retrieving metadata from arxiv ($x)" +
+          "Probably the arxiv ID is wrong?\n" +
+          "You have to paste the bibtex entry manually, or retry later (update metadata from pdf).").showAndWait()
+        }
     }
     a
   }
 
   private def updateBibtexFromDoi(article: Article, isCancelled: () => Boolean): Article = {
     // http://citation.crosscite.org/docs.html  https://github.com/CrossRef/rest-api-doc
-    import scalaj.http._
+    // provide email otherwise slow: https://github.com/CrossRef/rest-api-doc#good-manners--more-reliable-service
+    val uastring = "Reftool5/1.0 ; (https://github.com/wolfgangasdf/reftool5; mailto:wolfgang.loeffler@gmail.com)"
     var a = article
-    // val doienc = java.net.URLEncoder.encode(doi, "utf-8")
-    debug(s"""# curl https://api.crossref.org/works/${a.doi}/transform/application/x-bibtex""")
-    var doit = 2
-    while (doit > 0 && !isCancelled()) {
-      debug(s"updatebibtexfromdoi: while loop doit = $doit ...")
-      val responseo = try {
-        // provide email otherwise slow: https://github.com/CrossRef/rest-api-doc#good-manners--more-reliable-service
-        // unfortunately, can't be interrupted(), uses URLConnection where the connect() can't be interrupted.
-        Some(Http(s"https://dx.doi.org/${a.doi}").timeout(connTimeoutMs = 7000, readTimeoutMs = 10000)
-          .option(HttpOptions.followRedirects(shouldFollow = true))
-          .header("Accept", "text/bibliography; style=bibtex")
-          .header("User-Agent", "Reftool5/1.0 ; (https://github.com/wolfgangasdf/reftool5; mailto:wolfgang.loeffler@gmail.com)")
-          .asBytes)
-      } catch {
-        case _: SocketTimeoutException =>
-          debug("tryhttp: got SocketTimeoutException...")
-          None
-      }
-      if (responseo.isDefined && !isCancelled()) {
-        val response = responseo.get
-        for ((k, v) <- response.headers) debug(s"response header: $k = ${v.mkString(";")}")
-        if (response.code == 200) {
-          // val rb = response.body
-          val rb = new String(response.body, "UTF-8")
-          a = generateUpdateBibtexID(rb, a)
-          doit = 0 // becomes -1 below
-        } else if (response.code == 404) {
-          debug("updatebibtexfromdoi: received 404 not found")
-          doit = 1 // will be zero below.
-        } else {
-          debug(s"updatebibtexfromdoi: response=$response code=${response.code}\nbody:\n${response.body}")
-        }
-      } else {
-        debug("updatebibtexfromdoi: received no response or cancelled")
-      }
-      doit -= 1
-    }
-    if (doit != -1 && !isCancelled()) {
-      Helpers.runUI { Helpers.getModalTextAlert(AlertType.Error, "Error retrieving metadata from crossref. " +
-        "Probably the article is not yet in their database?\n" +
-        "You have to paste the bibtex entry manually, or retry later (update metadata from pdf).").showAndWait()
+    debug(s"""updatebibtexfromdoi: # curl -vv -H "User-Agent: $uastring" "https://api.crossref.org/works/${a.doi}/transform/application/x-bibtex" """)
+    val httpreq = HttpRequest.newBuilder()
+      .uri(new URI(s"https://doi.org/${a.doi}"))
+      .header("Accept", "text/bibliography; style=bibtex")
+      .header("User-Agent", uastring)
+      .timeout(Duration.ofSeconds(10))
+      .GET()
+      .build()
+    val response = HttpClient.newBuilder()
+      .followRedirects(Redirect.NORMAL)
+      .connectTimeout(Duration.ofSeconds(10))
+      .build()
+      .send(httpreq, BodyHandlers.ofString())
+    if (!isCancelled()) {
+      for ((k, v) <- response.headers.map().asScala) debug(s"response header: $k = ${v.asScala.mkString(";")}")
+      response.statusCode() match {
+        case 200 =>
+          a = generateUpdateBibtexID(response.body, a)
+        case x =>
+          error(s"updatebibtexfromdoi: response=$response code=${response.statusCode()}\nbody:\n${response.body}")
+          if (!isCancelled()) {
+            Helpers.runUI { Helpers.getModalTextAlert(AlertType.Error, s"Error retrieving metadata from crossref ($x)" +
+              "Probably the article is not yet in their database?\n" +
+              "You have to paste the bibtex entry manually, or retry later (update metadata from pdf).").showAndWait()
+            }
+          }
       }
     }
     a

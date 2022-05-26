@@ -1,7 +1,7 @@
 # Reftool 5
 
 Reftool is a scientific reference manager, similar to [Zotero](https://www.zotero.org) and 
-[Mendeley](https://www.mendeley.com), but it is focused on scientific article management and has more features, in particular for working with thousands of references.
+[Mendeley](https://www.mendeley.com), but it is focused on scientific article management and has more features, in particular for working with many thousands of articles.
 
 Some key specs & features (not complete):
 
@@ -16,20 +16,21 @@ Some key specs & features (not complete):
 * PDFs can be imported easily, it searches for DOI (or arxiv ID) in the PDF and then uses crossref.org to find the 
   metadata. Works via drag'n'drap, a single-click Google Chrome extension, or by watching an auto-import folder.
 * Bibtex export for papers: just create a topic containing all needed references and export it as bibtex database. The export file path is cached for each topic.
-* Copy selected articles' URLs to clipboard.
-* Copy selected articles' PDFs to a folder.
+* Copy html-formatted bibtex id & title, with URL of selected articles to clipboard.
+* Copy PDFs of selected articles to a folder.
+* Copy DOIs/arxiv IDs of selected articles to clipboard, for Zotero import
 * There is a `stack` topic with its own buttons to easily move / copy articles around or collect them.
 * Click on `Show orphans` to show articles not belonging to any topic. Don't misuse this as a "read later" tag.
-* Tools view: Extensive database information, checking for missing / orphaned document files, etc.
+* Tools view: Extensive database information, checking for missing / orphaned document files, etcetera.
 * topics and documents are sorted alphanumerically, just use numbers to order them (000-first, 00-second, 01-third etc.).  
 
-Reftool is/can not:
+Reftool is not/can not:
 
 * A collaborative thing. 
     * Reftool is a single-user application. In my opinion, references are personal, you exchange PDFs or links with collaborators. 
       My experience tells me that you should not import any articles into a reference manager 
       without having read at least the abstract, you'll never have time to read them later!
-    * Reftool contains tools to make exchange easy (copy article links, copy pdfs)
+    * Reftool contains tools to make exchange easy (copy article links, copy pdfs, copy DOIs for selected articles which can be pasted in zotero import)
 * Tag-based. I tried it and find that you'll quickly have to many, so they must be arranged in a tree, which I call `topics`. 
 * Full-text search through all documents. However, since most have a desktop search engine running you can use this 
   and reverse-lookup articles by drag'n'drop into Reftool.
@@ -72,13 +73,13 @@ Packaging:
 
 ### Used technologies ###
 
+* [Java](https://www.java.com/)
 * [Scala](http://www.scala-lang.org)
 * [Scalafx](http://scalafx.org) as wrapper for [JavaFX](http://docs.oracle.com/javafx) for the graphical user interface
 * [Squeryl](http://squeryl.org) as database ORM & DSL, using [Apache Derby](http://db.apache.org/derby) embedded as backend
 * [Apache Pdfbox](https://pdfbox.apache.org) to access PDF files
 * [JBibtex](https://github.com/jbibtex/jbibtex) to parse and write bibtex and latex
 * [ToolXiT BibTeX tools in Scala](https://github.com/gnieh/toolxit-bibtex) to parse authors
-* [scalaj-http](https://github.com/scalaj/scalaj-http) to make http connections
 * [jsoup](https://jsoup.org/) to parse html
 * [Runtime plugin](https://github.com/beryx/badass-runtime-plugin) to make runtimes with JRE
 * [Crossref](http://labs.crossref.org/citation-formatting-service) to get bibtex entries from DOIs

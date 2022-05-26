@@ -21,7 +21,7 @@ plugins {
     id("idea")
     application
     id("com.github.ben-manes.versions") version "0.42.0"
-    id("org.openjfx.javafxplugin") version "0.0.12"
+    id("org.openjfx.javafxplugin") version "0.0.13"
     id("org.beryx.runtime") version "1.12.7"
 }
 
@@ -37,7 +37,7 @@ repositories {
 }
 
 javafx {
-    version = "17"
+    version = "18"
     modules = listOf("javafx.base", "javafx.controls", "javafx.media") // scalafx requires javafx.media
     // set compileOnly for crosspackage to avoid packaging host javafx jmods for all target platforms
     configuration = if (project.gradle.startParameter.taskNames.intersect(listOf("crosspackage", "dist")).isNotEmpty()) "compileOnly" else "implementation"
@@ -46,7 +46,7 @@ val javaFXOptions = the<JavaFXOptions>()
 
 dependencies {
     implementation("org.scala-lang:scala-library:2.13.8")
-    implementation("org.scalafx:scalafx_2.13:17.0.1-R26")
+    implementation("org.scalafx:scalafx_2.13:18.0.1-R27")
     implementation("org.apache.derby:derby:$derbyVersion")
     implementation("org.apache.derby:derbytools:$derbyVersion")
     implementation("org.apache.derby:derbyshared:$derbyVersion")
@@ -54,9 +54,8 @@ dependencies {
     implementation("org.scala-lang.modules:scala-parser-combinators_2.13:2.1.1")
     implementation("org.apache.pdfbox:pdfbox:2.0.24")
     implementation("org.jbibtex:jbibtex:1.0.20")
-    implementation("org.scalaj:scalaj-http_2.13:2.4.2")
     implementation("org.scala-lang:scala-reflect:2.13.8")
-    implementation("org.jsoup:jsoup:1.14.3")
+    implementation("org.jsoup:jsoup:1.15.1")
     cPlatforms.forEach {platform ->
         val cfg = configurations.create("javafx_$platform")
         JavaFXModule.getJavaFXModules(javaFXOptions.modules).forEach { m ->
@@ -151,7 +150,7 @@ open class CrossPackage : DefaultTask() {
                     File("$imgdir/bin/$execfilename.bat").delete() // from runtime, not nice
                     val pf = File("$imgdir/$execfilename.bat")
                     pf.writeText("""
-                        set JLINK_VM_OPTIONS="${project.application.applicationDefaultJvmArgs.joinToString(" ")}"
+                        set JLINK_VM_OPTIONS=${project.application.applicationDefaultJvmArgs.joinToString(" ")}
                         set DIR=%~dp0
                         start "" "%DIR%\bin\javaw" %JLINK_VM_OPTIONS% -classpath "%DIR%/lib/*" ${project.application.mainClass.get()} 
                     """.trimIndent())
