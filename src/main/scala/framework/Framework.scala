@@ -1,6 +1,7 @@
 package framework
 
 import db.{Article, Topic}
+import framework.Helpers.MyAlert
 import views.MainScene
 import util.{AppStorage, MFile}
 
@@ -385,7 +386,7 @@ object ApplicationController extends Logging {
   val workerTimer = new java.util.Timer()
   var lastWorkEnd: Long = 0
   var stressCounter = 0
-  val stressAlert: Alert = new Alert(AlertType.Information) { title = "Information" ; contentText = "I am busy..." }
+  val stressAlert: Alert = new MyAlert(AlertType.Information) { title = "Information" ; contentText = "I am busy..." }
   workerTimer.schedule(
     new java.util.TimerTask {
       override def run(): Unit = {

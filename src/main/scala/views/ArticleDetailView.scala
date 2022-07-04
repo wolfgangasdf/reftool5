@@ -4,6 +4,7 @@ import db.{Article, ReftoolDB}
 import framework._
 import util.{FileHelper, ImportHelper}
 import db.SquerylEntrypointForMyApp._
+import framework.Helpers.MyAlert
 
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
@@ -26,7 +27,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
 
   override def canClose: Boolean = {
     if (isDirty.value) {
-      val res = new Alert(AlertType.Confirmation) {
+      val res = new MyAlert(AlertType.Confirmation) {
         headerText = "Application close requested"
         contentText = "Press OK to discard changes to Article \n" + article
       }.showAndWait()
@@ -42,7 +43,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
   private def setArticle(aa: Article): Unit = {
     logCall("" + aa)
     val doit = if (isDirty.value) {
-      val res = new Alert(AlertType.Confirmation) {
+      val res = new MyAlert(AlertType.Confirmation) {
         headerText = "Article is modified."
         contentText = "Save modifications?"
         buttonTypes = Seq(ButtonType.Yes, ButtonType.No, ButtonType.Cancel)

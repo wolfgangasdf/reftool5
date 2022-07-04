@@ -79,6 +79,7 @@ Packaging:
 * [Squeryl](http://squeryl.org) as database ORM & DSL, using [Apache Derby](http://db.apache.org/derby) embedded as backend
 * [Apache Pdfbox](https://pdfbox.apache.org) to access PDF files
 * [JBibtex](https://github.com/jbibtex/jbibtex) to parse and write bibtex and latex
+* [LaTeX2Unicode](https://github.com/tomtung/latex2unicode) 
 * [ToolXiT BibTeX tools in Scala](https://github.com/gnieh/toolxit-bibtex) to parse authors
 * [jsoup](https://jsoup.org/) to parse html
 * [Runtime plugin](https://github.com/beryx/badass-runtime-plugin) to make runtimes with JRE

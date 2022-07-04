@@ -54,6 +54,7 @@ dependencies {
     implementation("org.scala-lang.modules:scala-parser-combinators_2.13:2.1.1")
     implementation("org.apache.pdfbox:pdfbox:2.0.24")
     implementation("org.jbibtex:jbibtex:1.0.20")
+    implementation("com.github.tomtung:latex2unicode_2.13:0.3.2")
     implementation("org.scala-lang:scala-reflect:2.13.8")
     implementation("org.jsoup:jsoup:1.15.1")
     cPlatforms.forEach {platform ->

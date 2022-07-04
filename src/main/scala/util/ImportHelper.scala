@@ -1,5 +1,7 @@
 package util
 
+import com.github.tomtung.latex2unicode.LaTeX2Unicode
+
 import java.io
 import java.net.URI
 import db.SquerylEntrypointForMyApp._
@@ -378,13 +380,8 @@ object ImportHelper extends Logging {
     if (btfield != null) {
       s = btfield.toUserString
       if (s.contains('\\') || s.contains('{')) {
-        s = s.replaceAll("(?<!\\\\)~", " ") // jbibtex: A~B lastname fails
-        s = s.replaceAll("\\{\\\\hspace\\{[\\w\\.]*\\}\\}", " ") // jbibtex doesn't remove {\hspace{0.167em}} properly
-        s = s.replace("$", " ") // latexparser can't do this
-        val latexParser = new org.jbibtex.LaTeXParser()
-        val latexObjects = latexParser.parse(s)
-        val latexPrinter = new org.jbibtex.LaTeXPrinter()
-        s = latexPrinter.print(latexObjects)
+        s = s.replaceAll("""\{\\hspace\{[\w\.]*\}\}""", " ") // latex2unicode doesn't remove {\hspace{0.167em}} properly
+        s = LaTeX2Unicode.convert(s)
       }
     }
     s.trim
