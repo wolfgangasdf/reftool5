@@ -4,12 +4,13 @@ import java.{io, util}
 import java.io.{BufferedInputStream, File, FileInputStream, FileNotFoundException}
 import java.net.URI
 import java.nio.charset.Charset
-import java.nio.file.{Path, StandardCopyOption}
+import java.nio.file.{Files, Path, StandardCopyOption}
 import java.nio.file.StandardCopyOption._
-
 import db.Article
 import framework.{Helpers, Logging}
 
+import java.security.{DigestInputStream, MessageDigest}
+import scala.annotation.unused
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Random, Try, Using}
 
@@ -76,13 +77,33 @@ object MFile {
   def createDirectories(mf: MFile): Unit = {
     java.nio.file.Files.createDirectories(java.nio.file.Paths.get(mf.getPath))
   }
+
+  def getMD5(f: MFile): MessageDigest = {
+    val md = MessageDigest.getInstance("MD5")
+    val dis = new DigestInputStream(Files.newInputStream(f.toPath), md)
+    val buff = new Array[Byte](1024 * 128)
+    while (dis.available > 0) {
+      dis.read(buff)
+    }
+    dis.close()
+    dis.getMessageDigest
+  }
+
   def compare(f1: MFile, f2: MFile): Boolean = {
+    if (f1.toFile.length != f1.toFile.length) return false
+    val h1 = getMD5(f1) // faster via hashes?
+    val h2 = getMD5(f2)
+    util.Arrays.equals(h1.digest(), h2.digest())
+  }
+
+  @unused
+  def compareExact(f1: MFile, f2: MFile): Boolean = {
     if (f1.toFile.length != f1.toFile.length) return false
     val in1 =new BufferedInputStream(new FileInputStream(f1.toFile))
     val in2 =new BufferedInputStream(new FileInputStream(f2.toFile))
     var (res1, res2) = (0, 0)
     do {
-      //since we're buffered read() isn't expensive
+      //since we're buffered read() isn't expensive - this is wrong, reading two files chunked at the same time is expensive
       res1 = in1.read()
       res2 = in2.read()
       if(res1 != res2) { in1.close(); in2.close(); return false }
@@ -91,7 +112,6 @@ object MFile {
     in2.close()
     true
   }
-  // implicit def mfileToFile(mf: MFile): io.File = mf.file
 }
 
 object FileHelper extends Logging {
@@ -108,11 +128,14 @@ object FileHelper extends Logging {
       None
   }
 
+  @unused
   def foreachLine(file: MFile, proc : String=>Unit) : Unit = {
     val br = new io.BufferedReader(new io.FileReader(file.toFile))
     try{ while(br.ready) proc(br.readLine) }
     finally{ br.close() }
   }
+
+  @unused
   def deleteAll(file: MFile) : Unit = {
     def deleteFile(dfile : MFile) : Unit = {
       if(dfile.isDirectory) {

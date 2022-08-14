@@ -420,11 +420,12 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
       val t = tv.getSelectionModel.getSelectedItem.getValue
       val articles = inTransaction { t.articles.toList }
       debug(s"aexppdfs: topicfn=${t.exportfn}")
-      val newfolder = UpdatePdfs.exportPdfs(articles, new MFile(t.exportfn), toolbarButton.getParent.getScene.getWindow)
-      if (newfolder != null) inTransaction {
-        t.exportfn = newfolder.getPath
-        ReftoolDB.topics.update(t)
-      }
+      UpdatePdfs.exportPdfs(articles, new MFile(t.exportfn), toolbarButton.getParent.getScene.getWindow, newfolder => {
+        if (newfolder != null) inTransaction {
+          t.exportfn = newfolder.getPath
+          ReftoolDB.topics.update(t)
+        }
+      })
     }
   }
 

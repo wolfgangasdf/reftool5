@@ -12,7 +12,7 @@ group = "com.reftool5"
 version = "1.0-SNAPSHOT"
 val cPlatforms = listOf("mac", "win", "linux") // compile for these platforms. "mac", "linux", "win"
 val derbyVersion = "10.15.2.0"
-val minJavaVersion = 17
+val minJavaVersion = 18
 println("Current Java version: ${JavaVersion.current()}")
 if (JavaVersion.current().majorVersion.toInt() < minJavaVersion) throw GradleException("Use Java >= $minJavaVersion")
 
@@ -46,17 +46,17 @@ val javaFXOptions = the<JavaFXOptions>()
 
 dependencies {
     implementation("org.scala-lang:scala-library:2.13.8")
-    implementation("org.scalafx:scalafx_2.13:18.0.1-R27")
+    implementation("org.scalafx:scalafx_2.13:18.0.2-R29")
     implementation("org.apache.derby:derby:$derbyVersion")
     implementation("org.apache.derby:derbytools:$derbyVersion")
     implementation("org.apache.derby:derbyshared:$derbyVersion")
     implementation("org.squeryl:squeryl_2.13:0.9.17")
     implementation("org.scala-lang.modules:scala-parser-combinators_2.13:2.1.1")
-    implementation("org.apache.pdfbox:pdfbox:2.0.24")
+    implementation("org.apache.pdfbox:pdfbox:2.0.26")
     implementation("org.jbibtex:jbibtex:1.0.20")
     implementation("com.github.tomtung:latex2unicode_2.13:0.3.2")
     implementation("org.scala-lang:scala-reflect:2.13.8")
-    implementation("org.jsoup:jsoup:1.15.1")
+    implementation("org.jsoup:jsoup:1.15.2")
     cPlatforms.forEach {platform ->
         val cfg = configurations.create("javafx_$platform")
         JavaFXModule.getJavaFXModules(javaFXOptions.modules).forEach { m ->
