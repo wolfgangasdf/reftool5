@@ -127,7 +127,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
       val cont = new ClipboardContent()
       cont.putString("topic") // can't easily make custom DataFormats on mac (!)
       db.delegate.setContent(cont)
-      DnDHelper.topicTreeItem = self.treeItem.value
+      DnDHelper.topicDroppedOn = self.treeItem.value.getValue
       me.consume()
     }
 
@@ -184,7 +184,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
       if (self.treeItem.value != null) {
         getDropPositionScroll(de)
         if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "topic") {
-          val draggedId = DnDHelper.topicTreeItem.getValue.id
+          val draggedId = DnDHelper.topicDroppedOn.id
           if (!self.treeItem.value.getValue.path.exists(t => t.id == draggedId)) {
             MyTreeCell.lastDragoverCell = self
             de.acceptTransferModes(TransferMode.Move)
@@ -205,9 +205,8 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
       var dropOk = false
 
       if (de.dragboard.getContentTypes.contains(DataFormat.PlainText) && de.dragboard.content(DataFormat.PlainText) == "topic") {
-        val dti = DnDHelper.topicTreeItem
+        val dt = DnDHelper.topicDroppedOn
         inTransaction {
-          val dt = ReftoolDB.topics.get(dti.getValue.id)
           val newParent = if (dropPos == 2) {
             self.treeItem.value.getValue.parentTopic.head
           } else {

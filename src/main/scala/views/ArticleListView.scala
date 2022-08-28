@@ -19,6 +19,7 @@ import scalafx.scene.input._
 import scalafx.scene.layout.{Background, BackgroundFill, BorderPane, CornerRadii}
 import scalafx.scene.paint.Color
 import scalafx.scene.control.TableColumn._
+import scala.jdk.CollectionConverters._
 
 
 class ArticleListView extends GenericView("articlelistview") {
@@ -271,7 +272,13 @@ class ArticleListView extends GenericView("articlelistview") {
             ReftoolDB.articles.delete(a.id)
             ApplicationController.obsArticleRemoved(a)
           })
-          Helpers.runUIdelayed(alv.requestFocus())
+          Helpers.runUIdelayed {
+            alv.requestFocus()
+            // fix for bug: if first item in alv is deleted, selectedItems.onChange doesn't fire.
+            val x = alv.selectionModel.value.getSelectedItem
+            alv.selectionModel.value.clearSelection()
+            alv.selectionModel.value.select(x)
+          }
         case _ =>
       }
     }
@@ -408,6 +415,21 @@ class ArticleListView extends GenericView("articlelistview") {
         me.consume()
       }
 
+      onDragOver = (de: DragEvent) => { // only allow file drop if topic shown, code similar to TopicsTreeView
+        if (de.dragboard.getContentTypes.contains(DataFormat.Files) && currentTopic != null) {
+          if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].size == 1) // only one file at a time!
+            de.acceptTransferModes(TransferMode.Copy, TransferMode.Move, TransferMode.Link)
+        }
+      }
+      onDragDropped = (de: DragEvent) => {
+        if (de.dragboard.getContentTypes.contains(DataFormat.Files) && currentTopic != null) {
+          val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].asScala
+          val f = MFile(files.head)
+          ImportHelper.importDocument(f, currentTopic, null, Some(de.transferMode == TransferMode.Copy), isAdditionalDoc = false)
+          de.dropCompleted = true
+        }
+        de.consume()
+      }
     }
   }
 

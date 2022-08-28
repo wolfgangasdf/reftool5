@@ -11,7 +11,7 @@ buildscript {
 group = "com.reftool5"
 version = "1.0-SNAPSHOT"
 val cPlatforms = listOf("mac", "win", "linux") // compile for these platforms. "mac", "linux", "win"
-val derbyVersion = "10.15.2.0"
+val derbyVersion = "10.16.1.1"
 val minJavaVersion = 18
 println("Current Java version: ${JavaVersion.current()}")
 if (JavaVersion.current().majorVersion.toInt() < minJavaVersion) throw GradleException("Use Java >= $minJavaVersion")

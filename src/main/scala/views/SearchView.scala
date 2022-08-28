@@ -21,7 +21,7 @@ class SearchView extends GenericView("searchview") {
 
   private val tfSearch = new HistoryField(10) {
     hgrow = Priority.Always
-    tooltip = new Tooltip { text = "Sspace-separated search terms (group with single quote), articles matching all terms are returned if you press Enter!" }
+    tooltip = new Tooltip { text = "Space-separated search (bound phrases with |), articles matching all terms are returned if you press Enter!\nPossibly remove punctuation." }
     this.promptText = "Enter search text"
     onAction = (_: ActionEvent) => {
       doSearch()

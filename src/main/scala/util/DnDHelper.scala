@@ -9,5 +9,5 @@ import scalafx.scene.control.TreeItem
 object DnDHelper {
   var articles = new ArrayBuffer[Article]()
   var articlesTopic: Topic = _
-  var topicTreeItem: TreeItem[Topic] = _
+  var topicDroppedOn: Topic = _
 }
