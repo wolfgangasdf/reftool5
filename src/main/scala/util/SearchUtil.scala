@@ -32,9 +32,11 @@ class HistoryField(var historySize: Int) extends ComboBox[String] with Logging {
 }
 
 object SearchUtil extends Logging {
-  // split "  space 'case for' " into "CASE FOR","SPACE"
+  // split "space |case for|" into "CASE FOR","SPACE"
   def getSearchTerms(s: String): Array[String] = {
-    val s1 = StringHelper.replaceWeirdUnicodeChars(s)
+    var s1 = StringHelper.replaceWeirdUnicodeChars(s)
+    // replace dash by space since dash might be stored as some unicode (2013 or 2014) in database
+    s1 = s1.replace('-', ' ')
     // http://stackoverflow.com/questions/1757065/java-splitting-a-comma-separated-string-but-ignoring-commas-in-quotes
 //    val res = s1.trim.toUpperCase.split(" (?=([^\']*\'[^\']*\')*[^\']*$)", -1).map(_.replace("\'",""))
     val res = s1.trim.toUpperCase.split(" (?=([^|]*|[^|]*\')*[^|]*$)", -1).map(_.replace("|",""))

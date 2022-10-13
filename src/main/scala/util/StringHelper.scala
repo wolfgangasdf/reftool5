@@ -128,9 +128,13 @@ object StringHelper {
     '\u301E' -> "\"",
     '\uFEFF' -> " ")
 
-  def replaceWeirdUnicodeChars(string: String): String = unicodeCharMap.foldLeft(string) {
-    case (s, (unicodeChar, replacement)) =>
-      s.replace(unicodeChar.toString, replacement)
+  def replaceWeirdUnicodeChars(string: String): String = {
+    // for (c <- string) println(s"${c} => ${c.toInt}")
+    var s = string
+    for ((unicodeChar, replacement) <- unicodeCharMap) {
+      s = s.replace(unicodeChar.toString, replacement)
+    }
+    s
   }
 
 }

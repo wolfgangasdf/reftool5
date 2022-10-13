@@ -23,7 +23,7 @@ object Helpers extends Logging {
       case t: Throwable =>
         error("tryit: exception " + t.getMessage)
         t.printStackTrace()
-        if (main.Main.stage.isShowing) Helpers.showExceptionAlert("", t)
+        if (main.Main.stage.isShowing) Helpers.showExceptionAlert("tryit", t)
         null.asInstanceOf[T]
     }
   }

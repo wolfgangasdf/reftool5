@@ -34,7 +34,7 @@ object Main extends JFXApp3 with Logging {
   var mainScene: MainScene = _
   val logfile: MFile = MFile.createTempFile("reftool5log",".txt")
 
-  // JFXApp3: everything must go into this!
+  // JFXApp3: UI init stuff must go into this!
   override def start(): Unit = {
 
     // redirect console output, must happen on top of this object!
@@ -48,7 +48,12 @@ object Main extends JFXApp3 with Logging {
     Thread.currentThread().setUncaughtExceptionHandler((_: Thread, e: Throwable) => {
       error("Exception: " + e.getMessage)
       e.printStackTrace()
-      if (stage.isShowing) Helpers.showExceptionAlert("", e)
+      // ignore jdk bug drag drop "Flush is forbidden from target" https://bugs.openjdk.org/browse/JDK-8210797
+      if (e.isInstanceOf[java.lang.UnsupportedOperationException] && e.getMessage == "Flush is forbidden from target!") {
+        error("prevented dialog for Flush is forbidden from target!")
+        return
+      }
+      if (stage.isShowing) Helpers.showExceptionAlert("Uncaught exception", e)
     })
 
     class MyConsole(errchan: Boolean) extends io.OutputStream {
