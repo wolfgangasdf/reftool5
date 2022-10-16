@@ -85,6 +85,7 @@ class InfoView extends GenericView("toolview") {
     taInfo.appendText(s + "\n")
     debug("i: " + s)
   }
+
   private val aFindOrphanedPDFs: MyAction = new MyAction("Tools", "Find orphaned documents") {
     image = new Image(getClass.getResource("/images/checkpdfs.png").toExternalForm)
     tooltipString = "List orphaned and multiple times used documents\nTakes a long time!"
@@ -133,7 +134,7 @@ class InfoView extends GenericView("toolview") {
 
   private val aCheckArticleDocs: MyAction = new MyAction("Tools", "Check article documents") {
     image = new Image(getClass.getResource("/images/articledocs.png").toExternalForm)
-    tooltipString = "Check for articles with documents that are missing"
+    tooltipString = "Check article documents for missing documents"
     action = _ => {
       taInfo.text = "Articles with missing documents:\n"
       inTransaction {
@@ -153,6 +154,7 @@ class InfoView extends GenericView("toolview") {
         })
         ApplicationController.obsShowArticlesList((ares.toList, "Articles with missing documents", false))
       }
+      addToInfo("done!")
     }
     enabled = true
   }
@@ -230,7 +232,7 @@ class InfoView extends GenericView("toolview") {
 
   private val aMemory: MyAction = new MyAction("Tools", "Memory info") {
     image = new Image(getClass.getResource("/images/meminfo.png").toExternalForm)
-    tooltipString = "Memory cleanup and statistics"
+    tooltipString = "Memory info: cleanup and statistics"
     action = _ => {
       System.gc()
       val formatter = java.text.NumberFormat.getIntegerInstance
@@ -252,6 +254,42 @@ class InfoView extends GenericView("toolview") {
     }
     enabled = true
   }
+
+  // "renames" documents in selected folder below pdfpath in order to reduce number or so. not needed usually.
+//  private val aRenameDocs: MyAction = new MyAction("Tools", "XXX") {
+//    image = new Image(getClass.getResource("/images/checkpdfs.png").toExternalForm)
+//    tooltipString = "XXX"
+//    action = _ => {
+//
+//      // val path = new MFile(AppStorage.config.pdfpath + "/div")
+//      val path = MFile(new DirectoryChooser {
+//        title = "Choose directory below pdf directory..."
+//        initialDirectory = new MFile(AppStorage.config.pdfpath).toFile
+//      }.showDialog(null))
+//
+//      if (path != null && path.getPath.startsWith(AppStorage.config.pdfpath)) {
+//        val alldocs = FileHelper.listFilesRec(path).filter(_.isFile)
+//        var xxx = 0
+//        inTransaction { breakable { alldocs.foreach { mf => {
+//              xxx += 1
+//              // if (xxx > 1000) break()
+//              debug("XXXmf: " + mf)
+//              if (mf.exists) {
+//                StringHelper.startsWithGetRest(mf.getPath, AppStorage.config.pdfpath + "/") foreach (relp => {
+//                  val res = ReftoolDB.articles.where(a => upper(a.pdflink) like s"%${relp.toUpperCase}%")
+//                  debug("XXXrelp: " + relp + " res.size=" + res.size)
+//                  if (res.nonEmpty) {
+//                    debug("XXXa: " + res.single)
+//                    val a = ReftoolDB.renameDocuments(res.single)
+//                    ReftoolDB.articles.update(a)
+//                  }
+//                })
+//              } else debug("XXX document removed in meantime: " + mf)
+//        } } } }
+//      }
+//    }
+//    enabled = true
+//  }
 
   toolbaritems ++= Seq(aDBstats.toolbarButton, aCheckArticleDocs.toolbarButton, aFindOrphanedPDFs.toolbarButton, aFindDuplicates.toolbarButton, aMemory.toolbarButton, aClear.toolbarButton)
 

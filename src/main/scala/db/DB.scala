@@ -232,7 +232,7 @@ object ReftoolDB extends Schema with Logging {
     settings.insertOrUpdate(sett)
   }
 
-  // rename documents
+  // rename documents, returns new article which is not yet saved!
   def renameDocuments(a: Article): Article = {
     val dlnew = a.getDocuments.map(d => {
       val lastfolder = FileHelper.getLastImportFolder
