@@ -123,12 +123,14 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
 
     // drag'n'drop https://gist.github.com/andytill/4009620
     self.onDragDetected = (me: MouseEvent) => {
-      val db = self.treeView.value.startDragAndDrop(TransferMode.Move)
-      val cont = new ClipboardContent()
-      cont.putString("topic") // can't easily make custom DataFormats on mac (!)
-      db.delegate.setContent(cont)
-      DnDHelper.topicDroppedOn = self.treeItem.value.getValue
-      me.consume()
+      if (self.treeItem.isNotNull.get()) { // very seldom this is wrongly called while dragging file, with treeitem null.
+        val db = self.treeView.value.startDragAndDrop(TransferMode.Move)
+        val cont = new ClipboardContent()
+        cont.putString("topic") // can't easily make custom DataFormats on mac (!)
+        db.delegate.setContent(cont)
+        DnDHelper.topicDroppedOn = self.treeItem.value.getValue
+        me.consume()
+      } else debug("ttv ondragdetected: treeitem is null, ignore!")
     }
 
     override def updateItem(item: Topic, empty: Boolean): Unit = {
