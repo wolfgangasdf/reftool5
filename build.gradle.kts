@@ -3,19 +3,19 @@ import org.openjfx.gradle.JavaFXModule
 import org.openjfx.gradle.JavaFXOptions
 import java.util.*
 
+group = "com.reftool5"
+version = "1.0-SNAPSHOT"
+val cPlatforms = listOf("mac", "win", "linux") // compile for these platforms. "mac", "linux", "win"
+val derbyVersion = "10.16.1.1"
+val javaVersion = 19
+println("Current Java version: ${JavaVersion.current()}")
+if (JavaVersion.current().majorVersion.toInt() != javaVersion) throw GradleException("Use Java $javaVersion")
+
 buildscript {
     repositories {
         mavenCentral()
     }
 }
-
-group = "com.reftool5"
-version = "1.0-SNAPSHOT"
-val cPlatforms = listOf("mac", "win", "linux") // compile for these platforms. "mac", "linux", "win"
-val derbyVersion = "10.16.1.1"
-val javaVersion = 18
-println("Current Java version: ${JavaVersion.current()}")
-if (JavaVersion.current().majorVersion.toInt() != javaVersion) throw GradleException("Use Java $javaVersion")
 
 plugins {
     scala
@@ -49,7 +49,7 @@ val javaFXOptions = the<JavaFXOptions>()
 
 dependencies {
     implementation("org.scala-lang:scala-library:2.13.10")
-    implementation("org.scalafx:scalafx_2.13:18.0.2-R29")
+    implementation("org.scalafx:scalafx_2.13:19.0.0-R30")
     implementation("org.apache.derby:derby:$derbyVersion")
     implementation("org.apache.derby:derbytools:$derbyVersion")
     implementation("org.apache.derby:derbyshared:$derbyVersion")
@@ -72,9 +72,34 @@ runtime {
     options.set(listOf("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages"))
     modules.set(listOf("java.desktop", "java.sql", "jdk.unsupported", "java.scripting", "java.logging", "java.xml",
             "java.transaction.xa", "java.management", "java.rmi", "java.net.http", "jdk.crypto.cryptoki","jdk.crypto.ec"))
-    if (cPlatforms.contains("mac")) targetPlatform("mac", System.getenv("JDK_MAC_HOME"))
-    if (cPlatforms.contains("win")) targetPlatform("win", System.getenv("JDK_WIN_HOME"))
-    if (cPlatforms.contains("linux")) targetPlatform("linux", System.getenv("JDK_LINUX_HOME"))
+
+    // sets targetPlatform JDK for host os from toolchain, for others (cross-package) from adoptium / jdkDownload
+    // https://github.com/beryx/badass-runtime-plugin/issues/99
+    // if https://github.com/gradle/gradle/issues/18817 is solved: use toolchain
+    fun setTargetPlatform(jfxplatformname: String) {
+        val platf = if (jfxplatformname == "win") "windows" else jfxplatformname // jfx expects "win" but adoptium needs "windows"
+        val os = org.gradle.internal.os.OperatingSystem.current()
+        val oss = if (os.isLinux) "linux" else if (os.isWindows) "windows" else if (os.isMacOsX) "mac" else ""
+        if (oss == "") throw GradleException("unsupported os")
+        if (oss == platf) {
+            targetPlatform(jfxplatformname, javaToolchains.launcherFor(java.toolchain).get().executablePath.asFile.parentFile.parentFile.absolutePath)
+        } else { // https://api.adoptium.net/q/swagger-ui/#/Binary/getBinary
+            targetPlatform(jfxplatformname) {
+                val ddir = "${if (os.isWindows) "c:/" else "/"}tmp/jdk$javaVersion-$platf"
+                println("downloading jdks to or using jdk from $ddir, delete folder to update jdk!")
+                @Suppress("INACCESSIBLE_TYPE")
+                setJdkHome(
+                    jdkDownload("https://api.adoptium.net/v3/binary/latest/$javaVersion/ga/$platf/x64/jdk/hotspot/normal/eclipse?project=jdk",
+                        closureOf<org.beryx.runtime.util.JdkUtil.JdkDownloadOptions> {
+                            downloadDir = ddir // put jdks here so different projects can use them!
+                            archiveExtension = if (platf == "windows") "zip" else "tar.gz"
+                        }
+                    )
+                )
+            }
+        }
+    }
+    cPlatforms.forEach { setTargetPlatform(it) }
 }
 
 open class CrossPackage : DefaultTask() {

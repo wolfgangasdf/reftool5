@@ -64,11 +64,6 @@ database is populated with a few demo topics and articles.
 * Clone the repository
 * I use the free community version of [IntelliJ IDEA](https://www.jetbrains.com/idea/download/) with the scala 
 plugin for development, just open the project to get started.
-
-Packaging:
-
-* Download JDKs for the other platforms (and/or adapt `cPlatforms` in `build.gradle.kts`), extract them and set the environment variables to it:
-  * `export JDK_MAC_HOME=...`, `export JDK_WIN_HOME=...`, `export JDK_LINUX_HOME=...`
 * Package for all platforms: `./gradlew clean dist`. The resulting files are in `build/crosspackage`
 
 ### Used technologies ###
