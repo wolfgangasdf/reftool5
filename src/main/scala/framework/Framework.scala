@@ -349,7 +349,7 @@ object ApplicationController extends Logging {
     info("javafx.runtime.version: " + System.getProperties.get("javafx.runtime.version"))
     java.lang.management.ManagementFactory.getRuntimeMXBean.getInputArguments.asScala.foreach( s => info("jvm runtime parm: " + s))
 
-    debug("main ui thread: " + Thread.currentThread.getId + " isUI:" + scalafx.application.Platform.isFxApplicationThread)
+    debug("main ui thread: " + Thread.currentThread.threadId() + " isUI:" + scalafx.application.Platform.isFxApplicationThread)
 
     mainScene.window.value.onCloseRequest = (we: WindowEvent) => {
       if (!ApplicationController.canClose)
