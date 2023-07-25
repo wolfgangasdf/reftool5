@@ -22,7 +22,7 @@ plugins {
     id("idea")
     application
     id("com.github.ben-manes.versions") version "0.44.0"
-    id("org.openjfx.javafxplugin") version "0.0.13"
+    id("org.openjfx.javafxplugin") version "0.0.14"
     id("org.beryx.runtime") version "1.13.0"
 }
 
@@ -48,18 +48,18 @@ javafx {
 val javaFXOptions = the<JavaFXOptions>()
 
 dependencies {
-    implementation("org.scala-lang:scala-library:2.13.10")
+    implementation("org.scala-lang:scala-library:2.13.11")
     implementation("org.scalafx:scalafx_2.13:19.0.0-R30")
     implementation("org.apache.derby:derby:$derbyVersion")
     implementation("org.apache.derby:derbytools:$derbyVersion")
     implementation("org.apache.derby:derbyshared:$derbyVersion")
     implementation("org.squeryl:squeryl_2.13:0.9.18")
-    implementation("org.scala-lang.modules:scala-parser-combinators_2.13:2.2.0")
-    implementation("org.apache.pdfbox:pdfbox:2.0.27")
+    implementation("org.scala-lang.modules:scala-parser-combinators_2.13:2.3.0")
+    implementation("org.apache.pdfbox:pdfbox:2.0.29")
     implementation("org.jbibtex:jbibtex:1.0.20")
     implementation("com.github.tomtung:latex2unicode_2.13:0.3.2")
-    implementation("org.scala-lang:scala-reflect:2.13.10")
-    implementation("org.jsoup:jsoup:1.15.4")
+    implementation("org.scala-lang:scala-reflect:2.13.11")
+    implementation("org.jsoup:jsoup:1.16.1")
     cPlatforms.forEach {platform ->
         val cfg = configurations.create("javafx_$platform")
         JavaFXModule.getJavaFXModules(javaFXOptions.modules).forEach { m ->

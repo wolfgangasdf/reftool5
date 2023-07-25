@@ -392,6 +392,23 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   )
 
+  alv.onDragOver = (de: DragEvent) => { // only allow file drop if topic shown, code similar to TopicsTreeView
+    if (de.dragboard.getContentTypes.contains(DataFormat.Files) && currentTopic != null) {
+      if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].size == 1) // only one file at a time!
+        de.acceptTransferModes(TransferMode.Copy, TransferMode.Move, TransferMode.Link)
+    }
+  }
+
+  alv.onDragDropped = (de: DragEvent) => {
+    if (de.dragboard.getContentTypes.contains(DataFormat.Files) && currentTopic != null) {
+      val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].asScala
+      val f = MFile(files.head)
+      ImportHelper.importDocument(f, currentTopic, null, Some(de.transferMode == TransferMode.Copy), isAdditionalDoc = false)
+      de.dropCompleted = true
+    }
+    de.consume()
+  }
+
   alv.rowFactory = (_: TableView[Article]) => {
     new TableRow[Article] {
       onMouseClicked = (me: MouseEvent) => {
@@ -413,22 +430,6 @@ class ArticleListView extends GenericView("articlelistview") {
         DnDHelper.articlesTopic = currentTopic
         db.delegate.setContent(cont)
         me.consume()
-      }
-
-      onDragOver = (de: DragEvent) => { // only allow file drop if topic shown, code similar to TopicsTreeView
-        if (de.dragboard.getContentTypes.contains(DataFormat.Files) && currentTopic != null) {
-          if (de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].size == 1) // only one file at a time!
-            de.acceptTransferModes(TransferMode.Copy, TransferMode.Move, TransferMode.Link)
-        }
-      }
-      onDragDropped = (de: DragEvent) => {
-        if (de.dragboard.getContentTypes.contains(DataFormat.Files) && currentTopic != null) {
-          val files = de.dragboard.content(DataFormat.Files).asInstanceOf[java.util.ArrayList[java.io.File]].asScala
-          val f = MFile(files.head)
-          ImportHelper.importDocument(f, currentTopic, null, Some(de.transferMode == TransferMode.Copy), isAdditionalDoc = false)
-          de.dropCompleted = true
-        }
-        de.consume()
       }
     }
   }
