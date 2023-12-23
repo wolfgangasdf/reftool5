@@ -6,8 +6,8 @@ import java.util.*
 group = "com.reftool5"
 version = "1.0-SNAPSHOT"
 val cPlatforms = listOf("mac-aarch64", "linux", "win") // compile for these platforms. "mac", "mac-aarch64", "linux", "win"
-val derbyVersion = "10.16.1.1"
-val javaVersion = 19
+val derbyVersion = "10.17.1.0"
+val javaVersion = 21
 println("Current Java version: ${JavaVersion.current()}")
 if (JavaVersion.current().majorVersion.toInt() != javaVersion) throw GradleException("Use Java $javaVersion")
 
@@ -21,8 +21,8 @@ plugins {
     scala
     id("idea")
     application
-    id("com.github.ben-manes.versions") version "0.44.0"
-    id("org.openjfx.javafxplugin") version "0.0.14"
+    id("com.github.ben-manes.versions") version "0.44.0" // 0.50.0 doesn't work properly
+    id("org.openjfx.javafxplugin") version "0.0.14" // 0.1.0 doesn't work yet
     id("org.beryx.runtime") version "1.13.0"
 }
 
@@ -48,18 +48,18 @@ javafx {
 val javaFXOptions = the<JavaFXOptions>()
 
 dependencies {
-    implementation("org.scala-lang:scala-library:2.13.11")
-    implementation("org.scalafx:scalafx_2.13:19.0.0-R30")
+    implementation("org.scala-lang:scala-library:2.13.12")
+    implementation("org.scalafx:scalafx_2.13:21.0.0-R32")
     implementation("org.apache.derby:derby:$derbyVersion")
     implementation("org.apache.derby:derbytools:$derbyVersion")
     implementation("org.apache.derby:derbyshared:$derbyVersion")
-    implementation("org.squeryl:squeryl_2.13:0.9.18")
+    implementation("org.squeryl:squeryl_2.13:0.10.0")
     implementation("org.scala-lang.modules:scala-parser-combinators_2.13:2.3.0")
-    implementation("org.apache.pdfbox:pdfbox:2.0.29")
+    implementation("org.apache.pdfbox:pdfbox:3.0.1")
     implementation("org.jbibtex:jbibtex:1.0.20")
     implementation("com.github.tomtung:latex2unicode_2.13:0.3.2")
-    implementation("org.scala-lang:scala-reflect:2.13.11")
-    implementation("org.jsoup:jsoup:1.16.1")
+    implementation("org.scala-lang:scala-reflect:2.13.12")
+    implementation("org.jsoup:jsoup:1.17.1")
     cPlatforms.forEach {platform ->
         val cfg = configurations.create("javafx_$platform")
         JavaFXModule.getJavaFXModules(javaFXOptions.modules).forEach { m ->

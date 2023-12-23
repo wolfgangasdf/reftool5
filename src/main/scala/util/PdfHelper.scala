@@ -3,6 +3,7 @@ package util
 import org.apache.pdfbox.text.PDFTextStripper
 import org.apache.pdfbox.pdmodel.PDDocument
 import framework.Logging
+import org.apache.pdfbox.Loader
 
 import scala.jdk.CollectionConverters._
 import scala.util.matching.{Regex, UnanchoredRegex}
@@ -20,7 +21,7 @@ object PdfHelper extends Logging {
 
   def getDOI(file: MFile): String = {
     var doi = ""
-    val pdf = PDDocument.load(file.toFile)
+    val pdf = Loader.loadPDF(file.toFile)
     if (!pdf.isEncrypted) {
       val info = pdf.getDocumentInformation
       debug("parse pdf metadata for doi...")

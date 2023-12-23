@@ -227,19 +227,18 @@ object UpdatePdfs extends Logging {
             // present results
             differentFiles.foreach(e => debug("changed: " + e.toString + "\n"))
             if (differentFiles.nonEmpty) {
-              val dialog = new Dialog[ButtonType]() {
-                title = "Export PDFs"
-                headerText = "Export PDFs: existing but unequal target files.\nRemove those which should not be overwritten!"
-                resizable = true
-                width = 800
-              }
-
-              val tableview = new MyTableView(differentFiles)
-
-              dialog.dialogPane().buttonTypes = Seq(ButtonType.OK, ButtonType.Cancel)
-              dialog.dialogPane().content = tableview
-
               Helpers.runUIwait {
+                val dialog = new Dialog[ButtonType]() {
+                  title = "Export PDFs"
+                  headerText = "Export PDFs: existing but unequal target files.\nRemove those which should not be overwritten!"
+                  resizable = true
+                  width = 800
+                }
+
+                val tableview = new MyTableView(differentFiles)
+
+                dialog.dialogPane().buttonTypes = Seq(ButtonType.OK, ButtonType.Cancel)
+                dialog.dialogPane().content = tableview
                 dialog.showAndWait() match {
                   case Some(ButtonType.OK) =>
                     info("syncing pdfs...")
