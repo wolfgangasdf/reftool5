@@ -5,15 +5,12 @@ import java.io.{File, IOException}
 import java.util.Date
 import java.util.concurrent.FutureTask
 import java.util.jar.JarFile
-import scalafx.geometry.Insets
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control.{Alert, ButtonType, TextArea}
 import scalafx.scene.layout.Priority
 import scalafx.stage.Modality
 
 object Helpers extends Logging {
-
-  val insetsstd: Insets = scalafx.geometry.Insets(5)
 
   // this should be used for anything in javafx startup, as the stacktrace is missing if e.g. an icon file is not present!
   def tryit[T]( f: => T ): T = {
@@ -37,10 +34,6 @@ object Helpers extends Logging {
   def isMac: Boolean = System.getProperty("os.name").toLowerCase.contains("mac")
   def isLinux: Boolean = System.getProperty("os.name").toLowerCase.matches("(.*nix)|(.*nux)")
   def isWin: Boolean = System.getProperty("os.name").toLowerCase.contains("win")
-
-  def toHexString(s: String, encoding: String): String = {
-    s.getBytes(encoding).map("%02x " format _).mkString
-  }
 
   def unit(): Unit = {}
 
@@ -110,9 +103,9 @@ object Helpers extends Logging {
     showTextAlert(AlertType.Error, "Exception", xx, "Exception stacktrace:", exceptionText, null)
   }
 
-  def showTextAlert(alerttype: AlertType, titletext: String, headertext: String, contenttext: String, text: String, buttons: Seq[ButtonType] = null): Option[ButtonType] = {
-    val expContent = if (text.nonEmpty) {
-      val exceptionText = text
+  def showTextAlert(alerttype: AlertType, titletext: String, headertext: String, contenttext: String, alertText: String, buttons: Seq[ButtonType] = null): Option[ButtonType] = {
+    val expContent = if (alertText.nonEmpty) {
+      val exceptionText = alertText
       val textArea = new TextArea {
         text = exceptionText
         editable = false
