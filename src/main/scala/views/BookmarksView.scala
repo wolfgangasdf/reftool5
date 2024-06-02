@@ -3,7 +3,7 @@ package views
 import db.{ReftoolDB, Topic}
 import framework.{ApplicationController, GenericView, MyAction}
 import db.SquerylEntrypointForMyApp._
-import framework.Helpers.MyAlert
+import framework.Helpers.{FixedSfxTooltip, MyAlert}
 import util.StringHelper
 
 import scala.collection.mutable.ArrayBuffer
@@ -35,7 +35,7 @@ class BookmarksView extends GenericView("bookmarksview") {
   folders += new Folder { name = "New folder" }
 
   private val lv = new ListView[Topic]() {
-    tooltip = "Use shift+UP/DOWN to reorder topics!"
+    tooltip = new FixedSfxTooltip("Use shift+UP/DOWN to reorder topics!")
   }
 
   private def updateList(): Unit = {

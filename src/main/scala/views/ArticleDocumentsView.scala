@@ -2,7 +2,7 @@ package views
 
 import db.{Article, Document, ReftoolDB}
 import db.SquerylEntrypointForMyApp._
-import framework.Helpers.MyAlert
+import framework.Helpers.{FixedSfxTooltip, MyAlert}
 import framework.{ApplicationController, GenericView, Logging, MyAction}
 import util.FileHelper._
 import util.{ImportHelper, MFile}
@@ -28,7 +28,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
   private class MyListCell extends TextFieldListCell[Document] {
 
     item.onChange { // this is how to override updateItem !
-      (_, _, newd) => if (newd != null) tooltip = new Tooltip { text = newd.docPath }
+      (_, _, newd) => if (newd != null) tooltip = new FixedSfxTooltip(newd.docPath)
     }
 
     private val myConverter = new StringConverter[Document] {

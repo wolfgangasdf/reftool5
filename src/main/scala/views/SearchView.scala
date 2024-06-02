@@ -4,7 +4,7 @@ import java.time._
 import db.{Article, ReftoolDB, Topic}
 import framework.{ApplicationController, GenericView, Helpers}
 import db.SquerylEntrypointForMyApp._
-import framework.Helpers.MyAlert
+import framework.Helpers.{FixedSfxTooltip, MyAlert}
 import org.squeryl.{Query, Queryable}
 import util.{HistoryField, SearchUtil}
 import scalafx.Includes._
@@ -21,7 +21,7 @@ class SearchView extends GenericView("searchview") {
 
   private val tfSearch = new HistoryField(10) {
     hgrow = Priority.Always
-    tooltip = new Tooltip { text = "Space-separated search (bound phrases with |), articles matching all terms are returned if you press Enter!\nPossibly remove punctuation." }
+    tooltip = new FixedSfxTooltip("Space-separated search (bound phrases with |), articles matching all terms are returned if you press Enter!\nPossibly remove punctuation.")
     this.promptText = "Enter search text"
     onAction = (_: ActionEvent) => {
       doSearch()

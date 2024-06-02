@@ -4,13 +4,13 @@ import db.{Article, ReftoolDB}
 import framework._
 import util.{FileHelper, ImportHelper}
 import db.SquerylEntrypointForMyApp._
-import framework.Helpers.MyAlert
+import framework.Helpers.{FixedSfxTooltip, MyAlert}
 
 import scala.collection.mutable.ArrayBuffer
 import scalafx.Includes._
 import scalafx.geometry.Insets
 import scalafx.scene.control.Alert.AlertType
-import scalafx.scene.control.{Label, _}
+import scalafx.scene.control._
 import scalafx.scene.image.Image
 import scalafx.scene.input.KeyCombination
 import scalafx.scene.layout.ColumnConstraints._
@@ -63,7 +63,7 @@ class ArticleDetailView extends GenericView("articledetailview") with Logging {
         val a = aa
         article = a
         lbCurrentArticle.text = a.toString + "  "
-        lbCurrentArticle.tooltip =  "Last modified: " + a.getModtimeString
+        lbCurrentArticle.tooltip =  new FixedSfxTooltip("Last modified: " + a.getModtimeString)
         lTitle.tf.text = a.title
         lAuthors.tf.text = a.authors
         lPubdate.tf.text = a.pubdate

@@ -9,6 +9,7 @@ import db.SquerylEntrypointForMyApp._
 import framework.Helpers.MyAlert
 import org.squeryl.Queryable
 import util._
+import Helpers.FixedSfxTooltip
 
 import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -253,7 +254,7 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
   }
   private val tv = new TreeView[Topic] {
     id = "treeview"
-    tooltip = "Drop a PDF on topic for import, ctrl: move PDF file!"
+    tooltip = new FixedSfxTooltip("Drop a PDF on topic for import, ctrl: move PDF file!")
     showRoot = false
     userData = gv
     editable = true
@@ -648,12 +649,12 @@ class TopicsTreeView extends GenericView("topicsview") with Logging {
   private val tfSearch = new HistoryField(10) {
     hgrow = Priority.Always
     promptText = "search..."
-    tooltip = new Tooltip { text = "enter space-separated search terms (group with single quote), topics matching all terms are listed." }
+    tooltip = new FixedSfxTooltip("enter space-separated search terms (group with single quote), topics matching all terms are listed.")
     onAction = (_: ActionEvent) => findTopics(this.getValue, recursive = false)
   }
 
   private val btSearchRec = new Button("R") {
-    tooltip = new Tooltip { text = "Search full topic path (slow!)" }
+    tooltip = new FixedSfxTooltip("Search full topic path (slow!)")
     onAction = (_: ActionEvent) => findTopics(tfSearch.getValue, recursive = true)
   }
 

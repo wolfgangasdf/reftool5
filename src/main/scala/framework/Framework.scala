@@ -1,7 +1,7 @@
 package framework
 
 import db.{Article, Topic}
-import framework.Helpers.MyAlert
+import framework.Helpers.{FixedSfxTooltip, MyAlert}
 import views.MainScene
 import util.{AppStorage, MFile}
 
@@ -120,7 +120,7 @@ class MyAction(val category: String, val title: String) extends Logging {
   def tooltipString: String = _tooltipString
   def tooltipString_= (s: String): Unit = {
     _tooltipString = s
-    toolbarButton.tooltip = new Tooltip { text = s }
+    toolbarButton.tooltip = new FixedSfxTooltip(s)
   }
 
   def enabled: Boolean = _enabled
@@ -247,7 +247,7 @@ abstract class MyFlexInput(gpRow: Int, labelText: String, rows: Int = 1, helpStr
   val label: Label = new Label(labelText) {
     style = "-fx-font-weight:bold"
     alignmentInParent = Pos.CenterRight
-    tooltip = new Tooltip { text = helpString }
+    tooltip = new FixedSfxTooltip(helpString)
   }
   GridPane.setConstraints(label, 0, gpRow, 1, 1)
   var onchange: () => Unit = () => {}

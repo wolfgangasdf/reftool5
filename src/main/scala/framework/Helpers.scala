@@ -6,7 +6,7 @@ import java.util.Date
 import java.util.concurrent.FutureTask
 import java.util.jar.JarFile
 import scalafx.scene.control.Alert.AlertType
-import scalafx.scene.control.{Alert, ButtonType, TextArea}
+import scalafx.scene.control.{Alert, ButtonType, TextArea, Tooltip}
 import scalafx.scene.layout.Priority
 import scalafx.stage.Modality
 
@@ -162,4 +162,17 @@ object Helpers extends Logging {
     }
     d
   }
+
+  // fix to prevent tooltip to bringing stage to top if in background: https://stackoverflow.com/a/45468459
+  private class FixedJfxTooltip(string: String) extends javafx.scene.control.Tooltip(string) {
+    override def show(): Unit = {
+      if (getOwnerWindow.isFocused) super.show()
+    }
+  }
+  class FixedSfxTooltip(override val delegate: javafx.scene.control.Tooltip = new FixedJfxTooltip(null)) extends Tooltip(delegate) {
+    def this(text: String) = {
+      this(new FixedJfxTooltip(text))
+    }
+  }
+
 }

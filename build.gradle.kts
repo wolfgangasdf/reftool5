@@ -34,6 +34,13 @@ application {
     )
 }
 
+idea {
+    module {
+        isDownloadSources = true
+        isDownloadJavadoc = true
+    }
+}
+
 repositories {
     mavenCentral()
 }
