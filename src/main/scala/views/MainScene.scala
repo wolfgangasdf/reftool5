@@ -37,7 +37,9 @@ class MainScene(stage: Stage) extends Scene with Logging {
                   spacing = 15
                   children ++= Seq(
                     new TextArea {
-                      text = "Build time: " + Helpers.getClassBuildTime.toString + "\njava.version: " + System.getProperty("java.version")
+                      text = "Build time: " + Helpers.getClassBuildTime.toString +
+                        "\njava.version: " + System.getProperty("java.version") +
+                        "\njavafx.runtime.version: " + System.getProperty("javafx.runtime.version")
                       editable = false
                     },
                     new Button("Open Reftool homepage") {

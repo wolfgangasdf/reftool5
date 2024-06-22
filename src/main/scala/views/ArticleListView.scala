@@ -126,22 +126,21 @@ class ArticleListView extends GenericView("articlelistview") {
     enabled = true
   }
   private val aSetColor = new MyAction("Article", "Cycle article color") {
-    tooltipString = "Cycle article color for article in this topic"
+    tooltipString = "Cycle article color for selected articles in this topic"
     image = new Image(getClass.getResource("/images/colors.png").toExternalForm)
     action = _ => {
-      val a = alv.selectionModel.value.getSelectedItem
+      val as = alv.selectionModel.value.getSelectedItems
       inTransaction {
-        a.getT2a(currentTopic) match {
-          case Some(t2a) =>
-            var col = t2a.color + 1 // cycle through colors
-            if (col >= colorsn.length) col = 0
-            t2a.color = col
-            ReftoolDB.topics2articles.update(t2a)
-
-          case None =>
-        }
+        val distinctcols = as.map(_.getT2a(currentTopic).get.color).distinct
+        var newcol = if (distinctcols.length == 1) distinctcols.getFirst + 1 else 0
+        if (newcol >= colorsn.length) newcol = 0
+        as.foreach( a => {
+          val t2a = a.getT2a(currentTopic).get
+          t2a.color = newcol
+          ReftoolDB.topics2articles.update(t2a)
+          ApplicationController.obsArticleModified(a)
+        })
       }
-      ApplicationController.obsArticleModified(a)
     }
   }
 
@@ -371,6 +370,7 @@ class ArticleListView extends GenericView("articlelistview") {
         aUpdateDocumentFilenames.enabled = false
         aUnionTopics.enabled = false
       } else if (change.nonEmpty) { // no idea why it's empty sometimes...
+        aSetColor.enabled = currentTopic != null
         aRemoveArticle.enabled = true
         aCopyToStack.enabled = true
         aMoveToStack.enabled = currentTopic != null
@@ -380,7 +380,6 @@ class ArticleListView extends GenericView("articlelistview") {
         aCopyPDFs.enabled = true
         aUpdateDocumentFilenames.enabled = true
         if (ob.size == 1) {
-          aSetColor.enabled = currentTopic != null
           aOpenPDF.enabled = true
           aRevealPDF.enabled = true
           aOpenURL.enabled = true
@@ -473,21 +472,15 @@ class ArticleListView extends GenericView("articlelistview") {
   ApplicationController.obsTopicSelected += ((t: Topic) => setArticlesTopic(t) )
   ApplicationController.obsRevealArticleInList += ((a: Article) => selectRevealArticle(a) )
   ApplicationController.obsArticleModified += ((a: Article) => {
-    if (currentTopic != null) {
-      val oldsel = alv.getSelectionModel.getSelectedItems.headOption
-      val oldselidx = alv.getSelectionModel.getSelectedIndices.headOption
-      setArticlesTopic(currentTopic)
-      if (oldsel.nonEmpty) {
-        val founda = articles.find(a => a.id == oldsel.get.id)
-        if (founda.nonEmpty) {
-          selectRevealArticle(founda.get)
-        } else {
-          safeSelect(oldselidx.get)
-        }
-      }
-    } else {
-      val oldart = articles.find(oa => oa.id == a.id)
-      if (oldart.isDefined) { articles.replaceAll(oldart.get, a) }
+    val idx = articles.indexWhere(_.id == a.id)
+    if (idx >= 0) {
+      val oldselids = alv.getSelectionModel.getSelectedItems.map(_.id)
+      if (currentTopic != null)
+        setArticlesTopic(currentTopic)
+      else
+        articles.update(idx, a)
+      alv.getSelectionModel.clearSelection()
+      oldselids.flatMap(oldid => articles.find(_.id == oldid)).foreach(ax => alv.getSelectionModel.select(ax))
     }
   })
   ApplicationController.obsArticleRemoved += ((a: Article) => {

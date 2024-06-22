@@ -24,7 +24,7 @@ plugins {
     application
     id("com.github.ben-manes.versions") version "0.44.0" // 0.50.0 doesn't work properly
     id("org.openjfx.javafxplugin") version "0.0.14" // 0.1.0 doesn't work yet
-    id("org.beryx.runtime") version "1.13.0"
+    id("org.beryx.runtime") version "1.13.1"
 }
 
 application {
@@ -46,7 +46,7 @@ repositories {
 }
 
 javafx {
-    version = javaVersion
+    version = "22.0.1"
     modules = listOf("javafx.base", "javafx.controls", "javafx.media") // scalafx requires javafx.media
     // set compileOnly for crosspackage to avoid packaging host javafx jmods for all target platforms
     if (project.gradle.startParameter.taskNames.intersect(listOf("crosspackage", "dist")).isNotEmpty()) {
@@ -56,18 +56,18 @@ javafx {
 val javaFXOptions = the<JavaFXOptions>()
 
 dependencies {
-    implementation("org.scala-lang:scala-library:2.13.12")
-    implementation("org.scalafx:scalafx_2.13:21.0.0-R32")
+    implementation("org.scala-lang:scala-library:2.13.14")
+    implementation("org.scalafx:scalafx_2.13:22.0.0-R33")
     implementation("org.apache.derby:derby:$derbyVersion")
     implementation("org.apache.derby:derbytools:$derbyVersion")
     implementation("org.apache.derby:derbyshared:$derbyVersion")
     implementation("org.squeryl:squeryl_2.13:0.10.0")
-    implementation("org.scala-lang.modules:scala-parser-combinators_2.13:2.3.0")
-    implementation("org.apache.pdfbox:pdfbox:3.0.1")
+    implementation("org.scala-lang.modules:scala-parser-combinators_2.13:2.4.0")
+    implementation("org.apache.pdfbox:pdfbox:3.0.2")
     implementation("org.jbibtex:jbibtex:1.0.20")
     implementation("com.github.tomtung:latex2unicode_2.13:0.3.2")
-    implementation("org.scala-lang:scala-reflect:2.13.12")
-    implementation("org.jsoup:jsoup:1.17.1")
+    implementation("org.scala-lang:scala-reflect:2.13.14")
+    implementation("org.jsoup:jsoup:1.17.2")
     cPlatforms.forEach {platform ->
         val cfg = configurations.create("javafx_$platform")
         JavaFXModule.getJavaFXModules(javaFXOptions.modules).forEach { m ->
