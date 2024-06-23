@@ -159,6 +159,37 @@ class InfoView extends GenericView("toolview") {
     enabled = true
   }
 
+  private val aPdfsReduceSize: MyAction = new MyAction("Tools", "Reduce file size of PDFs") {
+    image = new Image(getClass.getResource("/images/articlesize.png").toExternalForm)
+    val minsize = 10e6
+    tooltipString = s"Scans all article documents for large (>${minsize}) PDFs and shows them." // TODO: auto shrink?
+    action = _ => {
+      taInfo.text = "Large PDFs:\n"
+      inTransaction {
+        var tocheck = ReftoolDB.articles.Count.toLong
+        val ares = new ArrayBuffer[Article]()
+        ReftoolDB.articles.allRows.foreach(a => {
+          tocheck -= 1
+          if (tocheck % 100 == 0) debug(s"still $tocheck articles to check!")
+          a.getDocuments.foreach(d => {
+            val f = FileHelper.getDocumentFileAbs(d.docPath)
+            if (f.exists && f.getSize > minsize) {
+              val s = s"[${a.bibtexid}] $a: large(${f.getSize}): ${d.docName} (${d.docPath})"
+              taInfo.appendText(s + "\n")
+              info(s)
+              ares.append(a)
+            }
+          })
+        })
+        ApplicationController.obsShowArticlesList((ares.toList, "Articles with large documents", false))
+        addToInfo("************************************************")
+        addToInfo("Now select articles of which you want to reduce the size of the PDFs, and select Article -> Reduce file size of PDFs")
+        addToInfo("The resized articles will get a new modification time, so just sort the article list for modtime!")
+      }
+      addToInfo("done!")
+    }
+    enabled = true
+  }
 
   private val aFindDuplicates: MyAction = new MyAction("Tools", "Find duplicate articles") {
     image = new Image(getClass.getResource("/images/articledocs.png").toExternalForm)
@@ -291,7 +322,7 @@ class InfoView extends GenericView("toolview") {
 //    enabled = true
 //  }
 
-  toolbaritems ++= Seq(aDBstats.toolbarButton, aCheckArticleDocs.toolbarButton, aFindOrphanedPDFs.toolbarButton, aFindDuplicates.toolbarButton, aMemory.toolbarButton, aClear.toolbarButton)
+  toolbaritems ++= Seq(aDBstats.toolbarButton, aCheckArticleDocs.toolbarButton, aPdfsReduceSize.toolbarButton, aFindOrphanedPDFs.toolbarButton, aFindDuplicates.toolbarButton, aMemory.toolbarButton, aClear.toolbarButton)
 
   content = new BorderPane {
     margin = Insets(5.0)

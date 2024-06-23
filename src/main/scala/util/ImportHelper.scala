@@ -155,6 +155,14 @@ object ImportHelper extends Logging {
             MFile.copy(sourceFile, newFile1)
           else
             MFile.move(sourceFile, newFile1)
+
+          // reduce filesize if selected
+          if (AppStorage.config.gspath.trim.nonEmpty) {
+            updateProgress(80, 100)
+            updateMessage("reduce size...")
+            FileHelper.pdfReduceSize(newFile1, a.toString)
+          }
+
         }
 
         updateProgress(90, 100)
@@ -243,8 +251,7 @@ object ImportHelper extends Logging {
     } else copyFile.get
 
     val task = importDocument2(!isAdditionalDoc, article, sourceFile, doFileAction = true, copyIt = copyIt, topic, interactive)
-      new MyWorker("Import document", task, () => { backgroundImportRunning.set(false) } ).run()
-
+    new MyWorker("Import document", task, () => { backgroundImportRunning.set(false) } ).run()
     true
   }
 
@@ -278,21 +285,22 @@ object ImportHelper extends Logging {
 
   def generateUpdateBibtexID(be: String, a: Article, resetBibtexID: Boolean = false): Article = {
     if (be.trim != "") {
-      a.bibtexentry = be
-      val (_, btentry) = parseBibtex(a.bibtexentry)
-      a.bibtexentry = bibtexFromBtentry(btentry) // update to nice format
-      val bidorig = btentry.getKey.getValue
-      if (a.bibtexid == "" || resetBibtexID) {
-        // article has no bibtexid, generate one...
-        val authors = AuthorNamesExtractor.toList(getPlainTextField(btentry, "", BibTeXEntry.KEY_AUTHOR))
-        val lastau = if (authors.nonEmpty) authors.head.last.map(_.toString).mkString("") else "unknown"
-        val bid = lastau + getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
-        val bid2 = getUniqueBibtexID(bid, a)
-        a.bibtexid = bid2
-        a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, bid2)
-      } else {
-        // if bibtexid was set before, just update bibtexentry with this
-        a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, a.bibtexid)
+      val (_, btentry) = parseBibtex(be)
+      if (btentry != null) {
+        a.bibtexentry = bibtexFromBtentry(btentry) // update to nice format
+        val bidorig = btentry.getKey.getValue
+        if (a.bibtexid == "" || resetBibtexID) {
+          // article has no bibtexid, generate one...
+          val authors = AuthorNamesExtractor.toList(getPlainTextField(btentry, "", BibTeXEntry.KEY_AUTHOR))
+          val lastau = if (authors.nonEmpty) authors.head.last.map(_.toString).mkString("") else "unknown"
+          val bid = lastau + getPlainTextField(btentry, "", BibTeXEntry.KEY_YEAR)
+          val bid2 = getUniqueBibtexID(bid, a)
+          a.bibtexid = bid2
+          a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, bid2)
+        } else {
+          // if bibtexid was set before, just update bibtexentry with this
+          a.bibtexentry = Article.updateBibtexIDinBibtexString(a.bibtexentry, bidorig, a.bibtexid)
+        }
       }
     }
     a
@@ -388,15 +396,27 @@ object ImportHelper extends Logging {
   }
 
   private def parseBibtex(bibtexentry: String): (Key, BibTeXEntry) = {
-    val btparser = new org.jbibtex.BibTeXParser
-    val btdb = btparser.parse(new io.StringReader(bibtexentry))
-    val btentries = btdb.getEntries
-    if (btentries.size == 1)
-      btentries.asScala.head
-    else {
-      warn("error parsing bibtex for bibtexentry=\n" + bibtexentry)
-      (null, null)
+    val res = try {
+      val btparser = new org.jbibtex.BibTeXParser
+      val btdb = btparser.parse(new io.StringReader(bibtexentry))
+      val btentries = btdb.getEntries
+      if (btentries.size == 1)
+        btentries.asScala.head
+      else {
+        warn("error parsing bibtex for bibtexentry=\n" + bibtexentry)
+        (null, null)
+      }
+    } catch {
+      case e: Exception => {
+        error("error parsing bibtex", e)
+        (null, null)
+      }
     }
+    if (res == (null, null)) {
+      error(s"error parsing bibtex, bibtexentry=\n$bibtexentry")
+      ApplicationController.showNotification("Error parsing bibtex!")
+    }
+    res
   }
 
   val months: List[String] = List("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")

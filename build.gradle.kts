@@ -68,6 +68,7 @@ dependencies {
     implementation("com.github.tomtung:latex2unicode_2.13:0.3.2")
     implementation("org.scala-lang:scala-reflect:2.13.14")
     implementation("org.jsoup:jsoup:1.17.2")
+    implementation("org.controlsfx:controlsfx:11.2.1") { exclude("org.openjfx") }
     cPlatforms.forEach {platform ->
         val cfg = configurations.create("javafx_$platform")
         JavaFXModule.getJavaFXModules(javaFXOptions.modules).forEach { m ->

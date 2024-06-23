@@ -23,6 +23,7 @@ Some key specs & features (not complete):
 * Click on `Show orphans` to show articles not belonging to any topic. Don't misuse this as a "read later" tag.
 * Tools view: Extensive database information, checking for missing / orphaned document files, etcetera.
 * topics and documents are sorted alphanumerically, just use numbers to order them (000-first, 00-second, 01-third etc.).  
+* The size of PDFs can be reduced using ghostscript, see preferences.
 
 Reftool is not/can not:
 
@@ -79,6 +80,7 @@ plugin for development, just open the project to get started.
 * [jsoup](https://jsoup.org/) to parse html
 * [Runtime plugin](https://github.com/beryx/badass-runtime-plugin) to make runtimes with JRE
 * [Crossref](http://labs.crossref.org/citation-formatting-service) to get bibtex entries from DOIs
+* [ControlsFX](https://github.com/controlsfx/controlsfx) for notifications
 * Scalafx GUI Application framework: I couldn't find one (yet), so reftool contains its own GUI app framework
   with, e.g., buttons next to tabs (`Framework.scala`)
 

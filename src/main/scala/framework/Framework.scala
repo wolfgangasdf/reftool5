@@ -2,6 +2,7 @@ package framework
 
 import db.{Article, Topic}
 import framework.Helpers.{FixedSfxTooltip, MyAlert}
+import org.controlsfx.control.Notifications
 import views.MainScene
 import util.{AppStorage, MFile}
 
@@ -20,6 +21,7 @@ import scalafx.scene.input.{KeyCode, KeyCombination, KeyEvent, MouseEvent}
 import scalafx.scene.layout.{GridPane, HBox, Pane, VBox}
 import scalafx.scene.{Group, Node, Scene}
 import scalafx.stage.{DirectoryChooser, Modality, Stage, WindowEvent}
+import scalafx.util.Duration
 
 
 trait HasUISettings {
@@ -428,7 +430,15 @@ object ApplicationController extends Logging {
 
   val notificationTimer = new java.util.Timer()
   def showNotification(string: String): Unit = {
-    mainScene.statusBarLabel.text = string
+    info(s"Notification: $string")
+    Helpers.runUI{
+      Notifications.create().owner(main.Main.stage.delegate).hideAfter(Duration(4000.0)).title("Reftool").text(string).show()
+    }
+  }
+
+  def showNotificationInStatusBar(string: String): Unit = {
+    info(s"NotificationISB: $string")
+    Helpers.runUI(mainScene.statusBarLabel.text = string)
     notificationTimer.schedule( // remove Notification later
       new java.util.TimerTask {
         override def run(): Unit = { Helpers.runUI( mainScene.statusBarLabel.text = "" ) }

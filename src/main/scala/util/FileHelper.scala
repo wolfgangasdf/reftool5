@@ -7,9 +7,10 @@ import java.nio.charset.Charset
 import java.nio.file.{Files, Path, StandardCopyOption}
 import java.nio.file.StandardCopyOption._
 import db.Article
-import framework.{Helpers, Logging}
+import framework.{ApplicationController, Helpers, Logging}
 
 import java.security.{DigestInputStream, MessageDigest}
+import java.util.concurrent.TimeUnit
 import scala.annotation.unused
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Random, Try, Using}
@@ -29,6 +30,7 @@ class MFile(file: io.File) extends Logging {
   def getName: String = file.getName
   def getPath: String = toSlashSeparator(file.getCanonicalPath)
   def getParent = new MFile(file.getParentFile)
+  def getSize = java.nio.file.Files.size(java.nio.file.Paths.get(getPath))
 
   def exists: Boolean = file.exists
   def canRead: Boolean = file.canRead
@@ -247,6 +249,53 @@ object FileHelper extends Logging {
   def listFilesRec(f: MFile): Array[MFile] = {
     val these = f.listFiles.filter(f => f.getName != ".DS_Store")
     these ++ these.filter(_.isDirectory).flatMap(listFilesRec)
+  }
+
+  def pdfReduceSize(file: MFile, idForMessage: String): Boolean = {
+    if (!file.getName.toLowerCase().endsWith(".pdf")) {
+      info(s"pdfReduceSize: wrong file extension: $file")
+      return false
+    }
+    if (Helpers.isMac || Helpers.isLinux) {
+      val tmpfile = MFile.createTempFile("reftool5pdftmp", ".pdf")
+      val tmpoldfile = MFile.createTempFile(file.getName.dropRight(4), ".pdf")
+      val oldsize = file.getSize
+      info(s"pdfReduceSize: try to resize $file to $tmpfile...")
+      val retval = try {
+        val e = Runtime.getRuntime.exec(Array(AppStorage.config.gspath, "-sDEVICE=pdfwrite", "-dCompatibilityLevel=1.7", "-dPDFSETTINGS=/printer", "-dNOPAUSE",
+          "-dQUIET", "-dBATCH", s"-sOutputFile=${tmpfile.getPath}", file.getPath))
+        if (!e.waitFor(10, TimeUnit.SECONDS)) {
+          ApplicationController.showNotification(s"pdfReduceSize $idForMessage: timeout waiting for gs - trying to kill process, and giving up.")
+          e.destroyForcibly()
+          return false
+        }
+        e.exitValue()
+      } catch {
+        case e: Exception =>
+          error(s"Exception calling ghostscript: ${e.getMessage}", e)
+          -1
+      }
+      if (retval != 0) {
+        ApplicationController.showNotification(s"pdfReduceSize $idForMessage failed: $retval")
+        false
+      } else {
+        val newsize = tmpfile.getSize
+        info(s"pdfReduceSize: done, exit value $retval, size before=$oldsize size now=$newsize")
+        if (newsize < 0.9*oldsize) {
+          info(s"pdfReduceSize: done ($retval), replacing file, backup is at $tmpoldfile")
+          MFile.move(file, tmpoldfile)
+          MFile.move(tmpfile, file)
+          info(s"pdfReduceSize: done!")
+          ApplicationController.showNotification(f"Reduced PDF size to ${100.0*newsize/oldsize}%1.2f %% ($idForMessage)")
+        } else {
+          ApplicationController.showNotification(s"PDF: no size reduction possible ($idForMessage): ${Helpers.tokMGTPE(oldsize)}.")
+        }
+        true
+      }
+    } else {
+      error("not supported OS, tell me how to do it!")
+      false
+    }
   }
 
 }

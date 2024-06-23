@@ -15,6 +15,8 @@ class Config extends Logging {
   var autoimportdir = ""
   var debuglevel = 0
   var showstartupdialog = false
+  var autshrinkpdfs = false
+  var gspath = ""
 
   def dbpath: String = datadir + "/db5"
   def dbschemaversionpath: String = dbpath + "/schemaversion.txt"
@@ -87,6 +89,8 @@ object AppStorage extends Logging {
           case "autoimportdir" => config.autoimportdir = sett(1)
           case "debuglevel" => config.debuglevel = sett(1).toInt
           case "showstartupdialog" => config.showstartupdialog = sett(1).toBoolean
+          case "autshrinkpdfs" => config.autshrinkpdfs = sett(1).toBoolean
+          case "pdfautoreducesize" => config.gspath = sett(1)
           case reUIsett(key) => config.uiSettings.put(key, sett(1))
           case _ => warn("unknown tag in config file: <" + sett.head + ">")
         }
@@ -109,6 +113,8 @@ object AppStorage extends Logging {
     saveSett("autoimportdir", config.autoimportdir)
     saveSett("debuglevel", config.debuglevel)
     saveSett("showstartupdialog", config.showstartupdialog)
+    saveSett("autshrinkpdfs", config.autshrinkpdfs)
+    saveSett("pdfautoreducesize", config.gspath)
 
     config.uiSettings.foreach { case (key, value) => saveSett("ui-" + key, value) }
 

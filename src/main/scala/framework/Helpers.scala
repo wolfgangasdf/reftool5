@@ -10,6 +10,8 @@ import scalafx.scene.control.{Alert, ButtonType, TextArea, Tooltip}
 import scalafx.scene.layout.Priority
 import scalafx.stage.Modality
 
+import scala.math.floor
+
 object Helpers extends Logging {
 
   // this should be used for anything in javafx startup, as the stacktrace is missing if e.g. an icon file is not present!
@@ -25,6 +27,16 @@ object Helpers extends Logging {
     }
   }
 
+  def tokMGTPE(d: Double): String = {
+    var num = d
+    var ext = ""
+    val expo = math.min(floor(math.log(d) / math.log(1000.0)).intValue, 6)
+    if (expo > 0) {
+      ext = "kMGTPE".charAt(expo - 1).toString
+      num = math.pow(d / 1000.0, expo.toDouble)
+    }
+    "%.1f%s".format(num, ext)
+  }
 
   def toJavaPathSeparator(in: String): String = {
     if (isWin) in.replaceAll("""\\""", "/")

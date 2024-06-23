@@ -5,7 +5,7 @@ import db.SquerylEntrypointForMyApp._
 import framework.Helpers.{FixedSfxTooltip, MyAlert}
 import framework.{ApplicationController, GenericView, Logging, MyAction}
 import util.FileHelper._
-import util.{ImportHelper, MFile}
+import util.{FileHelper, ImportHelper, MFile}
 
 import scala.jdk.CollectionConverters._
 import scalafx.Includes._
@@ -108,7 +108,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     }
   }
 
-  private val aRevealPDF = new MyAction("Article", "Reveal document") {
+  private val aRevealPDF = new MyAction("Documents", "Reveal document") {
     tooltipString = "Reveal document in file browser"
     image = new Image(getClass.getResource("/images/Finder_icon.png").toExternalForm)
     action = _ => {
@@ -118,7 +118,7 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     }
   }
 
-  private val aOpenPDF = new MyAction("Article", "Open document") {
+  private val aOpenPDF = new MyAction("Documents", "Open document") {
     tooltipString = "Open document"
     image = new Image(getClass.getResource("/images/pdf.png").toExternalForm)
     action = _ => {
@@ -128,15 +128,32 @@ class ArticleDocumentsView extends GenericView("articledocumentsview") with Logg
     }
   }
 
-  toolbaritems ++= Seq(aOpenPDF.toolbarButton, aRevealPDF.toolbarButton, aDeletePDF.toolbarButton, aAddDocument.toolbarButton)
+  private val aPdfReduceSize: MyAction = new MyAction("Documents", "Reduce file size of PDF") {
+    image = new Image(getClass.getResource("/images/articlesize.png").toExternalForm)
+    tooltipString = "Tries to reduce PDF size."
+    action = _ => {
+      val a = lv.selectionModel.value.getSelectedItem
+      debug("resize doc " + a.docPath)
+      if (FileHelper.pdfReduceSize(getDocumentFileAbs(a.docPath), article.toString)) {
+        // this updates modtime
+        inTransaction {
+          ReftoolDB.articles.update(article)
+        }
+      }
+    }
+  }
+
+  toolbaritems ++= Seq(aOpenPDF.toolbarButton, aRevealPDF.toolbarButton, aDeletePDF.toolbarButton, aAddDocument.toolbarButton, aPdfReduceSize.toolbarButton)
 
   lv.selectionModel.value.getSelectedItems.onChange {
     aDeletePDF.enabled = lv.selectionModel.value.getSelectedItems.length > 0
     aRevealPDF.enabled = lv.selectionModel.value.getSelectedItems.length == 1
     aOpenPDF.enabled = lv.selectionModel.value.getSelectedItems.length == 1
+    aPdfReduceSize.enabled = lv.selectionModel.value.getSelectedItems.length == 1
   }
 
   private def setArticle(a: Article): Unit = {
+    debug(s"setarticle $a") // without this, after search, document list not updated???
     logCall(a)
     lv.getItems.clear()
     if (a != null) {

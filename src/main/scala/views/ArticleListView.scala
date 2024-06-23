@@ -2,7 +2,7 @@ package views
 
 
 import db.{Article, ReftoolDB, Topic, Topic2Article}
-import framework.{ApplicationController, GenericView, Helpers, MyAction}
+import framework.{ApplicationController, GenericView, Helpers, MyAction, MyWorker}
 import db.SquerylEntrypointForMyApp._
 import framework.Helpers.MyAlert
 import util._
@@ -19,6 +19,8 @@ import scalafx.scene.input._
 import scalafx.scene.layout.{Background, BackgroundFill, BorderPane, CornerRadii}
 import scalafx.scene.paint.Color
 import scalafx.scene.control.TableColumn._
+import util.FileHelper.getDocumentFileAbs
+
 import scala.jdk.CollectionConverters._
 
 
@@ -353,6 +355,34 @@ class ArticleListView extends GenericView("articlelistview") {
     }
   }
 
+  private val aPdfReduceSize: MyAction = new MyAction("Article", "Reduce file size of PDFs") {
+    image = new Image(getClass.getResource("/images/articlesize.png").toExternalForm)
+    tooltipString = "Tries to reduce PDF size of selected articles."
+    action = _ => {
+      new MyWorker( "Reducing file sizes of PDFs...",
+        atask = new javafx.concurrent.Task[Unit] { // single abstract method doesn't work: isCancelled etc.
+          override def call(): Unit = {
+            alv.selectionModel.value.getSelectedItems.foreach { a =>
+              a.getDocuments.foreach { d =>
+                if (isCancelled) return
+                updateMessage(s"Resize $a: ${d.docPath}")
+                debug("resize doc " + d.docPath)
+                if (FileHelper.pdfReduceSize(getDocumentFileAbs(d.docPath), a.toString)) {
+                  // update modtime
+                  inTransaction {
+                    ReftoolDB.articles.update(a)
+                  }
+                  ApplicationController.obsArticleModified(a)
+                }
+              }
+            }
+          }
+        },
+        cleanup = () => {}
+      ).run()
+    }
+  }
+
   alv.selectionModel().selectedItems.onChange(
     (ob, change) => {
       if (ob.isEmpty) {
@@ -369,6 +399,7 @@ class ArticleListView extends GenericView("articlelistview") {
         aOpenURL.enabled = false
         aUpdateDocumentFilenames.enabled = false
         aUnionTopics.enabled = false
+        aPdfReduceSize.enabled = false
       } else if (change.nonEmpty) { // no idea why it's empty sometimes...
         aSetColor.enabled = currentTopic != null
         aRemoveArticle.enabled = true
@@ -379,6 +410,7 @@ class ArticleListView extends GenericView("articlelistview") {
         aCopyDOIs.enabled = true
         aCopyPDFs.enabled = true
         aUpdateDocumentFilenames.enabled = true
+        aPdfReduceSize.enabled = true
         if (ob.size == 1) {
           aOpenPDF.enabled = true
           aRevealPDF.enabled = true
