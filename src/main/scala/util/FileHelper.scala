@@ -30,7 +30,7 @@ class MFile(file: io.File) extends Logging {
   def getName: String = file.getName
   def getPath: String = toSlashSeparator(file.getCanonicalPath)
   def getParent = new MFile(file.getParentFile)
-  def getSize = java.nio.file.Files.size(java.nio.file.Paths.get(getPath))
+  def getSize: Long = java.nio.file.Files.size(java.nio.file.Paths.get(getPath))
 
   def exists: Boolean = file.exists
   def canRead: Boolean = file.canRead

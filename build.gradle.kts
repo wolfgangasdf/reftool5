@@ -46,7 +46,7 @@ repositories {
 }
 
 javafx {
-    version = "22.0.1"
+    version = "22.0.2"
     modules = listOf("javafx.base", "javafx.controls", "javafx.media") // scalafx requires javafx.media
     // set compileOnly for crosspackage to avoid packaging host javafx jmods for all target platforms
     if (project.gradle.startParameter.taskNames.intersect(listOf("crosspackage", "dist")).isNotEmpty()) {
@@ -63,11 +63,11 @@ dependencies {
     implementation("org.apache.derby:derbyshared:$derbyVersion")
     implementation("org.squeryl:squeryl_2.13:0.10.0")
     implementation("org.scala-lang.modules:scala-parser-combinators_2.13:2.4.0")
-    implementation("org.apache.pdfbox:pdfbox:3.0.2")
+    implementation("org.apache.pdfbox:pdfbox:3.0.3")
     implementation("org.jbibtex:jbibtex:1.0.20")
     implementation("com.github.tomtung:latex2unicode_2.13:0.3.2")
     implementation("org.scala-lang:scala-reflect:2.13.14")
-    implementation("org.jsoup:jsoup:1.17.2")
+    implementation("org.jsoup:jsoup:1.18.1")
     implementation("org.controlsfx:controlsfx:11.2.1") { exclude("org.openjfx") }
     cPlatforms.forEach {platform ->
         val cfg = configurations.create("javafx_$platform")

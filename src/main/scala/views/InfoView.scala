@@ -162,7 +162,7 @@ class InfoView extends GenericView("toolview") {
   private val aPdfsReduceSize: MyAction = new MyAction("Tools", "Reduce file size of PDFs") {
     image = new Image(getClass.getResource("/images/articlesize.png").toExternalForm)
     val minsize = 10e6
-    tooltipString = s"Scans all article documents for large (>${minsize}) PDFs and shows them." // TODO: auto shrink?
+    tooltipString = s"Scans all article documents for large (>$minsize) PDFs and shows them." // TODO: auto shrink?
     action = _ => {
       taInfo.text = "Large PDFs:\n"
       inTransaction {

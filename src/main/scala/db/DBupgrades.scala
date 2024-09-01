@@ -74,7 +74,7 @@ object DBupgrades extends Logging {
     debug("modify db (hard upgrade if needed)...")
     val dbc = dbGetConnection
     val s = dbc.createStatement()
-    def modCol(table: String, col: String, default: String = null) = {
+    def modCol(table: String, col: String, default: String = null): Boolean = {
       if (default != null) {
         s.execute(s"update $table set $col=$default WHERE $col IS NULL")
         s.execute(s"alter table $table alter column $col default $default")

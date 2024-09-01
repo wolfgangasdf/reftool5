@@ -429,10 +429,12 @@ object ApplicationController extends Logging {
   val obsBookmarksChanged = new Observable[List[Topic]]("oBookmarksChanged")
 
   val notificationTimer = new java.util.Timer()
-  def showNotification(string: String): Unit = {
+  def showNotification(string: String, sticky: Boolean = false): Unit = {
     info(s"Notification: $string")
     Helpers.runUI{
-      Notifications.create().owner(main.Main.stage.delegate).hideAfter(Duration(4000.0)).title("Reftool").text(string).show()
+      val n = Notifications.create().owner(main.Main.stage.delegate).title("Reftool").text(string)
+        .hideAfter(Duration(if (!sticky) 1000.0*7 else 1000.0*3600))
+      n.show()
     }
   }
 

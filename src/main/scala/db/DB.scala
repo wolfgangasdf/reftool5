@@ -4,14 +4,13 @@ import java.io.OutputStream
 import java.sql.SQLException
 import java.text.SimpleDateFormat
 import java.time.Instant
-
 import org.squeryl.adapters.DerbyAdapter
 import org.squeryl.dsl._
 import org.squeryl._
 import org.squeryl.annotations.Transient
 import util._
 import util.AppStorage
-import framework.Logging
+import framework.{ApplicationController, Logging}
 import org.squeryl.internals.LifecycleEvent
 
 import scala.collection.mutable.ArrayBuffer
@@ -155,6 +154,9 @@ object ReftoolDB extends Schema with Logging {
 
   val lastschemaversion = 3
 
+  val longFieldLength = 10000
+  val mediumFieldLength = 4096
+
   info("Initializing reftooldb...")
 
   val settings: Table[Setting] = table[Setting]("SETTING")
@@ -195,14 +197,14 @@ object ReftoolDB extends Schema with Logging {
     a.id.is(named("ID")),
     a.entrytype.is(dbType("varchar(256)"), named("ENTRYTYPE")), a.entrytype.defaultsTo(""),
     a.title.is(dbType("varchar(1024)"), named("TITLE")), a.title.defaultsTo(""),
-    a.authors.is(dbType("varchar(4096)"), named("AUTHORS")), a.authors.defaultsTo(""),
+    a.authors.is(dbType(s"varchar($mediumFieldLength)"), named("AUTHORS")), a.authors.defaultsTo(""),
     a.journal.is(dbType("varchar(256)"), named("JOURNAL")), a.journal.defaultsTo(""),
     a.pubdate.is(dbType("varchar(128)"), named("PUBDATE")), a.pubdate.defaultsTo(""),
-    a.review.is(dbType("varchar(10000)"), named("REVIEW")), a.review.defaultsTo(""),
-    a.pdflink.is(dbType("varchar(10000)"), named("PDFLINK")), a.pdflink.defaultsTo(""),
+    a.review.is(dbType(s"varchar($longFieldLength)"), named("REVIEW")), a.review.defaultsTo(""),
+    a.pdflink.is(dbType(s"varchar($longFieldLength)"), named("PDFLINK")), a.pdflink.defaultsTo(""),
     a.linkurl.is(dbType("varchar(1024)"), named("LINKURL")), a.linkurl.defaultsTo(""),
     a.bibtexid.is(dbType("varchar(128)"), named("BIBTEXID")), a.bibtexid.defaultsTo(""),
-    a.bibtexentry.is(dbType("varchar(10000)"), named("BIBTEXENTRY")), a.bibtexentry.defaultsTo(""),
+    a.bibtexentry.is(dbType(s"varchar($longFieldLength)"), named("BIBTEXENTRY")), a.bibtexentry.defaultsTo(""),
     a.doi.is(dbType("varchar(256)"), named("DOI")), a.doi defaultsTo "",
     a.modtime.is(dbType("bigint"), named("LASTTIMESTAMP")), a.modtime.defaultsTo(0.toLong)
   ))
@@ -214,11 +216,21 @@ object ReftoolDB extends Schema with Logging {
     a.color.is(named("COLOR")), a.color.defaultsTo(0)
   ))
 
-  // manually auto-increment ids.
+  // callbacks: auto-increment ids, modtime, validation for some fields
   override def callbacks: Seq[LifecycleEvent] = Seq(
-    beforeInsert(articles).call((x:Article) => x.id = from(articles)(a => select(a).orderBy(a.id.desc)).headOption.getOrElse(new Article()).id + 1),
+    beforeInsert(articles).call((x:Article) => {
+      x.id = from(articles)(a => select(a).orderBy(a.id.desc)).headOption.getOrElse(new Article()).id + 1
+      if (x.bibtexentry.length > ReftoolDB.longFieldLength) {
+        ApplicationController.showNotification(s"[$x] Truncated bibtexentry field!", sticky = true)
+        x.bibtexentry = x.bibtexentry.substring(0, ReftoolDB.longFieldLength)
+      }
+      if (x.authors.length > ReftoolDB.mediumFieldLength) {
+        ApplicationController.showNotification(s"[$x] Truncated authors field!", sticky = true)
+        x.authors = x.authors.substring(0, ReftoolDB.mediumFieldLength)
+      }
+    }),
     beforeInsert(topics).call((x:Topic) => x.id = from(topics)(a => select(a).orderBy(a.id.desc)).headOption.getOrElse(new Topic()).id + 1),
-    beforeUpdate(articles).call((x:Article) => x.modtime = Instant.now().toEpochMilli)
+    beforeUpdate(articles).call((x:Article) => x.modtime = Instant.now().toEpochMilli),
   )
 
   // helpers

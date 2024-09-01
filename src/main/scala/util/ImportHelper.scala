@@ -407,10 +407,9 @@ object ImportHelper extends Logging {
         (null, null)
       }
     } catch {
-      case e: Exception => {
+      case e: Exception =>
         error("error parsing bibtex", e)
         (null, null)
-      }
     }
     if (res == (null, null)) {
       error(s"error parsing bibtex, bibtexentry=\n$bibtexentry")
