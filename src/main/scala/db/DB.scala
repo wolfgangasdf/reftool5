@@ -50,7 +50,6 @@ class Document(var docName: String, var docPath: String) extends Ordered[Documen
 }
 object Document {
   val NMAIN = "0"
-  val NOTHER = "1"
 }
 
 class Article(var entrytype: String = "",
@@ -59,7 +58,7 @@ class Article(var entrytype: String = "",
               var journal: String = "",
               var pubdate: String = "",
               var review: String = "",
-              var pdflink: String = "",
+              var pdflink: String = "", // either single filepath or docName0\tfilepath0\ndocName1\tfilepath1\n...
               var linkurl: String = "",
               var bibtexid: String = "",
               var bibtexentry: String = "",

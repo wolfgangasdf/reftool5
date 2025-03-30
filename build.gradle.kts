@@ -22,7 +22,7 @@ plugins {
     scala
     id("idea")
     application
-    id("com.github.ben-manes.versions") version "0.44.0" // 0.50.0 doesn't work properly
+    id("com.github.ben-manes.versions") version "0.52.0"
     id("org.openjfx.javafxplugin") version "0.0.14" // 0.1.0 doesn't work yet
     id("org.beryx.runtime") version "1.13.1"
 }
@@ -56,19 +56,19 @@ javafx {
 val javaFXOptions = the<JavaFXOptions>()
 
 dependencies {
-    implementation("org.scala-lang:scala-library:2.13.14")
+    implementation("org.scala-lang:scala-library:2.13.16")
     implementation("org.scalafx:scalafx_2.13:22.0.0-R33")
     implementation("org.apache.derby:derby:$derbyVersion")
     implementation("org.apache.derby:derbytools:$derbyVersion")
     implementation("org.apache.derby:derbyshared:$derbyVersion")
-    implementation("org.squeryl:squeryl_2.13:0.10.0")
+    implementation("org.squeryl:squeryl_2.13:0.10.1")
     implementation("org.scala-lang.modules:scala-parser-combinators_2.13:2.4.0")
-    implementation("org.apache.pdfbox:pdfbox:3.0.3")
+    implementation("org.apache.pdfbox:pdfbox:3.0.4")
     implementation("org.jbibtex:jbibtex:1.0.20")
     implementation("com.github.tomtung:latex2unicode_2.13:0.3.2")
-    implementation("org.scala-lang:scala-reflect:2.13.14")
-    implementation("org.jsoup:jsoup:1.18.1")
-    implementation("org.controlsfx:controlsfx:11.2.1") { exclude("org.openjfx") }
+    implementation("org.scala-lang:scala-reflect:2.13.16")
+    implementation("org.jsoup:jsoup:1.19.1")
+    implementation("org.controlsfx:controlsfx:11.2.2") { exclude("org.openjfx") }
     cPlatforms.forEach {platform ->
         val cfg = configurations.create("javafx_$platform")
         JavaFXModule.getJavaFXModules(javaFXOptions.modules).forEach { m ->
@@ -118,14 +118,14 @@ open class CrossPackage : DefaultTask() {
 
     @TaskAction
     fun crossPackage() {
-        File("${project.buildDir.path}/crosspackage/").mkdirs()
+        File("${project.layout.buildDirectory.get().asFile.path}/crosspackage/").mkdirs()
         project.runtime.targetPlatforms.get().forEach { (t, _) ->
             println("targetplatform: $t")
             val imgdir = "${project.runtime.imageDir.get()}/${project.name}-$t"
             println("imagedir=$imgdir targetplatform=$t")
             when {
                 t.startsWith("mac") -> {
-                    val appp = File(project.buildDir.path + "/crosspackage/$t/$execfilename.app").path
+                    val appp = File(project.layout.buildDirectory.get().asFile.path + "/crosspackage/$t/$execfilename.app").path
                     project.delete(appp)
                     project.copy {
                         into(appp)
@@ -183,7 +183,7 @@ open class CrossPackage : DefaultTask() {
                     // touch folder to update Finder
                     File(appp).setLastModified(System.currentTimeMillis())
                     // zip it
-                    zipTo(File("${project.buildDir.path}/crosspackage/$execfilename-$t.zip"), File("${project.buildDir.path}/crosspackage/$t"))
+                    zipTo(File("${project.layout.buildDirectory.get().asFile.path}/crosspackage/$execfilename-$t.zip"), File("${project.layout.buildDirectory.get().asFile.path}/crosspackage/$t"))
                 }
                 t == "win" -> {
                     File("$imgdir/bin/$execfilename.bat").delete() // from runtime, not nice
@@ -193,10 +193,10 @@ open class CrossPackage : DefaultTask() {
                         set DIR=%~dp0
                         start "" "%DIR%\bin\javaw" %JLINK_VM_OPTIONS% -classpath "%DIR%/lib/*" ${project.application.mainClass.get()} 
                     """.trimIndent())
-                    zipTo(File("${project.buildDir.path}/crosspackage/$execfilename-$t.zip"), File(imgdir))
+                    zipTo(File("${project.layout.buildDirectory.get().asFile.path}/crosspackage/$execfilename-$t.zip"), File(imgdir))
                 }
                 t.startsWith("linux") -> {
-                    zipTo(File("${project.buildDir.path}/crosspackage/$execfilename-$t.zip"), File(imgdir))
+                    zipTo(File("${project.layout.buildDirectory.get().asFile.path}/crosspackage/$execfilename-$t.zip"), File(imgdir))
                 }
             }
         }
@@ -220,7 +220,7 @@ tasks["runtime"].doLast {
     cPlatforms.forEach { platform ->
         println("Copy jmods for platform $platform")
         val cfg = configurations["javafx_$platform"]
-        cfg.resolvedConfiguration.files.forEach { f ->
+        cfg.incoming.files.forEach { f ->
             copy {
                 from(f)
                 into("${project.runtime.imageDir.get()}/${project.name}-$platform/lib")
@@ -229,18 +229,18 @@ tasks["runtime"].doLast {
     }
 }
 
-task<Zip>("zipchrome") {
+tasks.register<Zip>("zipchrome") {
     archiveFileName.set("reftool5-chromeextension.zip")
-    destinationDirectory.set(file("$buildDir/crosspackage"))
+    destinationDirectory.set(file("${project.layout.buildDirectory.get().asFile.path}/crosspackage"))
     from("extensions/chrome")
 }
 
-task("dist") {
+tasks.register("dist") {
     dependsOn("crosspackage")
     dependsOn("zipchrome")
     doLast {
         println("Deleting build/[image,jre,install]")
-        project.delete(project.runtime.imageDir.get(), project.runtime.jreDir.get(), "${project.buildDir.path}/install")
+        project.delete(project.runtime.imageDir.get(), project.runtime.jreDir.get(), "${project.layout.buildDirectory.get().asFile.path}/install")
         println("Created zips in build/crosspackage")
     }
 }
@@ -256,4 +256,11 @@ tasks.withType<com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
         isNonStable(candidate.version)
     }
     gradleReleaseChannel = "current"
+}
+
+// fix scala issue https://github.com/ben-manes/gradle-versions-plugin/issues/821
+tasks.named<com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask>("dependencyUpdates").configure {
+    filterConfigurations = Spec<Configuration> {
+        !it.name.startsWith("incrementalScalaAnalysis")
+    }
 }

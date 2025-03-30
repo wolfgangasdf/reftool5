@@ -141,7 +141,13 @@ object ImportHelper extends Logging {
         updateProgress(60, 100)
         if (isCancelled) return
         if (doFileAction) {
-          val newdoc = new Document(if (article == null) Document.NMAIN else Document.NOTHER, "")
+          var docName = Document.NMAIN
+          if (article != null) {
+            while (article.getDocuments.exists(d => d.docName.startsWith(docName))) {
+              docName = (docName.toInt + 1).toString
+            }
+          }
+          val newdoc = new Document(docName, "")
           val newFile1 = FileHelper.getUniqueDocFile(FileHelper.getLastImportFolder, a, newdoc.docName, sourceFile.getName)
           newdoc.docPath = FileHelper.getDocumentPathRelative(newFile1)
 
@@ -387,6 +393,7 @@ object ImportHelper extends Logging {
     var s = oldString
     if (btfield != null) {
       s = btfield.toUserString
+      s = s.replaceAll("<[^>]*>", " ").trim.replaceAll("\\s+", " ") // remove tags (mathml etcetera) and multiple spaces
       if (s.contains('\\') || s.contains('{')) {
         s = s.replaceAll("""\{\\hspace\{[\w\.]*\}\}""", " ") // latex2unicode doesn't remove {\hspace{0.167em}} properly
         s = LaTeX2Unicode.convert(s)

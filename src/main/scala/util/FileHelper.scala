@@ -288,7 +288,7 @@ object FileHelper extends Logging {
           info(s"pdfReduceSize: done!")
           ApplicationController.showNotification(f"Reduced PDF size to ${100.0*newsize/oldsize}%1.2f %% ($idForMessage)")
         } else {
-          ApplicationController.showNotification(s"PDF: no size reduction possible ($idForMessage): ${Helpers.tokMGTPE(oldsize)}.")
+          ApplicationController.showNotification(s"PDF: no size reduction possible ($idForMessage): ${Helpers.tokMGTPE(oldsize.toDouble)}.")
         }
         true
       }
